@@ -10,6 +10,8 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 public class Device {
 	private String id;
 
+	private String clientId;
+
 	private String name;
 
 	private String address;
