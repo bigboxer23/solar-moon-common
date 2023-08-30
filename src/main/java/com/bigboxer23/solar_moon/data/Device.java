@@ -3,6 +3,7 @@ package com.bigboxer23.solar_moon.data;
 import lombok.Data;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 
 /** */
 @Data
@@ -33,6 +34,10 @@ public class Device {
 		return id;
 	}
 
+	@DynamoDbSortKey
+	public String getClientId() {
+		return clientId;
+	}
 	public boolean isPushedDevice() {
 		return getPassword() == null && getUser() == null;
 	}
