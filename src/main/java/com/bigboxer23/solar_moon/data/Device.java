@@ -15,8 +15,6 @@ public class Device {
 
 	public static final String TABLE_NAME = "devices";
 
-	public static final String VIRTUAL_TABLE_NAME = "virtualDevices";
-
 	private String id;
 
 	private String clientId;
@@ -38,6 +36,8 @@ public class Device {
 	private boolean subtraction;
 
 	private String deviceKey;
+
+	private boolean isVirtual = false;
 
 	@DynamoDbSecondaryPartitionKey(indexNames = NAME_INDEX)
 	public String getName() {
