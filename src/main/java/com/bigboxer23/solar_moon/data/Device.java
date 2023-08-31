@@ -17,6 +17,8 @@ public class Device {
 
 	public static final String DEVICE_KEY_INDEX = "deviceKey-index";
 
+	public static final String CLIENT_INDEX = "clientId-index";
+
 	public static final String TABLE_NAME = "devices";
 
 	@Schema(description = "(internal) id of the device")
@@ -79,6 +81,7 @@ public class Device {
 		return id;
 	}
 
+	@DynamoDbSecondaryPartitionKey(indexNames = CLIENT_INDEX)
 	@DynamoDbSecondarySortKey(indexNames = {NAME_INDEX, DEVICE_NAME_INDEX})
 	@DynamoDbSortKey
 	public String getClientId() {
