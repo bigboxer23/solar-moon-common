@@ -1,9 +1,7 @@
 package com.bigboxer23.solar_moon.data;
 
 import lombok.Data;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
 /** */
 @Data
@@ -29,11 +27,20 @@ public class Device {
 
 	private boolean subtraction;
 
+	@DynamoDbSecondaryPartitionKey(indexNames = "name-clientId-index")
+	public String getName() {
+		return name;
+	}
+	@DynamoDbSecondaryPartitionKey(indexNames = "deviceName-clientId-index")
+	public String getDeviceName() {
+		return deviceName;
+	}
 	@DynamoDbPartitionKey
 	public String getId() {
 		return id;
 	}
 
+	@DynamoDbSecondarySortKey(indexNames = {"name-clientId-index", "deviceName-clientId-index"})
 	@DynamoDbSortKey
 	public String getClientId() {
 		return clientId;
