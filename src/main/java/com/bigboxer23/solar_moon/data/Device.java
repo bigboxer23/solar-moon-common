@@ -7,6 +7,10 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 @Data
 @DynamoDbBean
 public class Device {
+	public static final String NAME_INDEX = "name-clientId-index";
+
+	public static final String DEVICE_NAME_INDEX = "deviceName-clientId-index";
+
 	private String id;
 
 	private String clientId;
@@ -27,11 +31,11 @@ public class Device {
 
 	private boolean subtraction;
 
-	@DynamoDbSecondaryPartitionKey(indexNames = "name-clientId-index")
+	@DynamoDbSecondaryPartitionKey(indexNames = NAME_INDEX)
 	public String getName() {
 		return name;
 	}
-	@DynamoDbSecondaryPartitionKey(indexNames = "deviceName-clientId-index")
+	@DynamoDbSecondaryPartitionKey(indexNames = DEVICE_NAME_INDEX)
 	public String getDeviceName() {
 		return deviceName;
 	}
@@ -40,7 +44,7 @@ public class Device {
 		return id;
 	}
 
-	@DynamoDbSecondarySortKey(indexNames = {"name-clientId-index", "deviceName-clientId-index"})
+	@DynamoDbSecondarySortKey(indexNames = {NAME_INDEX, DEVICE_NAME_INDEX})
 	@DynamoDbSortKey
 	public String getClientId() {
 		return clientId;
