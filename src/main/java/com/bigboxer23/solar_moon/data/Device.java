@@ -15,6 +15,8 @@ public class Device {
 
 	public static final String TABLE_NAME = "devices";
 
+	public static final String VIRTUAL_TABLE_NAME = "virtualDevices";
+
 	private String id;
 
 	private String clientId;
