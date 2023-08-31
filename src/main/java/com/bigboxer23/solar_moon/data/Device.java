@@ -11,6 +11,8 @@ public class Device {
 
 	public static final String DEVICE_NAME_INDEX = "deviceName-clientId-index";
 
+	public static final String DEVICE_KEY_INDEX = "deviceKey-index";
+
 	public static final String TABLE_NAME = "devices";
 
 	private String id;
@@ -33,14 +35,18 @@ public class Device {
 
 	private boolean subtraction;
 
+	private String deviceKey;
+
 	@DynamoDbSecondaryPartitionKey(indexNames = NAME_INDEX)
 	public String getName() {
 		return name;
 	}
+
 	@DynamoDbSecondaryPartitionKey(indexNames = DEVICE_NAME_INDEX)
 	public String getDeviceName() {
 		return deviceName;
 	}
+
 	@DynamoDbPartitionKey
 	public String getId() {
 		return id;
@@ -51,6 +57,12 @@ public class Device {
 	public String getClientId() {
 		return clientId;
 	}
+
+	@DynamoDbSecondaryPartitionKey(indexNames = DEVICE_KEY_INDEX)
+	public String getDeviceKey() {
+		return deviceKey;
+	}
+
 	public boolean isPushedDevice() {
 		return getPassword() == null && getUser() == null;
 	}
