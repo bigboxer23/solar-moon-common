@@ -11,6 +11,8 @@ public class Device {
 
 	public static final String DEVICE_NAME_INDEX = "deviceName-clientId-index";
 
+	public static final String TABLE_NAME = "devices";
+
 	private String id;
 
 	private String clientId;
