@@ -57,7 +57,7 @@ public class Device {
 	private String deviceKey;
 
 	@Schema(description = "Is this device virtual (site)?", example = "true|false")
-	private boolean isVirtual;
+	private boolean virtual;
 
 	public Device() {}
 
