@@ -29,6 +29,16 @@ public class DeviceComponent {
 		return getClient().table(Device.TABLE_NAME, TableSchema.fromBean(Device.class));
 	}
 
+	public Device findDeviceByDeviceKey(String deviceKey) {
+		return getDeviceTable()
+				.index(Device.DEVICE_KEY_INDEX)
+				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(deviceKey)))
+				.stream()
+				.findFirst()
+				.flatMap(page -> page.items().stream().findFirst())
+				.orElse(null);
+	}
+
 	public Stream<Page<Device>> getDevices(String clientId) {
 		return getDeviceTable()
 				.index(Device.CLIENT_INDEX)
