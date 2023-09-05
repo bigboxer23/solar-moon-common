@@ -11,12 +11,12 @@ import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 @ActiveProfiles("test")
 public class TestDeviceComponent {
 
-	protected String deviceKey = "2459786f-74c6-42e0-bc37-a501cb87297a";
-	protected String deviceName = "testDevice";
+	protected static final String deviceKey = "2459786f-74c6-42e0-bc37-a501cb87297a";
+	protected static final String deviceName = "testDevice";
 
-	protected String clientId = "0badd0c2-450b-4204-80d5-c7c77fc13500";
+	protected static final String clientId = "0badd0c2-450b-4204-80d5-c7c77fc13500";
 
-	protected String deviceId = "edc76a9b-e451-4592-996e-0e54410bae5e";
+	protected static final String deviceId = "edc76a9b-e451-4592-996e-0e54410bae5e";
 
 	private DeviceComponent component = new DeviceComponent();
 
