@@ -10,7 +10,7 @@
   </parent>
   <groupId>com.bigboxer23</groupId>
   <artifactId>solar-moon-common</artifactId>
-  <version>1.1.5</version>
+  <version>1.1.6</version>
   <packaging>jar</packaging>
   <name>solar-moon-common</name>
   <url>https://github.com/bigboxer23/solar-moon-common</url>
@@ -109,6 +109,17 @@
         <plugin>
           <artifactId>maven-project-info-reports-plugin</artifactId>
           <version>3.4.5</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <executions>
+            <execution>
+              <goals>
+                <goal>test-jar</goal>
+              </goals>
+            </execution>
+          </executions>
         </plugin>
       </plugins>
     </pluginManagement>
