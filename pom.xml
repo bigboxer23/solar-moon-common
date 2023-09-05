@@ -10,7 +10,7 @@
   </parent>
   <groupId>com.bigboxer23</groupId>
   <artifactId>solar-moon-common</artifactId>
-  <version>1.1.2</version>
+  <version>1.1.3</version>
   <packaging>jar</packaging>
   <name>solar-moon-common</name>
   <url>https://github.com/bigboxer23/solar-moon-common</url>
@@ -51,6 +51,11 @@
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
       <version>2.2.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
   <repositories>
