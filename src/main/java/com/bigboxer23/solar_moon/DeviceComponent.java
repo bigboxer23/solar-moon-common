@@ -1,6 +1,7 @@
 package com.bigboxer23.solar_moon;
 
 import com.bigboxer23.solar_moon.data.Device;
+import java.util.Collections;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,9 @@ public class DeviceComponent {
 	}
 
 	public Device findDeviceByDeviceKey(String deviceKey) {
+		if (deviceKey == null || deviceKey.isEmpty()) {
+			return null;
+		}
 		return getDeviceTable()
 				.index(Device.DEVICE_KEY_INDEX)
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(deviceKey)))
@@ -40,6 +44,9 @@ public class DeviceComponent {
 	}
 
 	public Stream<Page<Device>> getDevices(String clientId) {
+		if (clientId == null || clientId.isEmpty()) {
+			return Stream.of(Page.create(Collections.emptyList()));
+		}
 		return getDeviceTable()
 				.index(Device.CLIENT_INDEX)
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(clientId)))
