@@ -25,16 +25,21 @@ public class TestDeviceComponent {
 	@Test
 	public void testFindDeviceByDeviceKey() {
 		setupTestDevice();
+		assertNull(component.findDeviceByDeviceKey(null));
+		assertNull(component.findDeviceByDeviceKey(""));
 		assertNull(component.findDeviceByDeviceKey("1234"));
 		assertNotNull(component.findDeviceByDeviceKey(deviceKey));
 	}
 
 	@Test
-	public void testDevices() {
+	public void testGetDevices() {
 		setupTestDevice();
+		component.getDevices(null).forEach(page -> assertEquals(0, page.items().size()));
+		component.getDevices("").forEach(page -> assertEquals(0, page.items().size()));
 		component
 				.getDevices(clientId)
 				.forEach(page -> assertEquals(1, page.items().size()));
+		assertFalse(component.getDevices("tacoClient").findAny().isEmpty());
 		component
 				.getDevices("tacoClient")
 				.forEach(page -> assertEquals(0, page.items().size()));
