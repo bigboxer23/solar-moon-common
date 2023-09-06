@@ -47,18 +47,18 @@ public class TestDeviceComponent {
 
 	protected void setupTestDevice() {
 		try {
-			component.getDeviceTable().putItem(testDevice);
+			component.getTable().putItem(testDevice);
 		} catch (DynamoDbException e) {
 			testDevice.setId(deviceId);
 			testDevice.setName(deviceName);
 			testDevice.setClientId(clientId);
 			testDevice.setDeviceKey(deviceKey);
-			Device dbDevice = component.getDeviceTable().getItem(testDevice);
+			Device dbDevice = component.getTable().getItem(testDevice);
 			;
 			if (dbDevice != null) {
-				component.getDeviceTable().deleteItem(dbDevice);
+				component.getTable().deleteItem(dbDevice);
 			}
-			component.getDeviceTable().putItem(testDevice);
+			component.getTable().putItem(testDevice);
 			return;
 		}
 		fail();
