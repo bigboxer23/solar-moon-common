@@ -54,7 +54,6 @@ public class TestDeviceComponent {
 			testDevice.setClientId(clientId);
 			testDevice.setDeviceKey(deviceKey);
 			Device dbDevice = component.getTable().getItem(testDevice);
-			;
 			if (dbDevice != null) {
 				component.getTable().deleteItem(dbDevice);
 			}
