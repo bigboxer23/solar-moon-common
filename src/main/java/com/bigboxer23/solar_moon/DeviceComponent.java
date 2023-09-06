@@ -3,38 +3,18 @@ package com.bigboxer23.solar_moon;
 import com.bigboxer23.solar_moon.data.Device;
 import java.util.Collections;
 import java.util.stream.Stream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 /** */
 @Component
-public class DeviceComponent {
-	protected static final Logger logger = LoggerFactory.getLogger(DeviceComponent.class);
-
-	private DynamoDbEnhancedClient client;
-
-	private DynamoDbEnhancedClient getClient() {
-		if (client == null) {
-			client = DynamoDbEnhancedClient.create();
-		}
-		return client;
-	}
-
-	protected DynamoDbTable<Device> getDeviceTable() {
-		return getClient().table(Device.TABLE_NAME, TableSchema.fromBean(Device.class));
-	}
-
+public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	public Device findDeviceByDeviceKey(String deviceKey) {
 		if (deviceKey == null || deviceKey.isEmpty()) {
 			return null;
 		}
-		return getDeviceTable()
+		return getTable()
 				.index(Device.DEVICE_KEY_INDEX)
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(deviceKey)))
 				.stream()
@@ -47,9 +27,19 @@ public class DeviceComponent {
 		if (clientId == null || clientId.isEmpty()) {
 			return Stream.of(Page.create(Collections.emptyList()));
 		}
-		return getDeviceTable()
+		return getTable()
 				.index(Device.CLIENT_INDEX)
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(clientId)))
 				.stream();
+	}
+
+	@Override
+	protected String getTableName() {
+		return "devices";
+	}
+
+	@Override
+	protected Class<Device> getObjectClass() {
+		return Device.class;
 	}
 }
