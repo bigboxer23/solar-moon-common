@@ -10,7 +10,7 @@ import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 public abstract class AbstractDynamodbComponent<T> {
 	protected static final Logger logger = LoggerFactory.getLogger(AbstractDynamodbComponent.class);
 
-	private DynamoDbEnhancedClient client;
+	private static DynamoDbEnhancedClient client;
 
 	private DynamoDbEnhancedClient getClient() {
 		if (client == null) {
