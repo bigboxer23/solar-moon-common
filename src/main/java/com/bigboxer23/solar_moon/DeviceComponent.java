@@ -2,9 +2,9 @@ package com.bigboxer23.solar_moon;
 
 import com.bigboxer23.solar_moon.data.Device;
 import java.util.Collections;
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
-import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 /** */
@@ -23,14 +23,16 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 				.orElse(null);
 	}
 
-	public Stream<Page<Device>> getDevices(String clientId) {
+	public List<Device> getDevices(String clientId) {
 		if (clientId == null || clientId.isEmpty()) {
-			return Stream.of(Page.create(Collections.emptyList()));
+			return Collections.emptyList();
 		}
 		return getTable()
 				.index(Device.CLIENT_INDEX)
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(clientId)))
-				.stream();
+				.stream()
+				.flatMap(page -> page.items().stream())
+				.collect(Collectors.toList());
 	}
 
 	@Override
