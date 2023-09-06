@@ -19,8 +19,6 @@ public class Device {
 
 	public static final String CLIENT_INDEX = "clientId-index";
 
-	public static final String TABLE_NAME = "devices";
-
 	@Schema(description = "(internal) id of the device")
 	private String id;
 
