@@ -17,7 +17,7 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 		return Customer.class;
 	}
 
-	public Customer getCustomerIdByAccessKey(String accessKey) {
+	public Customer findCustomerIdByAccessKey(String accessKey) {
 		if (accessKey == null || accessKey.isEmpty()) {
 			return null;
 		}
