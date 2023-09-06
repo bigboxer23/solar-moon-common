@@ -40,6 +40,18 @@ public class TestDeviceComponent {
 		assertEquals(0, component.getDevices("tacoClient").size());
 	}
 
+	@Test
+	public void testGetDevice() {
+		setupTestDevice();
+		assertNotNull(component.getDevice(deviceId, clientId));
+		assertNull(component.getDevice(null, null));
+		assertNull(component.getDevice("", null));
+		assertNull(component.getDevice(null, ""));
+		assertNull(component.getDevice("", ""));
+		assertNull(component.getDevice("blah", clientId));
+		assertNull(component.getDevice(deviceId, "blah"));
+	}
+
 	protected void setupTestDevice() {
 		try {
 			component.getTable().putItem(testDevice);

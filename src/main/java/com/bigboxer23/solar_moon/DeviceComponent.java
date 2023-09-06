@@ -35,6 +35,13 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 				.collect(Collectors.toList());
 	}
 
+	public Device getDevice(String id, String clientId) {
+		if (id == null || clientId == null || id.isBlank() || clientId.isBlank()) {
+			return null;
+		}
+		return getTable().getItem(new Device(id, clientId));
+	}
+
 	@Override
 	protected String getTableName() {
 		return "devices";
