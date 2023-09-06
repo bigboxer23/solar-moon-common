@@ -17,6 +17,18 @@ public class Customer {
 
 	public static final String CUSTOMER_ID_INDEX = "customerId-index";
 
+	public Customer() {}
+
+	public Customer(String customerId) {
+		setCustomerId(customerId);
+	}
+
+	public Customer(String customerId, String email, String accessKey) {
+		this(customerId);
+		setEmail(email);
+		setAccessKey(accessKey);
+	}
+
 	@Schema(description = "email of customer")
 	private String email;
 
