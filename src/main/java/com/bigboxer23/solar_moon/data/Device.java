@@ -19,6 +19,10 @@ public class Device {
 
 	public static final String CLIENT_INDEX = "clientId-index";
 
+	public static final String SITE_INDEX = "site-customerId-index";
+
+	public static final String VIRTUAL_INDEX = "virtual-index";
+
 	@Schema(description = "(internal) id of the device")
 	private String id;
 
@@ -57,11 +61,21 @@ public class Device {
 	@Schema(description = "Is this device virtual (site)?", example = "true|false")
 	private boolean virtual;
 
-	public Device() {}
+	@Schema(description = "String representation of virtual for dynamodb index", example = "true|false")
+	private String virtualIndex;
+
+	public Device() {
+		setVirtual(false);
+	}
 
 	public Device(String id, String clientId) {
+		this();
 		setClientId(clientId);
 		setId(id);
+	}
+
+	public boolean isPushedDevice() {
+		return getPassword() == null && getUser() == null;
 	}
 
 	@DynamoDbSecondaryPartitionKey(indexNames = NAME_INDEX)
@@ -80,7 +94,7 @@ public class Device {
 	}
 
 	@DynamoDbSecondaryPartitionKey(indexNames = CLIENT_INDEX)
-	@DynamoDbSecondarySortKey(indexNames = {NAME_INDEX, DEVICE_NAME_INDEX})
+	@DynamoDbSecondarySortKey(indexNames = {NAME_INDEX, DEVICE_NAME_INDEX, SITE_INDEX})
 	@DynamoDbSortKey
 	public String getClientId() {
 		return clientId;
@@ -91,7 +105,18 @@ public class Device {
 		return deviceKey;
 	}
 
-	public boolean isPushedDevice() {
-		return getPassword() == null && getUser() == null;
+	@DynamoDbSecondaryPartitionKey(indexNames = SITE_INDEX)
+	public String getSite() {
+		return site;
+	}
+
+	@DynamoDbSecondaryPartitionKey(indexNames = VIRTUAL_INDEX)
+	public String getVirtualIndex() {
+		return virtualIndex;
+	}
+
+	public void setVirtual(boolean isVirtual) {
+		virtual = isVirtual;
+		virtualIndex = isVirtual + "";
 	}
 }
