@@ -23,23 +23,45 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 				.orElse(null);
 	}
 
-	public List<Device> getDevices(String clientId) {
-		if (clientId == null || clientId.isEmpty()) {
+	public List<Device> getDevicesBySite(String customerId, String site) {
+		if (customerId == null || site == null || site.isBlank() || customerId.isBlank()) {
 			return Collections.emptyList();
 		}
 		return getTable()
-				.index(Device.CLIENT_INDEX)
-				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(clientId)))
+				.index(Device.SITE_INDEX)
+				.query(QueryConditional.keyEqualTo(
+						builder -> builder.partitionValue(site).sortValue(customerId)))
 				.stream()
 				.flatMap(page -> page.items().stream())
 				.collect(Collectors.toList());
 	}
 
-	public Device getDevice(String id, String clientId) {
-		if (id == null || clientId == null || id.isBlank() || clientId.isBlank()) {
+	public List<Device> getDevices(boolean isVirtual) {
+		return getTable()
+				.index(Device.VIRTUAL_INDEX)
+				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(isVirtual + "")))
+				.stream()
+				.flatMap(page -> page.items().stream())
+				.collect(Collectors.toList());
+	}
+
+	public List<Device> getDevices(String customerId) {
+		if (customerId == null || customerId.isEmpty()) {
+			return Collections.emptyList();
+		}
+		return getTable()
+				.index(Device.CLIENT_INDEX)
+				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(customerId)))
+				.stream()
+				.flatMap(page -> page.items().stream())
+				.collect(Collectors.toList());
+	}
+
+	public Device getDevice(String id, String customerId) {
+		if (id == null || customerId == null || id.isBlank() || customerId.isBlank()) {
 			return null;
 		}
-		return getTable().getItem(new Device(id, clientId));
+		return getTable().getItem(new Device(id, customerId));
 	}
 
 	@Override
