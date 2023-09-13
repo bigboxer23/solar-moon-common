@@ -75,7 +75,7 @@ public class Device {
 	}
 
 	public boolean isPushedDevice() {
-		return getPassword() == null && getUser() == null;
+		return (getPassword() == null || getPassword().isBlank()) && (getUser() == null || getUser().isBlank());
 	}
 
 	@DynamoDbSecondaryPartitionKey(indexNames = NAME_INDEX)
