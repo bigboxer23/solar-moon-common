@@ -25,7 +25,7 @@ public class TransactionAspect {
 			TransactionUtil.newTransaction(Optional.of(jp.getArgs())
 					.map(array -> array[0])
 					.map(request -> (RequestFacade) request)
-					.map(request -> request.getHeader("X-Forwarded-For"))
+					.map(request -> Optional.ofNullable(request.getHeader("X-Forwarded-For")).orElseGet(request::getRemoteAddr))
 					.orElse(null));
 		}
 	}
