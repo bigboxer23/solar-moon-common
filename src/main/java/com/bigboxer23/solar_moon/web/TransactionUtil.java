@@ -18,9 +18,12 @@ public class TransactionUtil {
 	}
 
 	public static String getLoggingStatement() {
-		return Optional.ofNullable(getTransactionId()).orElse("")
-				+ ":"
-				+ Optional.ofNullable(getRemoteAddress()).orElse("");
+		StringBuilder builder = new StringBuilder(" ");
+		builder.append(Optional.ofNullable(getTransactionId())
+				.map(trans -> trans + ":")
+				.orElse(""));
+		builder.append(Optional.ofNullable(getRemoteAddress()).orElse(""));
+		return builder.length() == 1 ? "" : builder.toString();
 	}
 
 	public static void newTransaction(String address) {
