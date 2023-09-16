@@ -31,7 +31,7 @@ public class TransactionUtil {
 	}
 
 	public static String getLoggingStatement() {
-		return "[" + getHostName() + "][" + getTransactionId() + "][" + getRemoteAddress() + "] ";
+		return "[" + getHostName() + "][" + getRemoteAddress() + "][" + getTransactionId() + "] ";
 	}
 
 	public static void newTransaction(String address) {
