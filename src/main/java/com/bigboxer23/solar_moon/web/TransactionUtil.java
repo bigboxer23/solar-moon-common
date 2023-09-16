@@ -1,13 +1,16 @@
 package com.bigboxer23.solar_moon.web;
 
 import com.bigboxer23.solar_moon.util.TokenGenerator;
-import java.util.Optional;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /** */
 public class TransactionUtil {
 	private static final ThreadLocal<String> remoteAddress = new ThreadLocal<>();
 
 	private static final ThreadLocal<String> transactionID = new ThreadLocal<>();
+
+	private static String hostName;
 
 	public static String getRemoteAddress() {
 		return remoteAddress.get();
@@ -17,13 +20,18 @@ public class TransactionUtil {
 		return transactionID.get();
 	}
 
+	private static String getHostName() {
+		if (hostName == null) {
+			try {
+				hostName = InetAddress.getLocalHost().getHostName();
+			} catch (UnknownHostException theE) {
+			}
+		}
+		return hostName;
+	}
+
 	public static String getLoggingStatement() {
-		StringBuilder builder = new StringBuilder(" ");
-		builder.append(Optional.ofNullable(getTransactionId())
-				.map(trans -> trans + ":")
-				.orElse(""));
-		builder.append(Optional.ofNullable(getRemoteAddress()).orElse(""));
-		return builder.length() == 1 ? "" : builder.toString();
+		return "[" + getHostName() + "][" + getTransactionId() + "][" + getRemoteAddress() + "] ";
 	}
 
 	public static void newTransaction(String address) {
