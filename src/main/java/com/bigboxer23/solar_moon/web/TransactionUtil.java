@@ -20,7 +20,7 @@ public class TransactionUtil {
 		return transactionID.get();
 	}
 
-	private static String getHostName() {
+	public static String getHostName() {
 		if (hostName == null) {
 			try {
 				hostName = InetAddress.getLocalHost().getHostName();
@@ -28,10 +28,6 @@ public class TransactionUtil {
 			}
 		}
 		return hostName;
-	}
-
-	public static String getLoggingStatement() {
-		return "[" + getHostName() + "][" + getRemoteAddress() + "][" + getTransactionId() + "] ";
 	}
 
 	public static void newTransaction(String address) {
