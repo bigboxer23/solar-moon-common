@@ -7,6 +7,7 @@ import org.aspectj.lang.annotation.After;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 
 /**
@@ -29,10 +30,12 @@ public class TransactionAspect {
 							.orElseGet(request::getRemoteAddr))
 					.orElse(null));
 		}
+		MDC.put("transaction.info", TransactionUtil.getLoggingStatement());
 	}
 
 	@After("transactionPointcut()")
 	public void afterMethodCallsAdvice(JoinPoint jp) {
 		TransactionUtil.clear();
+		MDC.clear();
 	}
 }
