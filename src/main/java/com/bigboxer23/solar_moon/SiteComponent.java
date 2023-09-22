@@ -2,6 +2,7 @@ package com.bigboxer23.solar_moon;
 
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
+import com.bigboxer23.solar_moon.dynamodb.DynamoLockUtils;
 import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.open_search.OpenSearchUtils;
 import java.util.*;
@@ -16,9 +17,9 @@ public class SiteComponent {
 
 	private static final Logger logger = LoggerFactory.getLogger(SiteComponent.class);
 
-	private OpenSearchComponent openSearch;
+	private final OpenSearchComponent openSearch;
 
-	private DeviceComponent component;
+	private final DeviceComponent component;
 
 	public SiteComponent(OpenSearchComponent component, DeviceComponent deviceComponent) {
 		openSearch = component;
@@ -29,29 +30,33 @@ public class SiteComponent {
 		if (!shouldAddSiteDevice(device)) {
 			return;
 		}
-		Device site = component.getDevicesBySite(device.getCustomerId(), device.getSite()).stream()
-				.filter(Device::isVirtual)
-				.findAny()
-				.orElse(null);
-		if (site == null) {
-			logger.warn("cannot find site " + device.getCustomerId() + ":" + device.getSite());
-			return;
-		}
-		List<DeviceData> siteDevices =
-				openSearch.getDevicesForSiteByTimePeriod(device.getCustomerId(), device.getSite(), device.getDate());
-		DeviceData siteDevice = new DeviceData(device.getSite(), device.getSite(), device.getCustomerId());
-		siteDevice.setIsVirtual();
+		DynamoLockUtils.doLockedCommand(
+				device.getSite() + "-" + device.getDate().getTime(), () -> {
+					Device site = component.getDevicesBySite(device.getCustomerId(), device.getSite()).stream()
+							.filter(Device::isVirtual)
+							.findAny()
+							.orElse(null);
+					if (site == null) {
+						logger.warn("cannot find site " + device.getCustomerId() + ":" + device.getSite());
+						return;
+					}
+					List<DeviceData> siteDevices = openSearch.getDevicesForSiteByTimePeriod(
+							device.getCustomerId(), device.getSite(), device.getDate());
+					DeviceData siteDevice = new DeviceData(device.getSite(), device.getSite(), device.getCustomerId());
+					siteDevice.setIsVirtual();
 
-		float totalEnergyConsumed = getPushedDeviceValues(siteDevices, site, DeviceData::getEnergyConsumed);
-		if (totalEnergyConsumed > -1) {
-			siteDevice.setEnergyConsumed(Math.max(0, siteDevice.getTotalEnergyConsumed()) + totalEnergyConsumed);
-		}
-		float totalRealPower = getPushedDeviceValues(siteDevices, site, DeviceData::getTotalRealPower);
-		if (totalRealPower > -1) {
-			siteDevice.setTotalRealPower(Math.max(0, siteDevice.getTotalRealPower()) + totalRealPower);
-		}
-		logger.info("adding virtual device " + device.getSite() + " : " + device.getDate());
-		openSearch.logData(device.getDate(), Collections.singletonList(siteDevice));
+					float totalEnergyConsumed = getPushedDeviceValues(siteDevices, site, DeviceData::getEnergyConsumed);
+					if (totalEnergyConsumed > -1) {
+						siteDevice.setEnergyConsumed(
+								Math.max(0, siteDevice.getTotalEnergyConsumed()) + totalEnergyConsumed);
+					}
+					float totalRealPower = getPushedDeviceValues(siteDevices, site, DeviceData::getTotalRealPower);
+					if (totalRealPower > -1) {
+						siteDevice.setTotalRealPower(Math.max(0, siteDevice.getTotalRealPower()) + totalRealPower);
+					}
+					logger.info("adding virtual device " + device.getSite() + " : " + device.getDate());
+					openSearch.logData(device.getDate(), Collections.singletonList(siteDevice));
+				});
 	}
 
 	private boolean shouldAddSiteDevice(DeviceData device) {

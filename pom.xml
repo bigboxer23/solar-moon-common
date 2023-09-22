@@ -10,7 +10,7 @@
   </parent>
   <groupId>com.bigboxer23</groupId>
   <artifactId>solar-moon-common</artifactId>
-  <version>1.4.3</version>
+  <version>1.4.4</version>
   <packaging>jar</packaging>
   <name>solar-moon-common</name>
   <url>https://github.com/bigboxer23/solar-moon-common</url>
@@ -104,6 +104,11 @@
       <groupId>org.opensearch.client</groupId>
       <artifactId>opensearch-rest-client</artifactId>
       <version>2.9.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>dynamodb-lock-client</artifactId>
+      <version>1.2.0</version>
     </dependency>
   </dependencies>
   <repositories>
