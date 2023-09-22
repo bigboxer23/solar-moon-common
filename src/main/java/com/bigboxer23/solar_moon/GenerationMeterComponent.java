@@ -126,10 +126,6 @@ public class GenerationMeterComponent implements MeterConstants {
 			return null;
 		}
 		logger.debug("parsing device body: " + body);
-		if (!isUpdateEvent(body)) {
-			logger.debug("event is not a LOGFILEUPLOAD, doing nothing.");
-			return null;
-		}
 		Device device = Optional.ofNullable(findDeviceName(body))
 				.map(deviceName -> findDeviceFromDeviceName(customerId, deviceName))
 				.orElse(null);
@@ -150,11 +146,20 @@ public class GenerationMeterComponent implements MeterConstants {
 	}
 
 	public boolean isUpdateEvent(String body) throws XPathExpressionException {
+		if (body == null || body.isBlank()) {
+			logger.error("no body, not doing anything.");
+			return false;
+		}
 		NodeList nodes = (NodeList) XPathFactory.newInstance()
 				.newXPath()
 				.compile(MODE_PATH)
 				.evaluate(new InputSource(new StringReader(body)), XPathConstants.NODESET);
-		return nodes.getLength() > 0 && FILE_DATA.equals(nodes.item(0).getTextContent());
+		boolean isUpdate =
+				nodes.getLength() > 0 && FILE_DATA.equals(nodes.item(0).getTextContent());
+		if (!isUpdate) {
+			logger.info("event is not " + FILE_DATA + ", doing nothing.");
+		}
+		return isUpdate;
 	}
 
 	public String findDeviceName(String body) throws XPathExpressionException {
