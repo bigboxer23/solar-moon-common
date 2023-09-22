@@ -1,8 +1,10 @@
 package com.bigboxer23.solar_moon.web;
 
+import com.bigboxer23.solar_moon.lambda.data.LambdaRequest;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import org.slf4j.MDC;
 
 /** */
 public class TransactionUtil {
@@ -41,5 +43,21 @@ public class TransactionUtil {
 	public static void clear() {
 		remoteAddress.remove();
 		transactionID.remove();
+	}
+
+	public static void setRemoteFromLambdaRequest(LambdaRequest request) {
+		if (request == null || request.getHeaders() == null) {
+			return;
+		}
+		remoteAddress.set(request.getHeaders().getXForwardedFor());
+		transactionID.set(request.getHeaders().getAmazonTraceId());
+		hostName = request.getHeaders().getHost();
+		addToMDC();
+	}
+
+	public static void addToMDC() {
+		MDC.put("transaction.id", getTransactionId());
+		MDC.put("transaction.remote", getRemoteAddress());
+		MDC.put("transaction.host", getHostName());
 	}
 }

@@ -30,9 +30,7 @@ public class TransactionAspect {
 							.orElseGet(request::getRemoteAddr))
 					.orElse(null));
 		}
-		MDC.put("transaction.id", TransactionUtil.getTransactionId());
-		MDC.put("transaction.remote", TransactionUtil.getRemoteAddress());
-		MDC.put("transaction.host", TransactionUtil.getHostName());
+		TransactionUtil.addToMDC();
 	}
 
 	@After("transactionPointcut()")

@@ -17,6 +17,7 @@ public class LambdaRequestHeaders {
 	@Json(name = "X-Forwarded-Port")
 	private String XForwardedPort;
 
+	@Json(name = "Host")
 	private String host;
 
 	@Json(name = "X-Amzn-Trace-Id")
