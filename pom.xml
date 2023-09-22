@@ -10,7 +10,7 @@
   </parent>
   <groupId>com.bigboxer23</groupId>
   <artifactId>solar-moon-common</artifactId>
-  <version>1.4.0</version>
+  <version>1.4.1</version>
   <packaging>jar</packaging>
   <name>solar-moon-common</name>
   <url>https://github.com/bigboxer23/solar-moon-common</url>
@@ -76,14 +76,34 @@
       <version>1.2.3</version>
     </dependency>
     <dependency>
-      <groupId>com.googlecode.json-simple</groupId>
-      <artifactId>json-simple</artifactId>
-      <version>1.1.1</version>
-    </dependency>
-    <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <version>1.4.11</version>
+    </dependency>
+    <dependency>
+      <groupId>com.bigboxer23</groupId>
+      <artifactId>utils</artifactId>
+      <version>2.0.16</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>32.1.2-jre</version>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup.moshi</groupId>
+      <artifactId>moshi</artifactId>
+      <version>1.15.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.opensearch.client</groupId>
+      <artifactId>opensearch-java</artifactId>
+      <version>2.6.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.opensearch.client</groupId>
+      <artifactId>opensearch-rest-client</artifactId>
+      <version>2.9.0</version>
     </dependency>
   </dependencies>
   <repositories>
@@ -118,10 +138,6 @@
           <version>3.1.2</version>
         </plugin>
         <plugin>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>3.3.0</version>
-        </plugin>
-        <plugin>
           <artifactId>maven-install-plugin</artifactId>
           <version>3.1.1</version>
         </plugin>
@@ -141,6 +157,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
+          <version>3.3.0</version>
           <executions>
             <execution>
               <goals>
