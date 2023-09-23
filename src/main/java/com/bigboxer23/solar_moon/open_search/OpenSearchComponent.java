@@ -192,6 +192,10 @@ public class OpenSearchComponent implements OpenSearchConstants {
 				logger.debug("Couldn't find previous value for " + deviceName);
 				return null;
 			}
+			if (response.hits().hits().size() > 1) {
+				throw new IOException(
+						"too many device results: " + response.hits().hits().size());
+			}
 			return OpenSearchUtils.getDeviceDataFromFields(
 					deviceName, response.hits().hits().get(0).source());
 		} catch (IOException e) {

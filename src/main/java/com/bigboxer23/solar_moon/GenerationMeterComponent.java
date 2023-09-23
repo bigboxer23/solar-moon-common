@@ -57,8 +57,6 @@ public class GenerationMeterComponent implements MeterConstants {
 
 	private final AlarmComponent alarmComponent;
 
-	private final Map<String, Float> deviceTotalEnergyConsumed = new HashMap<>();
-
 	private final DeviceComponent deviceComponent;
 
 	private final SiteComponent siteComponent;
@@ -290,12 +288,10 @@ public class GenerationMeterComponent implements MeterConstants {
 		if (totalEnergyConsumption < 0) {
 			return;
 		}
-		Float previousTotalEnergyConsumed = deviceTotalEnergyConsumed.computeIfAbsent(
-				deviceData.getName(), name -> openSearch.getTotalEnergyConsumed(deviceData.getName()));
+		Float previousTotalEnergyConsumed = openSearch.getTotalEnergyConsumed(deviceData.getName());
 		if (previousTotalEnergyConsumed != null) {
 			deviceData.setEnergyConsumed(totalEnergyConsumption - previousTotalEnergyConsumed);
 		}
-		deviceTotalEnergyConsumed.put(deviceData.getName(), totalEnergyConsumption);
 	}
 
 	private RequestBuilderCallback getAuthCallback(String user, String pass) {

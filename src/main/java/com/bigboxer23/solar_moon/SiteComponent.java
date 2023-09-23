@@ -30,8 +30,9 @@ public class SiteComponent {
 		if (!shouldAddSiteDevice(device)) {
 			return;
 		}
+		logger.info("Trying to aquire lock " + device.getName());
 		DynamoLockUtils.doLockedCommand(
-				device.getSite() + "-" + device.getDate().getTime(), () -> {
+				device.getSite() + "-" + device.getDate().getTime(), device.getName(), () -> {
 					Device site = component.getDevicesBySite(device.getCustomerId(), device.getSite()).stream()
 							.filter(Device::isVirtual)
 							.findAny()
@@ -56,14 +57,12 @@ public class SiteComponent {
 					}
 					logger.info("adding virtual device " + device.getSite() + " : " + device.getDate());
 					openSearch.logData(device.getDate(), Collections.singletonList(siteDevice));
+					OpenSearchUtils.waitForIndexing();
 				});
 	}
 
 	private boolean shouldAddSiteDevice(DeviceData device) {
-		try {
-			OpenSearchUtils.waitForIndexing();
-		} catch (InterruptedException theE) {
-		}
+		OpenSearchUtils.waitForIndexing();
 		int deviceCount = component
 				.getDevicesBySite(device.getCustomerId(), device.getSite())
 				.size();

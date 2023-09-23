@@ -6,6 +6,7 @@ import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.SneakyThrows;
 import org.opensearch.client.json.JsonpSerializable;
 import org.opensearch.client.json.jsonb.JsonbJsonpMapper;
 import org.opensearch.client.opensearch.core.search.Hit;
@@ -40,7 +41,8 @@ public class OpenSearchUtils {
 		return stringWriter.toString();
 	}
 
-	public static void waitForIndexing() throws InterruptedException {
+	@SneakyThrows
+	public static void waitForIndexing() {
 		Thread.sleep(1000);
 	}
 }
