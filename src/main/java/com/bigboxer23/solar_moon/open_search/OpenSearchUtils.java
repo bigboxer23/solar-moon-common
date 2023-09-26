@@ -43,6 +43,6 @@ public class OpenSearchUtils {
 
 	@SneakyThrows
 	public static void waitForIndexing() {
-		Thread.sleep(1000);
+		Thread.sleep(1500);
 	}
 }
