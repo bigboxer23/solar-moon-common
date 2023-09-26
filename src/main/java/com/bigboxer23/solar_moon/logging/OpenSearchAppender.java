@@ -9,12 +9,15 @@ import com.internetitem.logback.elasticsearch.config.Settings;
 public class OpenSearchAppender extends ElasticsearchAppender {
 	public OpenSearchAppender() {
 		super();
+		setProperties(new ElasticsearchProperties());
 	}
 
 	public OpenSearchAppender(Settings settings) {
 		super(settings);
+		setProperties(new ElasticsearchProperties());
 	}
 
+	@Override
 	public void setProperties(ElasticsearchProperties elasticsearchProperties) {
 		super.setProperties(elasticsearchProperties);
 		elasticsearchProperties.addProperty(new Property("level", "%level", true));
