@@ -4,16 +4,15 @@ import com.bigboxer23.solar_moon.data.Location;
 import com.bigboxer23.solar_moon.data.WeatherData;
 import com.bigboxer23.solar_moon.data.WeatherSystemData;
 import com.bigboxer23.utils.http.OkHttpUtil;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,14 +35,15 @@ public class OpenWeatherComponent {
 
 	private final Moshi moshi = new Moshi.Builder().build();
 
-	private Cache<String, WeatherSystemData> weatherCache =
-			CacheBuilder.newBuilder().expireAfterAccess(3, TimeUnit.DAYS).build();
+	private Map<String, WeatherSystemData> weatherCache =
+			new HashMap<>(); // use map instead of cache... lambda doesn't have cache really
+	//			CacheBuilder.newBuilder().expireAfterAccess(3, TimeUnit.DAYS).build();
 
-	private Cache<String, Location> locationCache =
-			CacheBuilder.newBuilder().expireAfterAccess(30, TimeUnit.DAYS).build();
+	private Map<String, Location> locationCache = new HashMap<>();
+	//			CacheBuilder.newBuilder().expireAfterAccess(30, TimeUnit.DAYS).build();
 
 	protected Location getLatLongFromCity(String city, String state, int countryCode) {
-		return Optional.ofNullable(locationCache.getIfPresent(city + state + countryCode))
+		return Optional.ofNullable(locationCache.get(city + state + countryCode))
 				.map(loc -> {
 					logger.debug("retrieving lat/long (cached) from " + city + " " + state);
 					loc.setFromCache(true);
@@ -84,7 +84,7 @@ public class OpenWeatherComponent {
 	}
 
 	protected WeatherSystemData getSunriseSunset(double latitude, double longitude) {
-		return Optional.ofNullable(weatherCache.getIfPresent(latitude + ":" + longitude))
+		return Optional.ofNullable(weatherCache.get(latitude + ":" + longitude))
 				.map(loc -> {
 					logger.debug("retrieving weather (cached) from " + latitude + ":" + longitude);
 					loc.setFromCache(true);
