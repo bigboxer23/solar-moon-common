@@ -155,7 +155,7 @@ public class GenerationMeterComponent implements MeterConstants {
 		boolean isUpdate =
 				nodes.getLength() > 0 && FILE_DATA.equals(nodes.item(0).getTextContent());
 		if (!isUpdate) {
-			logger.info("event is not " + FILE_DATA + ", doing nothing.");
+			logger.debug("event is not " + FILE_DATA + ", doing nothing.");
 		}
 		return isUpdate;
 	}
