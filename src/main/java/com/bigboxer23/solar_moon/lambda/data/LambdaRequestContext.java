@@ -6,4 +6,5 @@ import lombok.Data;
 @Data
 public class LambdaRequestContext {
 	private LambdaRequestIdentity identity;
+	private LambdaAuthorizer authorizer;
 }
