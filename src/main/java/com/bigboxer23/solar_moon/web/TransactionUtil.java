@@ -45,7 +45,7 @@ public class TransactionUtil {
 		transactionID.remove();
 	}
 
-	public static void setRemoteFromLambdaRequest(LambdaRequest request) {
+	public static void newTransaction(LambdaRequest request) {
 		if (request == null || request.getHeaders() == null) {
 			return;
 		}

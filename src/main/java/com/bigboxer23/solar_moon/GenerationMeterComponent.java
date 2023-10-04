@@ -22,14 +22,12 @@ import okhttp3.Credentials;
 import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 /** Class to read data from the generation meter web interface */
-@Component
+// @Component
 public class GenerationMeterComponent implements MeterConstants {
 
 	private static final Map<String, String> fields = new HashMap<>();
@@ -73,7 +71,7 @@ public class GenerationMeterComponent implements MeterConstants {
 	}
 
 	// @Scheduled(fixedDelay = 5000)
-	@Scheduled(cron = "0 */15 * * * ?")
+	// @Scheduled(cron = "0 */15 * * * ?")
 	private void fetchData() throws IOException {
 		LocalDateTime fetchDate = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
 		Date date = Date.from(fetchDate.atZone(ZoneId.systemDefault()).toInstant());

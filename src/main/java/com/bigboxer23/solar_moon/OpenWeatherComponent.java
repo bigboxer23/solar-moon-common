@@ -16,11 +16,9 @@ import java.util.Optional;
 import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 /** */
-@Component
+// @Component
 public class OpenWeatherComponent {
 	private static final Logger logger = LoggerFactory.getLogger(OpenWeatherComponent.class);
 
@@ -30,7 +28,7 @@ public class OpenWeatherComponent {
 	public static final String kOpenWeatherMapCityToLatLong =
 			"http://api.openweathermap.org/geo/1.0/direct?q={0}&limit=2&appid={1}";
 
-	@Value("${openweathermap.api}")
+	// @Value("${openweathermap.api}")
 	private String openWeatherMapAPIKey;
 
 	private final Moshi moshi = new Moshi.Builder().build();

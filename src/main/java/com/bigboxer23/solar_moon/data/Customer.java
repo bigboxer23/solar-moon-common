@@ -23,10 +23,11 @@ public class Customer {
 		setCustomerId(customerId);
 	}
 
-	public Customer(String customerId, String email, String accessKey) {
+	public Customer(String customerId, String email, String accessKey, String name) {
 		this(customerId);
 		setEmail(email);
 		setAccessKey(accessKey);
+		setName(name);
 	}
 
 	@Schema(description = "email of customer")
@@ -37,6 +38,20 @@ public class Customer {
 
 	@Schema(description = "(internal) id of the customer")
 	private String customerId;
+
+	private String name;
+
+	private String address1;
+
+	private String address2;
+
+	private String city;
+
+	private String country;
+
+	private String state;
+
+	private String zip;
 
 	@DynamoDbPartitionKey
 	public String getEmail() {
