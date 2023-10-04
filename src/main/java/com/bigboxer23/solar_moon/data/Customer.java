@@ -53,6 +53,10 @@ public class Customer {
 
 	private String zip;
 
+	private boolean admin = false;
+
+	private boolean active = true;
+
 	@DynamoDbPartitionKey
 	public String getEmail() {
 		return email;
