@@ -28,6 +28,7 @@ public class Customer {
 		setEmail(email);
 		setAccessKey(accessKey);
 		setName(name);
+		setActive(true);
 	}
 
 	@Schema(description = "email of customer")

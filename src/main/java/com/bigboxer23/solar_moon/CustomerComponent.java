@@ -45,6 +45,14 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			return;
 		}
 		logAction(customer.getCustomerId(), "update");
+		if (customer.getAccessKey() == null || customer.getAccessKey().isBlank()) {
+			logger.info("generating new access key for " + customer.getCustomerId());
+			customer.setAccessKey(TokenGenerator.generateNewToken());
+		}
+		if (customer.isAdmin() && !findCustomerByCustomerId(customer.getCustomerId()).isAdmin()) {
+			logger.warn("Not allowing admin escalation" + customer.getCustomerId());
+			customer.setAdmin(false);
+		}
 		// TODO:validation
 		getTable().updateItem(builder -> builder.item(customer));
 	}
