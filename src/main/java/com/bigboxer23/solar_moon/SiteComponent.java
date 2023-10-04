@@ -9,10 +9,9 @@ import java.util.*;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 /** Component to stash all the logic related to aggregating virtual site devices */
-@Component
+// @Component
 public class SiteComponent {
 
 	private static final Logger logger = LoggerFactory.getLogger(SiteComponent.class);

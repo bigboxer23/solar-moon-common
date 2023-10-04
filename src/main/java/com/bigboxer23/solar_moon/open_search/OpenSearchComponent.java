@@ -27,31 +27,27 @@ import org.opensearch.client.opensearch.core.search.SourceFilter;
 import org.opensearch.client.transport.rest_client.RestClientTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
 
 /** */
-@Component
 public class OpenSearchComponent implements OpenSearchConstants {
 
 	private static final Logger logger = LoggerFactory.getLogger(OpenSearchComponent.class);
 
 	private OpenSearchClient client;
 
-	@Value("${opensearch.url}")
+	// @Value("${opensearch.url}")
 	private String openSearchUrl;
 
-	@Value("${opensearch.user}")
+	// @Value("${opensearch.user}")
 	private String user;
 
-	@Value("${opensearch.pw}")
+	// @Value("${opensearch.pw}")
 	private String pass;
 
 	private boolean isTest = false;
 
-	public OpenSearchComponent(Environment env) {
-		isTest = Boolean.parseBoolean(env.getProperty("testing"));
+	public OpenSearchComponent(/*Environment env*/ ) {
+		/*isTest = Boolean.parseBoolean(env.getProperty("testing"));*/
 		if (openSearchUrl == null) {
 			openSearchUrl = PropertyUtils.getProperty("opensearch.url");
 			user = PropertyUtils.getProperty("opensearch.user");

@@ -4,11 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.bigboxer23.solar_moon.data.Device;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.context.ActiveProfiles;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
 /** */
-@ActiveProfiles("test")
+// @ActiveProfiles("test")
 public class TestDeviceComponent {
 
 	protected static final String deviceKey = "2459786f-74c6-42e0-bc37-a501cb87297a";

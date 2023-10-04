@@ -4,11 +4,10 @@ import com.bigboxer23.solar_moon.data.Device;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.stereotype.Component;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 /** */
-@Component
+// @Component
 public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	public Device findDeviceByDeviceKey(String deviceKey) {
 		if (deviceKey == null || deviceKey.isEmpty()) {

@@ -4,14 +4,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.bigboxer23.solar_moon.data.Customer;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.context.ActiveProfiles;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
 /** */
-@ActiveProfiles("test")
+// @ActiveProfiles("test")
 public class TestCustomerComponent {
 	protected static final String CUSTOMER_EMAIL = "noop@noreply.org";
-
+	protected static final String CUSTOMER_NAME = "mr fake customer";
 	protected static final String CUSTOMER_ACCESS_KEY = "4ab84ed3-0ce1-4615-b919-c34c7b619702";
 
 	private CustomerComponent component = new CustomerComponent();
