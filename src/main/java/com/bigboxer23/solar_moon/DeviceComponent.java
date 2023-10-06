@@ -36,6 +36,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	public List<Device> getDevices(boolean isVirtual) {
+		logger.info("Fetching " + (isVirtual ? "" : "non-") + "virtual devices");
 		return getTable()
 				.index(Device.VIRTUAL_INDEX)
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(isVirtual + "")))
@@ -48,6 +49,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		if (customerId == null || customerId.isEmpty()) {
 			return Collections.emptyList();
 		}
+		logger.info("Fetching all devices");
 		return getTable()
 				.index(Device.CLIENT_INDEX)
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(customerId)))
@@ -60,7 +62,31 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		if (id == null || customerId == null || id.isBlank() || customerId.isBlank()) {
 			return null;
 		}
+		logAction("get", id);
 		return getTable().getItem(new Device(id, customerId));
+	}
+
+	public void addDevice(Device device) {
+		if (getDevice(device.getId(), device.getClientId()) != null) {
+			logger.warn(device.getClientId() + ":" + device.getId() + " exists, not putting into db.");
+			return;
+		}
+		logAction("add", device.getId());
+		getTable().putItem(device);
+	}
+
+	public void updateDevice(Device device) {
+		logAction("update", device.getId());
+		getTable().updateItem(builder -> builder.item(device));
+	}
+
+	public void deleteDevice(String id, String customerId) {
+		logAction("delete", id);
+		getTable().deleteItem(new Device(id, customerId));
+	}
+
+	private void logAction(String action, String id) {
+		logger.info(id + " device " + action);
 	}
 
 	@Override
