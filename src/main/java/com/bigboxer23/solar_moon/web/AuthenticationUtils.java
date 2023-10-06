@@ -28,6 +28,7 @@ public class AuthenticationUtils {
 				.map(Customer::getCustomerId)
 				.orElse(null);
 		if (customerId != null) {
+			TransactionUtil.updateCustomerId(customerId);
 			return customerId;
 		}
 		logger.warn("Invalid token, returning unauthorized: " + parts[1]);
@@ -41,6 +42,8 @@ public class AuthenticationUtils {
 	}
 
 	public static String getCustomerIdFromRequest(LambdaRequest request) {
-		return request.getRequestContext().getAuthorizer().getClaims().getUsername();
+		return Optional.ofNullable(request.getRequestContext().getAuthorizer())
+				.map(auth -> auth.getClaims().getUsername())
+				.orElse(null);
 	}
 }

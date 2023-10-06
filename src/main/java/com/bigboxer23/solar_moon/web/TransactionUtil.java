@@ -63,6 +63,11 @@ public class TransactionUtil {
 		addToMDC();
 	}
 
+	public static void updateCustomerId(String customerId) {
+		customerID.set(customerId);
+		MDC.put("customer.id", customerId);
+	}
+
 	public static void addToMDC() {
 		MDC.put("transaction.id", getTransactionId());
 		MDC.put("transaction.remote", getRemoteAddress());
