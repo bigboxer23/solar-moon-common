@@ -49,7 +49,8 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			logger.info("generating new access key for " + customer.getCustomerId());
 			customer.setAccessKey(TokenGenerator.generateNewToken());
 		}
-		if (customer.isAdmin() && !findCustomerByCustomerId(customer.getCustomerId()).isAdmin()) {
+		if (customer.isAdmin()
+				&& !findCustomerByCustomerId(customer.getCustomerId()).isAdmin()) {
 			logger.warn("Not allowing admin escalation" + customer.getCustomerId());
 			customer.setAdmin(false);
 		}
