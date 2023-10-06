@@ -12,6 +12,8 @@ public class TransactionUtil {
 
 	private static final ThreadLocal<String> transactionID = new ThreadLocal<>();
 
+	private static final ThreadLocal<String> customerID = new ThreadLocal<>();
+
 	private static String hostName;
 
 	public static String getRemoteAddress() {
@@ -20,6 +22,10 @@ public class TransactionUtil {
 
 	public static String getTransactionId() {
 		return transactionID.get();
+	}
+
+	public static String getCustomerId() {
+		return customerID.get();
 	}
 
 	public static String getHostName() {
@@ -43,6 +49,7 @@ public class TransactionUtil {
 	public static void clear() {
 		remoteAddress.remove();
 		transactionID.remove();
+		customerID.remove();
 	}
 
 	public static void newTransaction(LambdaRequest request) {
@@ -51,6 +58,7 @@ public class TransactionUtil {
 		}
 		remoteAddress.set(request.getHeaders().getXForwardedFor());
 		transactionID.set(request.getHeaders().getAmazonTraceId());
+		customerID.set(AuthenticationUtils.getCustomerIdFromRequest(request));
 		hostName = request.getHeaders().getHost();
 		addToMDC();
 	}
@@ -59,5 +67,6 @@ public class TransactionUtil {
 		MDC.put("transaction.id", getTransactionId());
 		MDC.put("transaction.remote", getRemoteAddress());
 		MDC.put("transaction.host", getHostName());
+		MDC.put("customer.id", getCustomerId());
 	}
 }
