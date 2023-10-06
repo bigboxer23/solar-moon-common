@@ -39,4 +39,8 @@ public class AuthenticationUtils {
 				? authenticateRequest(request.getHeaders().getAuthorization(), customerComponent)
 				: null;
 	}
+
+	public static String getCustomerIdFromRequest(LambdaRequest request) {
+		return request.getRequestContext().getAuthorizer().getClaims().getUsername();
+	}
 }
