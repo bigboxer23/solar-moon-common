@@ -9,6 +9,9 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 /** */
 // @Component
 public class DeviceComponent extends AbstractDynamodbComponent<Device> {
+
+	public static final String NO_SITE = "No Site";
+
 	public Device findDeviceByDeviceKey(String deviceKey) {
 		if (deviceKey == null || deviceKey.isEmpty()) {
 			return null;
@@ -77,12 +80,28 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 
 	public void updateDevice(Device device) {
 		logAction("update", device.getId());
+		if (device.isVirtual()) {
+			Device site = getDevice(device.getId(), device.getClientId());
+			if (!site.getName().equals(device.getName())) {
+				getDevicesBySite(site.getClientId(), site.getName()).forEach(childDevice -> {
+					device.setSite(device.getName());
+					updateDevice(childDevice);
+				});
+			}
+		}
 		getTable().updateItem(builder -> builder.item(device));
 	}
 
 	public void deleteDevice(String id, String customerId) {
 		logAction("delete", id);
-		getTable().deleteItem(new Device(id, customerId));
+		Device device = getDevice(id, customerId);
+		if (device.isVirtual()) {
+			getDevicesBySite(customerId, device.getName()).forEach(childDevice -> {
+				childDevice.setSite(NO_SITE);
+				updateDevice(childDevice);
+			});
+		}
+		getTable().deleteItem(device);
 	}
 
 	private void logAction(String action, String id) {

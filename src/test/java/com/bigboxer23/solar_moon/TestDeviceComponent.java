@@ -3,6 +3,8 @@ package com.bigboxer23.solar_moon;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.bigboxer23.solar_moon.data.Device;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
@@ -25,7 +27,6 @@ public class TestDeviceComponent {
 
 	@Test
 	public void testFindDeviceByDeviceKey() {
-		setupTestDevice();
 		assertNull(component.findDeviceByDeviceKey(null));
 		assertNull(component.findDeviceByDeviceKey(""));
 		assertNull(component.findDeviceByDeviceKey("1234"));
@@ -34,7 +35,6 @@ public class TestDeviceComponent {
 
 	@Test
 	public void testGetDevices() {
-		setupTestDevice();
 		assertEquals(0, component.getDevices(null).size());
 		assertEquals(0, component.getDevices("").size());
 		assertEquals(1, component.getDevices(clientId).size());
@@ -43,7 +43,6 @@ public class TestDeviceComponent {
 
 	@Test
 	public void testGetDevice() {
-		setupTestDevice();
 		assertNotNull(component.getDevice(deviceId, clientId));
 		assertNull(component.getDevice(null, null));
 		assertNull(component.getDevice("", null));
@@ -55,7 +54,6 @@ public class TestDeviceComponent {
 
 	@Test
 	public void testGetDevicesBySite() {
-		setupTestDevice();
 		assertTrue(component.getDevicesBySite(null, null).isEmpty());
 		assertTrue(component.getDevicesBySite("", null).isEmpty());
 		assertTrue(component.getDevicesBySite(null, "").isEmpty());
@@ -66,7 +64,6 @@ public class TestDeviceComponent {
 
 	@Test
 	public void testGetDevicesVirtual() {
-		setupTestDevice();
 		assertFalse(component.getDevices(false).stream()
 				.filter(device -> clientId.equals(device.getClientId()))
 				.toList()
@@ -100,8 +97,47 @@ public class TestDeviceComponent {
 		testDevice = new Device();
 	}
 
+	@Test
+	public void testSiteDelete() {
+		TestUtils.setupSite(component);
+		Device testSite =
+				component.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
+						.filter(Device::isVirtual).findFirst().orElse(null);
+		assertNotNull(testSite);
+		component.deleteDevice(testSite.getId(), testSite.getClientId());
+		assertTrue(component.getDevicesBySite(testSite.getClientId(), testSite.getSite()).isEmpty());
+		List<Device> updatedDevices = component.getDevicesBySite(testSite.getClientId(), DeviceComponent.NO_SITE);
+		assertFalse(updatedDevices.isEmpty());
+		updatedDevices.forEach(device -> assertEquals(device.getSite(), DeviceComponent.NO_SITE));
+	}
+
+	@Test
+	public void testSiteUpdate() {
+		TestUtils.setupSite(component);
+		Device testSite =
+				component.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
+						.filter(Device::isVirtual).findFirst().orElse(null);
+		assertNotNull(testSite);
+		testSite.setName(TestDeviceComponent.SITE + 2);
+		testSite.setSite(TestDeviceComponent.SITE + 2);
+		component.updateDevice(testSite);
+		List<Device> updatedDevices = component.getDevicesBySite(testSite.getClientId(), testSite.getSite());
+		assertFalse(updatedDevices.isEmpty());
+		updatedDevices.forEach(device -> assertEquals(device.getSite(), testSite.getSite()));
+	}
+
+	@BeforeEach
 	protected void setupTestDevice() {
+		component
+				.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE)
+				.forEach(device -> component.getTable().deleteItem(device));
 		setupTestDevice(false);
+	}
+
+	public void setup() {
+		TestUtils.setupSite(component);
+		/*TestUtils.setupSite(deviceComponent);
+		openComponent.deleteByCustomerId(TestDeviceComponent.clientId);*/
 	}
 
 	protected void setupTestDevice(boolean isVirtual) {
