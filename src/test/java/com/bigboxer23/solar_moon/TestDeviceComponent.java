@@ -100,12 +100,15 @@ public class TestDeviceComponent {
 	@Test
 	public void testSiteDelete() {
 		TestUtils.setupSite(component);
-		Device testSite =
-				component.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
-						.filter(Device::isVirtual).findFirst().orElse(null);
+		Device testSite = component.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
+				.filter(Device::isVirtual)
+				.findFirst()
+				.orElse(null);
 		assertNotNull(testSite);
 		component.deleteDevice(testSite.getId(), testSite.getClientId());
-		assertTrue(component.getDevicesBySite(testSite.getClientId(), testSite.getSite()).isEmpty());
+		assertTrue(component
+				.getDevicesBySite(testSite.getClientId(), testSite.getSite())
+				.isEmpty());
 		List<Device> updatedDevices = component.getDevicesBySite(testSite.getClientId(), DeviceComponent.NO_SITE);
 		assertFalse(updatedDevices.isEmpty());
 		updatedDevices.forEach(device -> assertEquals(device.getSite(), DeviceComponent.NO_SITE));
@@ -114,9 +117,10 @@ public class TestDeviceComponent {
 	@Test
 	public void testSiteUpdate() {
 		TestUtils.setupSite(component);
-		Device testSite =
-				component.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
-						.filter(Device::isVirtual).findFirst().orElse(null);
+		Device testSite = component.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
+				.filter(Device::isVirtual)
+				.findFirst()
+				.orElse(null);
 		assertNotNull(testSite);
 		testSite.setName(TestDeviceComponent.SITE + 2);
 		testSite.setSite(TestDeviceComponent.SITE + 2);
