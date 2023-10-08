@@ -84,7 +84,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 			Device site = getDevice(device.getId(), device.getClientId());
 			if (!site.getName().equals(device.getName())) {
 				getDevicesBySite(site.getClientId(), site.getName()).forEach(childDevice -> {
-					device.setSite(device.getName());
+					childDevice.setSite(device.getName());
 					updateDevice(childDevice);
 				});
 			}

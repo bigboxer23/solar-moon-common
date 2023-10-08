@@ -105,6 +105,9 @@ public class TestDeviceComponent {
 				.findFirst()
 				.orElse(null);
 		assertNotNull(testSite);
+		assertTrue(component
+				.getDevicesBySite(testSite.getClientId(), DeviceComponent.NO_SITE)
+				.isEmpty());
 		component.deleteDevice(testSite.getId(), testSite.getClientId());
 		assertTrue(component
 				.getDevicesBySite(testSite.getClientId(), testSite.getSite())
@@ -122,10 +125,12 @@ public class TestDeviceComponent {
 				.findFirst()
 				.orElse(null);
 		assertNotNull(testSite);
+		List<Device> originalDevices = component.getDevicesBySite(testSite.getClientId(), testSite.getSite());
 		testSite.setName(TestDeviceComponent.SITE + 2);
 		testSite.setSite(TestDeviceComponent.SITE + 2);
 		component.updateDevice(testSite);
 		List<Device> updatedDevices = component.getDevicesBySite(testSite.getClientId(), testSite.getSite());
+		assertEquals(originalDevices.size(), updatedDevices.size());
 		assertFalse(updatedDevices.isEmpty());
 		updatedDevices.forEach(device -> assertEquals(device.getSite(), testSite.getSite()));
 	}
