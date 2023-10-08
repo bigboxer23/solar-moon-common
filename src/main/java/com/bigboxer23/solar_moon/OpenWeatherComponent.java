@@ -3,6 +3,7 @@ package com.bigboxer23.solar_moon;
 import com.bigboxer23.solar_moon.data.Location;
 import com.bigboxer23.solar_moon.data.WeatherData;
 import com.bigboxer23.solar_moon.data.WeatherSystemData;
+import com.bigboxer23.solar_moon.lambda.utils.PropertyUtils;
 import com.bigboxer23.utils.http.OkHttpUtil;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
@@ -28,10 +29,13 @@ public class OpenWeatherComponent {
 	public static final String kOpenWeatherMapCityToLatLong =
 			"http://api.openweathermap.org/geo/1.0/direct?q={0}&limit=2&appid={1}";
 
-	// @Value("${openweathermap.api}")
 	private String openWeatherMapAPIKey;
 
 	private final Moshi moshi = new Moshi.Builder().build();
+
+	public OpenWeatherComponent() {
+		openWeatherMapAPIKey = PropertyUtils.getProperty("openweathermap.api");
+	}
 
 	private Map<String, WeatherSystemData> weatherCache =
 			new HashMap<>(); // use map instead of cache... lambda doesn't have cache really

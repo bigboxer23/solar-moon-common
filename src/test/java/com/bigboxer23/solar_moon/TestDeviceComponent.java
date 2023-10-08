@@ -132,9 +132,7 @@ public class TestDeviceComponent {
 
 	@BeforeEach
 	protected void setupTestDevice() {
-		component
-				.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE)
-				.forEach(device -> component.getTable().deleteItem(device));
+		TestUtils.deleteAllCustomerDevices(component);
 		setupTestDevice(false);
 	}
 
