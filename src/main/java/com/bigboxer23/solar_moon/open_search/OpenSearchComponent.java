@@ -35,24 +35,18 @@ public class OpenSearchComponent implements OpenSearchConstants {
 
 	private OpenSearchClient client;
 
-	// @Value("${opensearch.url}")
 	private String openSearchUrl;
 
-	// @Value("${opensearch.user}")
 	private String user;
 
-	// @Value("${opensearch.pw}")
 	private String pass;
 
 	private boolean isTest = false;
 
-	public OpenSearchComponent(/*Environment env*/ ) {
-		/*isTest = Boolean.parseBoolean(env.getProperty("testing"));*/
-		if (openSearchUrl == null) {
-			openSearchUrl = PropertyUtils.getProperty("opensearch.url");
-			user = PropertyUtils.getProperty("opensearch.user");
-			pass = PropertyUtils.getProperty("opensearch.pw");
-		}
+	public OpenSearchComponent() {
+		openSearchUrl = PropertyUtils.getProperty("opensearch.url");
+		user = PropertyUtils.getProperty("opensearch.user");
+		pass = PropertyUtils.getProperty("opensearch.pw");
 	}
 
 	public void logData(Date fetchDate, List<DeviceData> deviceData) {

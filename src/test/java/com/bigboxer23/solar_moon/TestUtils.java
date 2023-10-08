@@ -29,14 +29,14 @@ public class TestUtils {
 		return deviceXML;
 	}
 
-	public static void setupSite(DeviceComponent deviceComponent) {
+	public static void deleteAllCustomerDevices(DeviceComponent deviceComponent) {
 		deviceComponent
 				.getDevices(TestDeviceComponent.clientId)
 				.forEach(device -> deviceComponent.getTable().deleteItem(device));
-		/*deviceComponent
-		.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE)
-		.forEach(device -> deviceComponent.getTable().deleteItem(device));*/
+	}
 
+	public static void setupSite(DeviceComponent deviceComponent) {
+		deleteAllCustomerDevices(deviceComponent);
 		Device testDevice = new Device();
 		testDevice.setClientId(TestDeviceComponent.clientId);
 		testDevice.setSite(TestDeviceComponent.SITE);
