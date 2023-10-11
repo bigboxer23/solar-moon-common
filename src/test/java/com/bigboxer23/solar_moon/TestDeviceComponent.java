@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.bigboxer23.solar_moon.data.Device;
 import java.util.List;
+
+import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
@@ -22,6 +24,8 @@ public class TestDeviceComponent {
 	protected static final String SITE = "testSite";
 
 	private DeviceComponent component = new DeviceComponent();
+
+	private OpenSearchComponent OSComponent = new OpenSearchComponent();
 
 	private Device testDevice = new Device();
 
@@ -99,7 +103,7 @@ public class TestDeviceComponent {
 
 	@Test
 	public void testSiteDelete() {
-		TestUtils.setupSite(component);
+		TestUtils.setupSite(component, OSComponent);
 		Device testSite = component.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
 				.filter(Device::isVirtual)
 				.findFirst()
@@ -119,7 +123,7 @@ public class TestDeviceComponent {
 
 	@Test
 	public void testSiteUpdate() {
-		TestUtils.setupSite(component);
+		TestUtils.setupSite(component, OSComponent);
 		Device testSite = component.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
 				.filter(Device::isVirtual)
 				.findFirst()
@@ -139,12 +143,6 @@ public class TestDeviceComponent {
 	protected void setupTestDevice() {
 		TestUtils.deleteAllCustomerDevices(component);
 		setupTestDevice(false);
-	}
-
-	public void setup() {
-		TestUtils.setupSite(component);
-		/*TestUtils.setupSite(deviceComponent);
-		openComponent.deleteByCustomerId(TestDeviceComponent.clientId);*/
 	}
 
 	protected void setupTestDevice(boolean isVirtual) {

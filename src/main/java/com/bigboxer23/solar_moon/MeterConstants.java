@@ -23,6 +23,9 @@ public interface MeterConstants {
 	String ENG_CONS = "Energy Consumed";
 	String TOTAL_REAL_POWER = "Total Real Power";
 	String DEVICE_NAME = "device-name";
+
+	String DEVICE_ID = "device-id";
+
 	String AVG_CURRENT = "Average Current";
 	String AVG_VOLT = "Average Voltage (L-N)";
 	String TOTAL_PF = "Total (System) Power Factor";

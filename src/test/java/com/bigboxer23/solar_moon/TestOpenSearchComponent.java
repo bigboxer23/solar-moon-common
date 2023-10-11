@@ -33,8 +33,7 @@ public class TestOpenSearchComponent {
 
 	@Test
 	public void testGetLastDeviceEntry() throws XPathExpressionException {
-		TestUtils.setupSite(deviceComponent);
-		OSComponent.deleteByCustomerId(TestDeviceComponent.clientId);
+		TestUtils.setupSite(deviceComponent, OSComponent);
 		Date date = TimeUtils.get15mRoundedDate();
 		LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 		Date prevDate =
@@ -61,8 +60,7 @@ public class TestOpenSearchComponent {
 
 	@Test
 	public void testGetDeviceByTimePeriod() throws XPathExpressionException, InterruptedException {
-		TestUtils.setupSite(deviceComponent);
-		OSComponent.deleteByCustomerId(TestDeviceComponent.clientId);
+		TestUtils.setupSite(deviceComponent, OSComponent);
 		OpenSearchUtils.waitForIndexing();
 		Date date = TimeUtils.get15mRoundedDate();
 		assertNull(OSComponent.getDeviceByTimePeriod(
@@ -91,8 +89,7 @@ public class TestOpenSearchComponent {
 
 	@Test
 	public void testGetDeviceCountByTimePeriod() throws XPathExpressionException {
-		TestUtils.setupSite(deviceComponent);
-		OSComponent.deleteByCustomerId(TestDeviceComponent.clientId);
+		TestUtils.setupSite(deviceComponent, OSComponent);
 		Date date = TimeUtils.get15mRoundedDate();
 		LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 		Date prevDate =
