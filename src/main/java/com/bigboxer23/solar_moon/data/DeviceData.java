@@ -19,7 +19,7 @@ public class DeviceData {
 
 	public DeviceData(Map<String, Object> openSearchMap) {
 		this((String) openSearchMap.get(SITE), (String) openSearchMap.get(DEVICE_NAME), (String)
-				openSearchMap.get(CUSTOMER_ID));
+				openSearchMap.get(CUSTOMER_ID), (String) openSearchMap.get(DEVICE_ID));
 		setTotalRealPower(doubleToFloat(openSearchMap.get(TOTAL_REAL_POWER)));
 		setEnergyConsumed(doubleToFloat(openSearchMap.get(ENG_CONS)));
 		setPowerFactor(doubleToFloat(openSearchMap.get(TOTAL_PF)));
@@ -30,7 +30,7 @@ public class DeviceData {
 	}
 
 	public boolean isValid() {
-		return getAttributes().size() > 3;
+		return getAttributes().size() > 4;
 	}
 
 	private float doubleToFloat(Object value) {
@@ -43,11 +43,12 @@ public class DeviceData {
 				.orElse(null);
 	}
 
-	public DeviceData(String site, String name, String customerId) {
+	public DeviceData(String site, String name, String customerId, String deviceId) {
 		attributes = new HashMap<>();
 		attributes.put(SITE, new DeviceAttribute(SITE, "", site));
 		attributes.put(DEVICE_NAME, new DeviceAttribute(DEVICE_NAME, "", name));
 		attributes.put(CUSTOMER_ID, new DeviceAttribute(CUSTOMER_ID, "", customerId));
+		attributes.put(DEVICE_ID, new DeviceAttribute(DEVICE_ID, "", deviceId));
 	}
 
 	public void addAttribute(DeviceAttribute attr) {
@@ -104,6 +105,10 @@ public class DeviceData {
 
 	public String getCustomerId() {
 		return (String) attributes.get(CUSTOMER_ID).getValue();
+	}
+
+	public String getDeviceId() {
+		return (String) attributes.get(DEVICE_ID).getValue();
 	}
 
 	public float getAverageVoltage() {

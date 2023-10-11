@@ -12,6 +12,7 @@ import javax.xml.xpath.XPathExpressionException;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.OS;
 
 /** */
 public class TestSiteComponent {
@@ -28,8 +29,7 @@ public class TestSiteComponent {
 
 	@BeforeEach
 	public void setup() {
-		TestUtils.setupSite(deviceComponent);
-		OSComponent.deleteByCustomerId(TestDeviceComponent.clientId);
+		TestUtils.setupSite(deviceComponent, OSComponent);
 	}
 
 	@Test

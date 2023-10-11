@@ -35,8 +35,9 @@ public class TestUtils {
 				.forEach(device -> deviceComponent.getTable().deleteItem(device));
 	}
 
-	public static void setupSite(DeviceComponent deviceComponent) {
+	public static void setupSite(DeviceComponent deviceComponent, OpenSearchComponent OSComponent) {
 		deleteAllCustomerDevices(deviceComponent);
+		OSComponent.deleteByCustomerId(TestDeviceComponent.clientId);
 		Device testDevice = new Device();
 		testDevice.setClientId(TestDeviceComponent.clientId);
 		testDevice.setSite(TestDeviceComponent.SITE);

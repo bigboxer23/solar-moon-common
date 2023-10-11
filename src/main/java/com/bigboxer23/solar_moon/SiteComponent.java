@@ -42,7 +42,7 @@ public class SiteComponent {
 					}
 					List<DeviceData> siteDevices = openSearch.getDevicesForSiteByTimePeriod(
 							device.getCustomerId(), device.getSite(), device.getDate());
-					DeviceData siteDevice = new DeviceData(device.getSite(), device.getSite(), device.getCustomerId());
+					DeviceData siteDevice = new DeviceData(site.getSite(), site.getName(), site.getClientId(), site.getId());
 					siteDevice.setIsVirtual();
 
 					float totalEnergyConsumed = getPushedDeviceValues(siteDevices, site, DeviceData::getEnergyConsumed);
