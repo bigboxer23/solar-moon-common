@@ -18,8 +18,11 @@ public class DeviceData {
 	private Date date;
 
 	public DeviceData(Map<String, Object> openSearchMap) {
-		this((String) openSearchMap.get(SITE), (String) openSearchMap.get(DEVICE_NAME), (String)
-				openSearchMap.get(CUSTOMER_ID), (String) openSearchMap.get(DEVICE_ID));
+		this(
+				(String) openSearchMap.get(SITE),
+				(String) openSearchMap.get(DEVICE_NAME),
+				(String) openSearchMap.get(CUSTOMER_ID),
+				(String) openSearchMap.get(DEVICE_ID));
 		setTotalRealPower(doubleToFloat(openSearchMap.get(TOTAL_REAL_POWER)));
 		setEnergyConsumed(doubleToFloat(openSearchMap.get(ENG_CONS)));
 		setPowerFactor(doubleToFloat(openSearchMap.get(TOTAL_PF)));

@@ -48,7 +48,11 @@ public class TestGenerationMeterComponent implements TestConstants {
 	@Test
 	public void testCalculatedTotalRealPower() {
 		DeviceData aDeviceData2 = generationComponent.parseDeviceInformation(
-				device2Xml, "site1", TestDeviceComponent.deviceName, TestDeviceComponent.clientId, TestDeviceComponent.deviceId);
+				device2Xml,
+				"site1",
+				TestDeviceComponent.deviceName,
+				TestDeviceComponent.clientId,
+				TestDeviceComponent.deviceId);
 		assertEquals(aDeviceData2.getTotalRealPower(), 422.7f);
 		aDeviceData2.setPowerFactor(-aDeviceData2.getPowerFactor());
 		assertEquals(aDeviceData2.getTotalRealPower(), 422.7f);
@@ -57,18 +61,27 @@ public class TestGenerationMeterComponent implements TestConstants {
 	@Test
 	public void testParseDeviceInformation() {
 		DeviceData aDeviceData = generationComponent.parseDeviceInformation(
-				device2XmlNull, "site1", TestDeviceComponent.deviceName, TestDeviceComponent.clientId, TestDeviceComponent.deviceId);
+				device2XmlNull,
+				"site1",
+				TestDeviceComponent.deviceName,
+				TestDeviceComponent.clientId,
+				TestDeviceComponent.deviceId);
 		assertNotNull(aDeviceData);
 		assertFalse(aDeviceData.isValid());
 		aDeviceData = generationComponent.parseDeviceInformation(
-				device2Xml, "site1", TestDeviceComponent.deviceName, TestDeviceComponent.clientId, TestDeviceComponent.deviceId);
+				device2Xml,
+				"site1",
+				TestDeviceComponent.deviceName,
+				TestDeviceComponent.clientId,
+				TestDeviceComponent.deviceId);
 		assertNotNull(aDeviceData);
 		assertTrue(aDeviceData.isValid());
 		assertNull(generationComponent.parseDeviceInformation(
 				TestDeviceComponent.deviceName,
 				TestDeviceComponent.deviceName,
 				TestDeviceComponent.deviceName,
-				TestDeviceComponent.clientId, TestDeviceComponent.deviceId));
+				TestDeviceComponent.clientId,
+				TestDeviceComponent.deviceId));
 	}
 
 	@Test
@@ -93,18 +106,34 @@ public class TestGenerationMeterComponent implements TestConstants {
 	@Test
 	public void testDateRead() {
 		DeviceData aDeviceData = generationComponent.parseDeviceInformation(
-				device2Xml, "site1", TestDeviceComponent.deviceName, TestDeviceComponent.clientId, TestDeviceComponent.deviceId);
+				device2Xml,
+				"site1",
+				TestDeviceComponent.deviceName,
+				TestDeviceComponent.clientId,
+				TestDeviceComponent.deviceId);
 		assertNotNull(aDeviceData.getDate());
 		SimpleDateFormat sdf = new SimpleDateFormat(MeterConstants.DATE_PATTERN);
 		assertEquals(sdf.format(aDeviceData.getDate()), "2020-08-21 12:30:00 CDT");
 		aDeviceData = generationComponent.parseDeviceInformation(
-				device2XmlNoDate, "site1", TestDeviceComponent.deviceName, TestDeviceComponent.clientId, TestDeviceComponent.deviceId);
+				device2XmlNoDate,
+				"site1",
+				TestDeviceComponent.deviceName,
+				TestDeviceComponent.clientId,
+				TestDeviceComponent.deviceId);
 		assertNull(aDeviceData.getDate());
 		aDeviceData = generationComponent.parseDeviceInformation(
-				device2XmlBadDate, "site1", TestDeviceComponent.deviceName, TestDeviceComponent.clientId, TestDeviceComponent.deviceId);
+				device2XmlBadDate,
+				"site1",
+				TestDeviceComponent.deviceName,
+				TestDeviceComponent.clientId,
+				TestDeviceComponent.deviceId);
 		assertNull(aDeviceData.getDate());
 		aDeviceData = generationComponent.parseDeviceInformation(
-				device2XmlNoTZ, "site1", TestDeviceComponent.deviceName, TestDeviceComponent.clientId, TestDeviceComponent.deviceId);
+				device2XmlNoTZ,
+				"site1",
+				TestDeviceComponent.deviceName,
+				TestDeviceComponent.clientId,
+				TestDeviceComponent.deviceId);
 		assertNull(aDeviceData.getDate());
 	}
 }
