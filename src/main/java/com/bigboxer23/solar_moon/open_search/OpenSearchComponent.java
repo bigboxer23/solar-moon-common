@@ -231,6 +231,26 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		}
 	}
 
+	public SearchResponse search(SearchJSON searchJSON) {
+		try {
+			SearchRequest request = OpenSearchQueries.getTimeSeriesBuilder(
+							searchJSON.getTimeZone(), searchJSON.getBucketSize())
+					.query(QueryBuilders.bool()
+							.must(
+									OpenSearchQueries.getCustomerIdQuery(searchJSON.getCustomerId()),
+									OpenSearchQueries.getDeviceNameQuery(searchJSON.getDeviceName()),
+									OpenSearchQueries.getDateRangeQuery(
+											searchJSON.getJavaStartDate(), searchJSON.getJavaEndDate()))
+							.build()
+							._toQuery())
+					.build();
+			return getClient().search(request, Map.class);
+		} catch (IOException e) {
+			logger.error("search " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
+		}
+		return null;
+	}
+
 	private OpenSearchClient getClient() {
 		if (client == null) {
 			final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
