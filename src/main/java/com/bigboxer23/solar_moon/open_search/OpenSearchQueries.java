@@ -6,10 +6,10 @@ import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
 import org.opensearch.client.json.JsonData;
+import org.opensearch.client.opensearch._types.FieldSort;
+import org.opensearch.client.opensearch._types.SortOrder;
 import org.opensearch.client.opensearch._types.Time;
-import org.opensearch.client.opensearch._types.aggregations.Aggregation;
-import org.opensearch.client.opensearch._types.aggregations.AggregationBuilders;
-import org.opensearch.client.opensearch._types.aggregations.AverageAggregation;
+import org.opensearch.client.opensearch._types.aggregations.*;
 import org.opensearch.client.opensearch._types.query_dsl.FieldAndFormat;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch._types.query_dsl.QueryBuilders;
@@ -17,10 +17,10 @@ import org.opensearch.client.opensearch.core.DeleteByQueryRequest;
 import org.opensearch.client.opensearch.core.SearchRequest;
 
 /** */
-public class OpenSearchQueries implements OpenSearchConstants {
+public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 	public static Query getDeviceNameQuery(String deviceName) {
 		return QueryBuilders.match()
-				.field(getKeywordField(MeterConstants.DEVICE_NAME))
+				.field(getKeywordField(DEVICE_NAME))
 				.query(builder -> builder.stringValue(deviceName))
 				.build()
 				._toQuery();
@@ -28,7 +28,7 @@ public class OpenSearchQueries implements OpenSearchConstants {
 
 	public static Query getDeviceIdQuery(String id) {
 		return QueryBuilders.match()
-				.field(getKeywordField(MeterConstants.DEVICE_ID))
+				.field(getKeywordField(DEVICE_ID))
 				.query(builder -> builder.stringValue(id))
 				.build()
 				._toQuery();
@@ -36,7 +36,7 @@ public class OpenSearchQueries implements OpenSearchConstants {
 
 	public static Query getCustomerIdQuery(String customerId) {
 		return QueryBuilders.match()
-				.field(getKeywordField(MeterConstants.CUSTOMER_ID))
+				.field(getKeywordField(CUSTOMER_ID))
 				.query(builder -> builder.stringValue(customerId))
 				.build()
 				._toQuery();
@@ -44,7 +44,7 @@ public class OpenSearchQueries implements OpenSearchConstants {
 
 	public static Query getSiteQuery(String site) {
 		return QueryBuilders.match()
-				.field(getKeywordField(MeterConstants.SITE))
+				.field(getKeywordField(SITE))
 				.query(builder -> builder.stringValue(site))
 				.build()
 				._toQuery();
@@ -93,8 +93,20 @@ public class OpenSearchQueries implements OpenSearchConstants {
 		return field + ".keyword";
 	}
 
+	private static SearchRequest.Builder getBaseBuilder(int count) {
+		return getSearchRequestBuilder()
+				.storedFields("*")
+				.size(count)
+				.docvalueFields(new FieldAndFormat.Builder()
+						.field(TIMESTAMP)
+						.format("date_time")
+						.build())
+				.docvalueFields(
+						new FieldAndFormat.Builder().field(TOTAL_REAL_POWER).build());
+	}
+
 	public static SearchRequest.Builder getTimeSeriesBuilder(String timezone, String bucketSize) {
-		return OpenSearchQueries.getSearchRequestBuilder()
+		return getBaseBuilder(0)
 				.aggregations(
 						"2",
 						new Aggregation.Builder()
@@ -110,15 +122,42 @@ public class OpenSearchQueries implements OpenSearchConstants {
 										"1",
 										new Aggregation.Builder()
 												.avg(new AverageAggregation.Builder()
-														.field(MeterConstants.TOTAL_REAL_POWER)
+														.field(TOTAL_REAL_POWER)
 														.build())
 												.build())
+								.build());
+	}
+
+	public static SearchRequest.Builder getMaxCurrentBuilder(String timezone, String bucketSize) {
+		return getBaseBuilder(1)
+				.aggregations(
+						"max",
+						new Aggregation.Builder()
+								.max(new MaxAggregation.Builder()
+										.field(TOTAL_REAL_POWER)
+										.build())
 								.build())
-				.storedFields("*")
-				.size(0)
-				.docvalueFields(new FieldAndFormat.Builder()
+				.sort(builder -> builder.field(new FieldSort.Builder()
 						.field(TIMESTAMP)
-						.format("date_time")
-						.build());
+						.order(SortOrder.Desc)
+						.build()));
+	}
+
+	public static SearchRequest.Builder getAverageTotalBuilder(String timezone, String bucketSize) {
+		return getBaseBuilder(0)
+				.aggregations(
+						"avg",
+						new Aggregation.Builder()
+								.avg(new AverageAggregation.Builder()
+										.field(TOTAL_REAL_POWER)
+										.build())
+								.build())
+				.aggregations(
+						"total",
+						new Aggregation.Builder()
+								.sum(new SumAggregation.Builder()
+										.field(ENG_CONS)
+										.build())
+								.build());
 	}
 }
