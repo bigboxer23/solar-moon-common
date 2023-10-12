@@ -233,8 +233,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 
 	public SearchResponse search(SearchJSON searchJSON) {
 		try {
-			SearchRequest request = OpenSearchQueries.getTimeSeriesBuilder(
-							searchJSON.getTimeZone(), searchJSON.getBucketSize())
+			SearchRequest request = getSearchRequest(searchJSON)
 					.query(QueryBuilders.bool()
 							.must(
 									OpenSearchQueries.getCustomerIdQuery(searchJSON.getCustomerId()),
@@ -249,6 +248,18 @@ public class OpenSearchComponent implements OpenSearchConstants {
 			logger.error("search " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
 		}
 		return null;
+	}
+
+	private SearchRequest.Builder getSearchRequest(SearchJSON searchJSON) {
+		return switch (searchJSON.getType()) {
+			case TS_SEARCH_TYPE -> OpenSearchQueries.getTimeSeriesBuilder(
+					searchJSON.getTimeZone(), searchJSON.getBucketSize());
+			case AT_SEARCH_TYPE -> OpenSearchQueries.getAverageTotalBuilder(
+					searchJSON.getTimeZone(), searchJSON.getBucketSize());
+			case MC_SEARCH_TYPE -> OpenSearchQueries.getMaxCurrentBuilder(
+					searchJSON.getTimeZone(), searchJSON.getBucketSize());
+			default -> null;
+		};
 	}
 
 	private OpenSearchClient getClient() {
