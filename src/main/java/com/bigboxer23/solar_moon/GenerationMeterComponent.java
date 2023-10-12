@@ -127,7 +127,8 @@ public class GenerationMeterComponent implements MeterConstants {
 				.orElse(null);
 
 		DeviceData deviceData = Optional.ofNullable(device)
-				.map(server -> parseDeviceInformation(body, server.getSite(), server.getName(), customerId, server.getId()))
+				.map(server ->
+						parseDeviceInformation(body, server.getSite(), server.getName(), customerId, server.getId()))
 				.filter(DeviceData::isValid)
 				.orElse(null);
 		if (deviceData == null) {
@@ -181,7 +182,8 @@ public class GenerationMeterComponent implements MeterConstants {
 				});
 	}
 
-	protected DeviceData parseDeviceInformation(String body, String site, String name, String customerId, String deviceId) {
+	protected DeviceData parseDeviceInformation(
+			String body, String site, String name, String customerId, String deviceId) {
 		try {
 			logger.debug("parsing device info " + site + ":" + name + "\n" + body);
 			InputSource xml = new InputSource(new StringReader(body));

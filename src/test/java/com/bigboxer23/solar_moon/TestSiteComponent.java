@@ -12,7 +12,6 @@ import javax.xml.xpath.XPathExpressionException;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.OS;
 
 /** */
 public class TestSiteComponent {
