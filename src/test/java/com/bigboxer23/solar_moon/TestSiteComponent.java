@@ -48,12 +48,13 @@ public class TestSiteComponent {
 		Date date = TimeUtils.get15mRoundedDate();
 		for (int ai = 0; ai < 4; ai++) {
 			generationComponent.handleDeviceBody(
-					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + ai, date), TestDeviceComponent.clientId);
+					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + ai, date, -1),
+					TestDeviceComponent.clientId);
 		}
 		OpenSearchUtils.waitForIndexing();
 		assertNull(OSComponent.getLastDeviceEntry(TestDeviceComponent.clientId, TestDeviceComponent.SITE));
 		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 4, date), TestDeviceComponent.clientId);
+				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 4, date, -1), TestDeviceComponent.clientId);
 		OpenSearchUtils.waitForIndexing();
 		TestUtils.validateDateData(OSComponent, TestDeviceComponent.SITE, date);
 	}
@@ -68,11 +69,13 @@ public class TestSiteComponent {
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
 		for (int ai = 0; ai < 4; ai++) {
 			generationComponent.handleDeviceBody(
-					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + ai, date), TestDeviceComponent.clientId);
+					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + ai, date, -1),
+					TestDeviceComponent.clientId);
 		}
 		for (int ai = 0; ai < 5; ai++) {
 			generationComponent.handleDeviceBody(
-					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + ai, past), TestDeviceComponent.clientId);
+					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + ai, past, -1),
+					TestDeviceComponent.clientId);
 		}
 		OpenSearchUtils.waitForIndexing();
 		TestUtils.validateDateData(OSComponent, TestDeviceComponent.SITE, past);
@@ -80,13 +83,14 @@ public class TestSiteComponent {
 
 		for (int ai = 0; ai < 5; ai++) {
 			generationComponent.handleDeviceBody(
-					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + ai, future), TestDeviceComponent.clientId);
+					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + ai, future, -1),
+					TestDeviceComponent.clientId);
 		}
 		OpenSearchUtils.waitForIndexing();
 		TestUtils.validateDateData(OSComponent, TestDeviceComponent.SITE, future);
 		assertNull(OSComponent.getDeviceByTimePeriod(TestDeviceComponent.clientId, TestDeviceComponent.SITE, date));
 		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 4, date), TestDeviceComponent.clientId);
+				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 4, date, -1), TestDeviceComponent.clientId);
 		OpenSearchUtils.waitForIndexing();
 		TestUtils.validateDateData(OSComponent, TestDeviceComponent.SITE, date);
 	}
@@ -107,7 +111,8 @@ public class TestSiteComponent {
 		@Override
 		public void run() {
 			generationComponent.handleDeviceBody(
-					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + count, date), TestDeviceComponent.clientId);
+					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + count, date, -1),
+					TestDeviceComponent.clientId);
 			latch.countDown();
 		}
 	}

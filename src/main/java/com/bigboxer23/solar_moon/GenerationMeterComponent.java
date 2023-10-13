@@ -189,7 +189,7 @@ public class GenerationMeterComponent implements MeterConstants {
 			InputSource xml = new InputSource(new StringReader(body));
 			NodeList nodes = (NodeList)
 					XPathFactory.newInstance().newXPath().compile(POINT_PATH).evaluate(xml, XPathConstants.NODESET);
-			DeviceData aDeviceData = new DeviceData(site, name, customerId, deviceId);
+			DeviceData deviceData = new DeviceData(site, name, customerId, deviceId);
 			for (int i = 0; i < nodes.getLength(); i++) {
 				String attributeName =
 						nodes.item(i).getAttributes().getNamedItem("name").getNodeValue();
@@ -199,7 +199,7 @@ public class GenerationMeterComponent implements MeterConstants {
 								.getAttributes()
 								.getNamedItem("value")
 								.getNodeValue());
-						aDeviceData.addAttribute(new DeviceAttribute(
+						deviceData.addAttribute(new DeviceAttribute(
 								fields.get(attributeName),
 								nodes.item(i)
 										.getAttributes()
@@ -211,10 +211,10 @@ public class GenerationMeterComponent implements MeterConstants {
 					}
 				}
 			}
-			calculateTotalRealPower(aDeviceData);
-			calculateTotalEnergyConsumed(aDeviceData);
-			calculateTime(aDeviceData, body);
-			return aDeviceData;
+			calculateTotalRealPower(deviceData);
+			calculateTotalEnergyConsumed(deviceData);
+			calculateTime(deviceData, body);
+			return deviceData;
 		} catch (XPathExpressionException e) {
 			logger.error("parseDeviceInformation", e);
 		}

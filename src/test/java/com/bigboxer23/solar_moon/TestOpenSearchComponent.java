@@ -1,39 +1,51 @@
 package com.bigboxer23.solar_moon;
 
+import static com.bigboxer23.solar_moon.open_search.OpenSearchConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.open_search.OpenSearchUtils;
+import com.bigboxer23.solar_moon.open_search.SearchJSON;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.List;
 import javax.xml.xpath.XPathExpressionException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opensearch.client.opensearch._types.aggregations.Aggregate;
+import org.opensearch.client.opensearch._types.aggregations.DateHistogramBucket;
+import org.opensearch.client.opensearch.core.SearchResponse;
+import org.opensearch.client.opensearch.core.search.Hit;
 
 /** */
 public class TestOpenSearchComponent {
 
-	private OpenSearchComponent OSComponent = new OpenSearchComponent();
+	private static OpenSearchComponent OSComponent = new OpenSearchComponent();
 
-	private DeviceComponent deviceComponent = new DeviceComponent();
+	private static DeviceComponent deviceComponent = new DeviceComponent();
 
-	private GenerationMeterComponent generationComponent = new GenerationMeterComponent(
+	private static GenerationMeterComponent generationComponent = new GenerationMeterComponent(
 			OSComponent,
 			new AlarmComponent(new OpenWeatherComponent()),
 			deviceComponent,
 			new SiteComponent(OSComponent, deviceComponent));
 
+	@BeforeEach
+	public void setup() {
+		TestUtils.setupSite(deviceComponent, OSComponent);
+	}
+
 	@Test
 	public void testGetTotalEnergyConsumed() {
 		// test invalid case
-		Float consumed = OSComponent.getTotalEnergyConsumed(TestDeviceComponent.deviceName);
-		assertNull(consumed);
+		assertNull(OSComponent.getTotalEnergyConsumed(TestDeviceComponent.deviceName));
 	}
 
 	@Test
 	public void testGetLastDeviceEntry() throws XPathExpressionException {
-		TestUtils.setupSite(deviceComponent, OSComponent);
 		Date date = TimeUtils.get15mRoundedDate();
 		LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 		Date prevDate =
@@ -41,16 +53,16 @@ public class TestOpenSearchComponent {
 		Date nextDate =
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
 		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, prevDate), TestDeviceComponent.clientId);
+				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, prevDate, -1), TestDeviceComponent.clientId);
 		DeviceData data =
 				OSComponent.getLastDeviceEntry(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
 		assertNull(data);
 		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, nextDate), TestDeviceComponent.clientId);
+				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, nextDate, -1), TestDeviceComponent.clientId);
 		data = OSComponent.getLastDeviceEntry(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
 		assertNull(data);
 		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, date), TestDeviceComponent.clientId);
+				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, date, -1), TestDeviceComponent.clientId);
 		data = OSComponent.getLastDeviceEntry(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
 		assertNotNull(data);
 		assertTrue(data.isValid());
@@ -60,8 +72,6 @@ public class TestOpenSearchComponent {
 
 	@Test
 	public void testGetDeviceByTimePeriod() throws XPathExpressionException, InterruptedException {
-		TestUtils.setupSite(deviceComponent, OSComponent);
-		OpenSearchUtils.waitForIndexing();
 		Date date = TimeUtils.get15mRoundedDate();
 		assertNull(OSComponent.getDeviceByTimePeriod(
 				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0, date));
@@ -73,23 +83,22 @@ public class TestOpenSearchComponent {
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
 
 		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, past), TestDeviceComponent.clientId);
+				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, past, -1), TestDeviceComponent.clientId);
 		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, future), TestDeviceComponent.clientId);
+				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, future, -1), TestDeviceComponent.clientId);
 		OpenSearchUtils.waitForIndexing();
 		assertNull(OSComponent.getDeviceByTimePeriod(
 				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0, date));
 		TestUtils.validateDateData(OSComponent, future);
 		TestUtils.validateDateData(OSComponent, past);
 		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, date), TestDeviceComponent.clientId);
+				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, date, -1), TestDeviceComponent.clientId);
 		OpenSearchUtils.waitForIndexing();
 		TestUtils.validateDateData(OSComponent, date);
 	}
 
 	@Test
 	public void testGetDeviceCountByTimePeriod() throws XPathExpressionException {
-		TestUtils.setupSite(deviceComponent, OSComponent);
 		Date date = TimeUtils.get15mRoundedDate();
 		LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 		Date prevDate =
@@ -97,11 +106,11 @@ public class TestOpenSearchComponent {
 		Date nextDate =
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
 		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, date), TestDeviceComponent.clientId);
+				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, date, -1), TestDeviceComponent.clientId);
 		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, prevDate), TestDeviceComponent.clientId);
+				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, prevDate, -1), TestDeviceComponent.clientId);
 		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, nextDate), TestDeviceComponent.clientId);
+				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, nextDate, -1), TestDeviceComponent.clientId);
 		assertEquals(
 				1,
 				OSComponent.getSiteDevicesCountByTimePeriod(
@@ -116,7 +125,7 @@ public class TestOpenSearchComponent {
 						TestDeviceComponent.clientId, TestDeviceComponent.SITE, nextDate));
 
 		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, nextDate), TestDeviceComponent.clientId);
+				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, nextDate, -1), TestDeviceComponent.clientId);
 		assertEquals(
 				1,
 				OSComponent.getSiteDevicesCountByTimePeriod(
@@ -129,5 +138,79 @@ public class TestOpenSearchComponent {
 				2,
 				OSComponent.getSiteDevicesCountByTimePeriod(
 						TestDeviceComponent.clientId, TestDeviceComponent.SITE, nextDate));
+	}
+
+	@Test
+	public void testTimeSeriesSearch() throws XPathExpressionException {
+		TestUtils.seedOpenSearchData(generationComponent);
+		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
+				.minusDays(2);
+		SearchJSON json = new SearchJSON(
+				TestDeviceComponent.clientId,
+				TestDeviceComponent.deviceName + 0,
+				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
+				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
+						.getTime());
+		json.setType(TS_SEARCH_TYPE);
+		json.setTimeZone(ZonedDateTime.now().getZone().getId());
+		SearchResponse response = OSComponent.search(json);
+		assertNotNull(response.aggregations().get("2"));
+		assertNotNull(((Aggregate) response.aggregations().get("2"))._get());
+		List<DateHistogramBucket> buckets = ((Aggregate) response.aggregations().get("2"))
+				.dateHistogram()
+				.buckets()
+				.array();
+		for (int ai = 0; ai < buckets.size() - 1; ai++) {
+			assertTrue(buckets.get(ai).aggregations().get("1").avg().value()
+					> buckets.get(ai + 1).aggregations().get("1").avg().value());
+		}
+	}
+
+	@Test
+	public void testMaxCurrentSearch() throws XPathExpressionException {
+		TestUtils.seedOpenSearchData(generationComponent);
+		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
+				.minusDays(2);
+		SearchJSON json = new SearchJSON(
+				TestDeviceComponent.clientId,
+				TestDeviceComponent.deviceName + 0,
+				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
+				Date.from(ldt.minusDays(7).atZone(ZoneId.systemDefault()).toInstant())
+						.getTime());
+		json.setType(MC_SEARCH_TYPE);
+		json.setTimeZone(ZonedDateTime.now().getZone().getId());
+		SearchResponse response = OSComponent.search(json);
+		assertEquals(
+				333.70001220703125,
+				((Aggregate) response.aggregations().get("max")).max().value());
+		assertFalse(response.hits().hits().isEmpty());
+		assertEquals(
+				"[0.0]",
+				((Hit) response.hits().hits().get(0))
+						.fields()
+						.get(MeterConstants.TOTAL_REAL_POWER)
+						.toString());
+		assertFalse(response.hits().hits().isEmpty());
+	}
+
+	@Test
+	public void testAverageTotalSearch() throws XPathExpressionException {
+		TestUtils.seedOpenSearchData(generationComponent);
+		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
+				.minusDays(2);
+		SearchJSON json = new SearchJSON(
+				TestDeviceComponent.clientId,
+				TestDeviceComponent.deviceName + 0,
+				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
+				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
+						.getTime());
+		json.setType(AT_SEARCH_TYPE);
+		json.setTimeZone(ZonedDateTime.now().getZone().getId());
+		SearchResponse response = OSComponent.search(json);
+		assertEquals(2, response.aggregations().size());
+		assertEquals(0, ((Aggregate) response.aggregations().get("total")).sum().value());
+		assertEquals(
+				166.85000076293946,
+				((Aggregate) response.aggregations().get("avg")).avg().value());
 	}
 }
