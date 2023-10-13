@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 // @Component
@@ -69,6 +70,15 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		return getTable().getItem(new Device(id, customerId));
 	}
 
+	public boolean isValidAdd(Device device) {
+		if (StringUtils.isBlank(device.getClientId())
+				|| StringUtils.isBlank(device.getDeviceName())
+				|| StringUtils.isBlank(device.getId())) {
+			return false;
+		}
+		return true;
+	}
+
 	public void addDevice(Device device) {
 		if (getDevice(device.getId(), device.getClientId()) != null) {
 			logger.warn(device.getClientId() + ":" + device.getId() + " exists, not putting into db.");
@@ -76,6 +86,15 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		}
 		logAction("add", device.getId());
 		getTable().putItem(device);
+	}
+
+	public boolean isValidUpdate(Device device) {
+		if (StringUtils.isBlank(device.getClientId())
+				|| StringUtils.isBlank(device.getDeviceName())
+				|| StringUtils.isBlank(device.getId())) {
+			return false;
+		}
+		return true;
 	}
 
 	public void updateDevice(Device device) {

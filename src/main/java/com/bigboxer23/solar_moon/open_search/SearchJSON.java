@@ -8,6 +8,7 @@ import lombok.Data;
 public class SearchJSON {
 	private String customerId;
 	private String deviceName;
+	private String deviceId;
 	private long endDate;
 	private long startDate;
 	private String timeZone; // America/Chicago, etc
