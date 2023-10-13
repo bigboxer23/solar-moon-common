@@ -109,7 +109,7 @@ public interface TestConstants {
 			+ "<point number=\"5\" name=\"Vll bc\" units=\"Volts\" value=\"4280.8\"/>\n"
 			+ "<point number=\"6\" name=\"Vll ca\" units=\"Volts\" value=\"4283.1\"/>\n"
 			+ "<point number=\"7\" name=\"Vll ave\" units=\"Volts\" value=\"4283.1\"/>\n"
-			+ "<point number=\"8\" name=\"I a\" units=\"Amps\" value=\"57.0\"/>\n"
+			+ "<point number=\"8\" name=\"I a\" units=\"Amps\" value=\"57.2345\"/>\n"
 			+ "<point number=\"9\" name=\"I b\" units=\"Amps\" value=\"57.0\"/>\n"
 			+ "<point number=\"10\" name=\"I c\" units=\"Amps\" value=\"57.1\"/>\n"
 			+ "<point number=\"11\" name=\"I ave\" units=\"Amps\" value=\"57.1\"/>\n"

@@ -86,7 +86,7 @@ public class TestGenerationMeterComponent implements TestConstants {
 
 	@Test
 	public void testHandleDeviceBody() throws XPathExpressionException {
-		String deviceXML = TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, new Date());
+		String deviceXML = TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, new Date(), -1);
 		TestUtils.setupSite(deviceComponent, OSComponent);
 		assertNull(generationComponent.handleDeviceBody(null, null));
 		assertNull(generationComponent.handleDeviceBody(deviceXML, null));
@@ -98,7 +98,7 @@ public class TestGenerationMeterComponent implements TestConstants {
 		assertNull(generationComponent.handleDeviceBody(deviceXML, TestDeviceComponent.clientId + "invalid"));
 		assertNull(generationComponent.handleDeviceBody(nonUpdateStatus, TestDeviceComponent.clientId));
 		assertNull(generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(device2XmlNull, TestDeviceComponent.deviceName + 0, null),
+				TestUtils.getDeviceXML(device2XmlNull, TestDeviceComponent.deviceName + 0, null, -1),
 				TestDeviceComponent.clientId));
 		assertNotNull(generationComponent.handleDeviceBody(deviceXML, TestDeviceComponent.clientId));
 	}
