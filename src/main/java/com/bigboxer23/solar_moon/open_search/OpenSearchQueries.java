@@ -26,6 +26,10 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				._toQuery();
 	}
 
+	public static Query getNotVirtual() {
+		return QueryBuilders.exists().field("Virtual").build()._toQuery();
+	}
+
 	public static Query getDeviceIdQuery(String id) {
 		return QueryBuilders.match()
 				.field(getKeywordField(DEVICE_ID))
@@ -103,6 +107,40 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 						.build())
 				.docvalueFields(
 						new FieldAndFormat.Builder().field(TOTAL_REAL_POWER).build());
+	}
+
+	public static SearchRequest.Builder getStackedTimeSeriesBuilder(String timezone, String bucketSize) {
+
+		return getBaseBuilder(0)
+				.aggregations(
+						"2",
+						new Aggregation.Builder()
+								.dateHistogram(AggregationBuilders.dateHistogram()
+										.field(TIMESTAMP)
+										.fixedInterval(new Time.Builder()
+												.time(bucketSize)
+												.build())
+										.timeZone(timezone)
+										.minDocCount(1)
+										.build())
+								.aggregations(
+										"terms",
+										new Aggregation.Builder()
+												.terms(new TermsAggregation.Builder()
+														.field(getKeywordField(DEVICE_NAME))
+														.order(Collections.singletonList(
+																Collections.singletonMap("1", SortOrder.Desc)))
+														.size(10)
+														.build())
+												.aggregations(
+														"1",
+														new Aggregation.Builder()
+																.avg(new AverageAggregation.Builder()
+																		.field(TOTAL_REAL_POWER)
+																		.build())
+																.build())
+												.build())
+								.build());
 	}
 
 	public static SearchRequest.Builder getTimeSeriesBuilder(String timezone, String bucketSize) {

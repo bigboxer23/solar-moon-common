@@ -3,8 +3,10 @@ package com.bigboxer23.solar_moon;
 import static com.bigboxer23.solar_moon.open_search.OpenSearchConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
+import com.bigboxer23.solar_moon.open_search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.open_search.OpenSearchUtils;
 import com.bigboxer23.solar_moon.open_search.SearchJSON;
 import java.time.LocalDateTime;
@@ -167,6 +169,64 @@ public class TestOpenSearchComponent {
 	}
 
 	@Test
+	public void testStackedTimeSeriesSearch() throws XPathExpressionException {
+		TestUtils.seedOpenSearchData(generationComponent);
+		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
+				.minusDays(2);
+		SearchJSON json = new SearchJSON(
+				TestDeviceComponent.clientId,
+				TestDeviceComponent.SITE,
+				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
+				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
+						.getTime());
+		json.setType(STS_SEARCH_TYPE);
+		json.setTimeZone(ZonedDateTime.now().getZone().getId());
+		SearchResponse response = OSComponent.search(json);
+		assertNotNull(response.aggregations().get("2"));
+		assertNotNull(((Aggregate) response.aggregations().get("2"))._get());
+		List<DateHistogramBucket> buckets = ((Aggregate) response.aggregations().get("2"))
+				.dateHistogram()
+				.buckets()
+				.array();
+		assertFalse(buckets.isEmpty());
+		for (int ai = 0; ai < buckets.size() - 1; ai++) {
+			assertNotNull(buckets.get(0).aggregations().get("terms"));
+			assertNotNull(buckets.get(0).aggregations().get("terms").sterms().buckets());
+			assertNotNull(buckets.get(0)
+					.aggregations()
+					.get("terms")
+					.sterms()
+					.buckets()
+					.array()
+					.get(0)
+					.aggregations()
+					.get("1"));
+			assertTrue(buckets.get(ai)
+							.aggregations()
+							.get("terms")
+							.sterms()
+							.buckets()
+							.array()
+							.get(0)
+							.aggregations()
+							.get("1")
+							.avg()
+							.value()
+					> buckets.get(ai + 1)
+							.aggregations()
+							.get("terms")
+							.sterms()
+							.buckets()
+							.array()
+							.get(0)
+							.aggregations()
+							.get("1")
+							.avg()
+							.value());
+		}
+	}
+
+	@Test
 	public void testMaxCurrentSearch() throws XPathExpressionException {
 		TestUtils.seedOpenSearchData(generationComponent);
 		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
@@ -231,8 +291,17 @@ public class TestOpenSearchComponent {
 								.toInstant()),
 						5),
 				TestDeviceComponent.clientId);
-		assertTrue(deviceComponent.getDevices(TestDeviceComponent.clientId).stream()
+		Device SNEDevice = deviceComponent.getDevices(TestDeviceComponent.clientId).stream()
 				.filter(d -> !d.isVirtual())
-				.anyMatch(device -> device.getDeviceName().equalsIgnoreCase(deviceName)));
+				.filter(device -> device.getDeviceName().equalsIgnoreCase(deviceName))
+				.findAny()
+				.orElse(null);
+		assertNotNull(SNEDevice);
+		assertNull(SNEDevice.getName());
+
+		assertNotNull(OSComponent.getLastDeviceEntry(
+				SNEDevice.getDeviceName(),
+				OpenSearchQueries.getDeviceNameQuery(SNEDevice.getDeviceName()),
+				OpenSearchQueries.getCustomerIdQuery(TestDeviceComponent.clientId)));
 	}
 }

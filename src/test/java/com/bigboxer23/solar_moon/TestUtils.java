@@ -60,6 +60,12 @@ public class TestUtils {
 		LocalDateTime ldt = LocalDateTime.ofInstant(
 						TimeUtils.get15mRoundedDate().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
+		generationComponent.handleDeviceBody(
+				TestUtils.getDeviceXML(
+						TestDeviceComponent.SITE,
+						Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()),
+						5),
+				TestDeviceComponent.clientId);
 		for (int aj = 0; aj < 1; aj++) {
 			for (int ai = 0; ai < 10; ai++) {
 				generationComponent.handleDeviceBody(

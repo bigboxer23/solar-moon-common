@@ -18,6 +18,8 @@ import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.FieldSort;
 import org.opensearch.client.opensearch._types.SortOptions;
 import org.opensearch.client.opensearch._types.SortOrder;
+import org.opensearch.client.opensearch._types.query_dsl.BoolQuery;
+import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch._types.query_dsl.QueryBuilders;
 import org.opensearch.client.opensearch.core.*;
 import org.opensearch.client.opensearch.core.bulk.BulkOperation;
@@ -116,15 +118,17 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	}
 
 	public DeviceData getLastDeviceEntry(String customerId, String deviceName) {
+		return getLastDeviceEntry(
+				deviceName,
+				OpenSearchQueries.getDeviceNameQuery(deviceName),
+				OpenSearchQueries.getCustomerIdQuery(customerId),
+				OpenSearchQueries.getLast15MinQuery());
+	}
+
+	public DeviceData getLastDeviceEntry(String deviceName, Query query, Query... queries) {
 		try {
 			SearchRequest request = OpenSearchQueries.getSearchRequestBuilder()
-					.query(QueryBuilders.bool()
-							.must(
-									OpenSearchQueries.getDeviceNameQuery(deviceName),
-									OpenSearchQueries.getCustomerIdQuery(customerId),
-									OpenSearchQueries.getLast15MinQuery())
-							.build()
-							._toQuery())
+					.query(QueryBuilders.bool().filter(query, queries).build()._toQuery())
 					.sort(new SortOptions.Builder()
 							.field(new FieldSort.Builder()
 									.field(TIMESTAMP)
@@ -170,7 +174,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		try {
 			SearchRequest request = OpenSearchQueries.getSearchRequestBuilder()
 					.query(QueryBuilders.bool()
-							.must(
+							.filter(
 									OpenSearchQueries.getCustomerIdQuery(customerId),
 									OpenSearchQueries.getDeviceNameQuery(deviceName),
 									OpenSearchQueries.getDateRangeQuery(date))
@@ -198,7 +202,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		try {
 			SearchRequest request = OpenSearchQueries.getSearchRequestBuilder()
 					.query(QueryBuilders.bool()
-							.must(
+							.filter(
 									OpenSearchQueries.getCustomerIdQuery(customerId),
 									OpenSearchQueries.getSiteQuery(site),
 									OpenSearchQueries.getDateRangeQuery(date))
@@ -217,7 +221,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		try {
 			SearchRequest request = OpenSearchQueries.getSearchRequestBuilder()
 					.query(QueryBuilders.bool()
-							.must(
+							.filter(
 									OpenSearchQueries.getCustomerIdQuery(customerId),
 									OpenSearchQueries.getSiteQuery(site),
 									OpenSearchQueries.getDateRangeQuery(date))
@@ -233,21 +237,29 @@ public class OpenSearchComponent implements OpenSearchConstants {
 
 	public SearchResponse search(SearchJSON searchJSON) {
 		try {
-			SearchRequest request = getSearchRequest(searchJSON)
-					.query(QueryBuilders.bool()
-							.must(
-									OpenSearchQueries.getCustomerIdQuery(searchJSON.getCustomerId()),
-									OpenSearchQueries.getDeviceNameQuery(searchJSON.getDeviceName()),
-									OpenSearchQueries.getDateRangeQuery(
-											searchJSON.getJavaStartDate(), searchJSON.getJavaEndDate()))
-							.build()
-							._toQuery())
-					.build();
+			SearchRequest request =
+					getSearchRequest(searchJSON).query(getFilter(searchJSON)).build();
 			return getClient().search(request, Map.class);
 		} catch (IOException e) {
 			logger.error("search " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
 		}
 		return null;
+	}
+
+	private Query getFilter(SearchJSON searchJSON) {
+		BoolQuery.Builder builder = QueryBuilders.bool()
+				.filter(
+						OpenSearchQueries.getCustomerIdQuery(searchJSON.getCustomerId()),
+						STS_SEARCH_TYPE.equals(searchJSON.getType())
+								? OpenSearchQueries.getSiteQuery(searchJSON.getDeviceName())
+								: OpenSearchQueries.getDeviceNameQuery(searchJSON.getDeviceName()),
+						OpenSearchQueries.getDateRangeQuery(
+								searchJSON.getJavaStartDate(), searchJSON.getJavaEndDate()));
+		if (STS_SEARCH_TYPE.equals(searchJSON.getType())) {
+			builder.mustNot(OpenSearchQueries.getNotVirtual());
+		}
+
+		return builder.build()._toQuery();
 	}
 
 	private SearchRequest.Builder getSearchRequest(SearchJSON searchJSON) {
@@ -257,6 +269,8 @@ public class OpenSearchComponent implements OpenSearchConstants {
 			case AT_SEARCH_TYPE -> OpenSearchQueries.getAverageTotalBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			case MC_SEARCH_TYPE -> OpenSearchQueries.getMaxCurrentBuilder(
+					searchJSON.getTimeZone(), searchJSON.getBucketSize());
+			case STS_SEARCH_TYPE -> OpenSearchQueries.getStackedTimeSeriesBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			default -> null;
 		};

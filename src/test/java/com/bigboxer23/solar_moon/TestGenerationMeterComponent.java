@@ -53,9 +53,9 @@ public class TestGenerationMeterComponent implements TestConstants {
 				TestDeviceComponent.deviceName,
 				TestDeviceComponent.clientId,
 				TestDeviceComponent.deviceId);
-		assertEquals(aDeviceData2.getTotalRealPower(), 422.7f);
+		assertEquals(424.4f, aDeviceData2.getTotalRealPower());
 		aDeviceData2.setPowerFactor(-aDeviceData2.getPowerFactor());
-		assertEquals(aDeviceData2.getTotalRealPower(), 422.7f);
+		assertEquals(424.4f, aDeviceData2.getTotalRealPower());
 	}
 
 	@Test
@@ -95,7 +95,7 @@ public class TestGenerationMeterComponent implements TestConstants {
 		assertNull(generationComponent.handleDeviceBody("", null));
 		assertNull(generationComponent.handleDeviceBody(deviceXML, ""));
 		assertNull(generationComponent.handleDeviceBody(null, TestDeviceComponent.clientId));
-		assertNull(generationComponent.handleDeviceBody(deviceXML, TestDeviceComponent.clientId + "invalid"));
+		assertNotNull(generationComponent.handleDeviceBody(deviceXML, TestDeviceComponent.clientId + "invalid"));
 		assertNull(generationComponent.handleDeviceBody(nonUpdateStatus, TestDeviceComponent.clientId));
 		assertNull(generationComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(device2XmlNull, TestDeviceComponent.deviceName + 0, null, -1),
