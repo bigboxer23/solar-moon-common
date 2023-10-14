@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon.data;
 
+import com.bigboxer23.solar_moon.DeviceComponent;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
@@ -72,6 +73,14 @@ public class Device {
 		this();
 		setClientId(clientId);
 		setId(id);
+	}
+
+	public Device(String id, String clientId, String deviceName) {
+		this();
+		setClientId(clientId);
+		setId(id);
+		setDeviceName(deviceName);
+		setSite(DeviceComponent.NO_SITE);
 	}
 
 	public boolean isPushedDevice() {

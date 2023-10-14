@@ -4,6 +4,7 @@ import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
+import com.bigboxer23.solar_moon.util.TokenGenerator;
 import com.bigboxer23.utils.http.OkHttpUtil;
 import com.bigboxer23.utils.http.RequestBuilderCallback;
 import java.io.IOException;
@@ -125,8 +126,13 @@ public class GenerationMeterComponent implements MeterConstants {
 		Device device = Optional.ofNullable(findDeviceName(body))
 				.map(deviceName -> findDeviceFromDeviceName(customerId, deviceName))
 				.orElse(null);
-
-		DeviceData deviceData = Optional.ofNullable(device)
+		if (device == null) {
+			String deviceName = findDeviceName(body);
+			logger.warn("New device found, " + deviceName);
+			device = new Device(TokenGenerator.generateNewToken(), customerId, deviceName);
+			deviceComponent.addDevice(device);
+		}
+		DeviceData deviceData = Optional.of(device)
 				.map(server ->
 						parseDeviceInformation(body, server.getSite(), server.getName(), customerId, server.getId()))
 				.filter(DeviceData::isValid)

@@ -213,4 +213,26 @@ public class TestOpenSearchComponent {
 				166.85000076293946,
 				((Aggregate) response.aggregations().get("avg")).avg().value());
 	}
+
+	@Test
+	public void testAddingNewDeviceViaDataPush() throws XPathExpressionException {
+		String deviceName = TestDeviceComponent.deviceName + "shouldNotExist";
+		assertFalse(deviceComponent.getDevices(TestDeviceComponent.clientId).stream()
+				.filter(d -> !d.isVirtual())
+				.anyMatch(device -> device.getDeviceName().equalsIgnoreCase(deviceName)));
+		LocalDateTime ldt = LocalDateTime.ofInstant(
+						TimeUtils.get15mRoundedDate().toInstant(), ZoneId.systemDefault())
+				.minusDays(2);
+		generationComponent.handleDeviceBody(
+				TestUtils.getDeviceXML(
+						deviceName,
+						Date.from(ldt.minusMinutes(15)
+								.atZone(ZoneId.systemDefault())
+								.toInstant()),
+						5),
+				TestDeviceComponent.clientId);
+		assertTrue(deviceComponent.getDevices(TestDeviceComponent.clientId).stream()
+				.filter(d -> !d.isVirtual())
+				.anyMatch(device -> device.getDeviceName().equalsIgnoreCase(deviceName)));
+	}
 }
