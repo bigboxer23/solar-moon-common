@@ -8,4 +8,6 @@ public interface OpenSearchConstants {
 	String TS_SEARCH_TYPE = "timeseries";
 	String AT_SEARCH_TYPE = "avgTotal";
 	String MC_SEARCH_TYPE = "maxCurrent";
+
+	String STS_SEARCH_TYPE = "stackedTimeSeries";
 }
