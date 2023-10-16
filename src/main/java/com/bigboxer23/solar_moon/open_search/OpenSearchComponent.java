@@ -250,12 +250,12 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		BoolQuery.Builder builder = QueryBuilders.bool()
 				.filter(
 						OpenSearchQueries.getCustomerIdQuery(searchJSON.getCustomerId()),
-						STS_SEARCH_TYPE.equals(searchJSON.getType())
+						STS_SEARCH_TYPE.equals(searchJSON.getType()) || GBS_SEARCH_TYPE.equals(searchJSON.getType())
 								? OpenSearchQueries.getSiteQuery(searchJSON.getDeviceName())
 								: OpenSearchQueries.getDeviceNameQuery(searchJSON.getDeviceName()),
 						OpenSearchQueries.getDateRangeQuery(
 								searchJSON.getJavaStartDate(), searchJSON.getJavaEndDate()));
-		if (STS_SEARCH_TYPE.equals(searchJSON.getType())) {
+		if (STS_SEARCH_TYPE.equals(searchJSON.getType()) || GBS_SEARCH_TYPE.equals(searchJSON.getType())) {
 			builder.mustNot(OpenSearchQueries.getNotVirtual());
 		}
 
@@ -270,7 +270,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			case MC_SEARCH_TYPE -> OpenSearchQueries.getMaxCurrentBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
-			case STS_SEARCH_TYPE -> OpenSearchQueries.getStackedTimeSeriesBuilder(
+			case STS_SEARCH_TYPE, GBS_SEARCH_TYPE -> OpenSearchQueries.getStackedTimeSeriesBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			default -> null;
 		};

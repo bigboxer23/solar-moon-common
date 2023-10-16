@@ -10,4 +10,5 @@ public interface OpenSearchConstants {
 	String MC_SEARCH_TYPE = "maxCurrent";
 
 	String STS_SEARCH_TYPE = "stackedTimeSeries";
+	String GBS_SEARCH_TYPE = "groupedBarGraph";
 }
