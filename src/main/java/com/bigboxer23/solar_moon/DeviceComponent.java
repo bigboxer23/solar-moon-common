@@ -53,7 +53,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		if (customerId == null || customerId.isEmpty()) {
 			return Collections.emptyList();
 		}
-		logger.info("Fetching all devices");
+		logger.debug("Fetching all devices");
 		return getTable()
 				.index(Device.CLIENT_INDEX)
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(customerId)))
@@ -123,7 +123,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		getTable().deleteItem(device);
 	}
 
-	private void logAction(String action, String id) {
+	public void logAction(String action, String id) {
 		logger.info(id + " device " + action);
 	}
 
