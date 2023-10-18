@@ -11,4 +11,6 @@ public interface OpenSearchConstants {
 
 	String STS_SEARCH_TYPE = "stackedTimeSeries";
 	String GBS_SEARCH_TYPE = "groupedBarGraph";
+
+	String DATA_SEARCH_TYPE = "data";
 }

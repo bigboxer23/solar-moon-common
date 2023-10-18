@@ -15,6 +15,8 @@ import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch._types.query_dsl.QueryBuilders;
 import org.opensearch.client.opensearch.core.DeleteByQueryRequest;
 import org.opensearch.client.opensearch.core.SearchRequest;
+import org.opensearch.client.opensearch.core.search.SourceConfig;
+import org.opensearch.client.opensearch.core.search.SourceFilter;
 
 /** */
 public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
@@ -107,6 +109,17 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 						.build())
 				.docvalueFields(
 						new FieldAndFormat.Builder().field(TOTAL_REAL_POWER).build());
+	}
+
+	public static SearchRequest.Builder getDataSearch(String timezone) {
+		return getBaseBuilder(500)
+				.source(new SourceConfig.Builder()
+						.filter(new SourceFilter.Builder().excludes("a").build())
+						.build())
+				.sort(builder -> builder.field(new FieldSort.Builder()
+						.field(TIMESTAMP)
+						.order(SortOrder.Desc)
+						.build()));
 	}
 
 	public static SearchRequest.Builder getStackedTimeSeriesBuilder(String timezone, String bucketSize) {

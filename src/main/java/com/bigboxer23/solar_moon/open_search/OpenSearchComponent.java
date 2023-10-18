@@ -18,7 +18,6 @@ import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.FieldSort;
 import org.opensearch.client.opensearch._types.SortOptions;
 import org.opensearch.client.opensearch._types.SortOrder;
-import org.opensearch.client.opensearch._types.query_dsl.BoolQuery;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch._types.query_dsl.QueryBuilders;
 import org.opensearch.client.opensearch.core.*;
@@ -238,7 +237,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	public SearchResponse search(SearchJSON searchJSON) {
 		try {
 			SearchRequest request =
-					getSearchRequest(searchJSON).query(getFilter(searchJSON)).build();
+					getSearchRequest(searchJSON).query(getQuery(searchJSON)).build();
 			return getClient().search(request, Map.class);
 		} catch (IOException e) {
 			logger.error("search " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
@@ -246,20 +245,34 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		return null;
 	}
 
-	private Query getFilter(SearchJSON searchJSON) {
-		BoolQuery.Builder builder = QueryBuilders.bool()
-				.filter(
-						OpenSearchQueries.getCustomerIdQuery(searchJSON.getCustomerId()),
-						STS_SEARCH_TYPE.equals(searchJSON.getType()) || GBS_SEARCH_TYPE.equals(searchJSON.getType())
-								? OpenSearchQueries.getSiteQuery(searchJSON.getDeviceName())
-								: OpenSearchQueries.getDeviceNameQuery(searchJSON.getDeviceName()),
-						OpenSearchQueries.getDateRangeQuery(
-								searchJSON.getJavaStartDate(), searchJSON.getJavaEndDate()));
-		if (STS_SEARCH_TYPE.equals(searchJSON.getType()) || GBS_SEARCH_TYPE.equals(searchJSON.getType())) {
-			builder.mustNot(OpenSearchQueries.getNotVirtual());
-		}
+	private Query getQuery(SearchJSON searchJSON) {
+		return QueryBuilders.bool()
+				.filter(getFiltersByType(searchJSON))
+				.mustNot(getMustNotByType(searchJSON))
+				.build()
+				._toQuery();
+	}
 
-		return builder.build()._toQuery();
+	private List<Query> getMustNotByType(SearchJSON searchJSON) {
+		return switch (searchJSON.getType()) {
+			case STS_SEARCH_TYPE, GBS_SEARCH_TYPE -> Collections.singletonList(OpenSearchQueries.getNotVirtual());
+			default -> Collections.emptyList();
+		};
+	}
+
+	private List<Query> getFiltersByType(SearchJSON searchJSON) {
+		List<Query> filters = new ArrayList<>(
+				switch (searchJSON.getType()) {
+					case TS_SEARCH_TYPE, AT_SEARCH_TYPE, MC_SEARCH_TYPE -> Collections.singleton(
+							OpenSearchQueries.getDeviceNameQuery(searchJSON.getDeviceName()));
+					case STS_SEARCH_TYPE, GBS_SEARCH_TYPE -> Collections.singletonList(
+							OpenSearchQueries.getSiteQuery(searchJSON.getDeviceName()));
+					default -> Collections.<Query>emptyList();
+				});
+		filters.addAll(Arrays.asList(
+				OpenSearchQueries.getDateRangeQuery(searchJSON.getJavaStartDate(), searchJSON.getJavaEndDate()),
+				OpenSearchQueries.getCustomerIdQuery(searchJSON.getCustomerId())));
+		return filters;
 	}
 
 	private SearchRequest.Builder getSearchRequest(SearchJSON searchJSON) {
@@ -272,6 +285,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			case STS_SEARCH_TYPE, GBS_SEARCH_TYPE -> OpenSearchQueries.getStackedTimeSeriesBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
+			case DATA_SEARCH_TYPE -> OpenSearchQueries.getDataSearch(searchJSON.getTimeZone());
 			default -> null;
 		};
 	}
