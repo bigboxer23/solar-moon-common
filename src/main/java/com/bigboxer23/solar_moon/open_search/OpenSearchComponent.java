@@ -28,6 +28,7 @@ import org.opensearch.client.opensearch.core.search.SourceFilter;
 import org.opensearch.client.transport.rest_client.RestClientTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 public class OpenSearchComponent implements OpenSearchConstants {
@@ -261,14 +262,16 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	}
 
 	private List<Query> getFiltersByType(SearchJSON searchJSON) {
-		List<Query> filters = new ArrayList<>(
-				switch (searchJSON.getType()) {
-					case TS_SEARCH_TYPE, AT_SEARCH_TYPE, MC_SEARCH_TYPE -> Collections.singleton(
-							OpenSearchQueries.getDeviceNameQuery(searchJSON.getDeviceName()));
-					case STS_SEARCH_TYPE, GBS_SEARCH_TYPE -> Collections.singletonList(
-							OpenSearchQueries.getSiteQuery(searchJSON.getDeviceName()));
-					default -> Collections.<Query>emptyList();
-				});
+		List<Query> filters = new ArrayList<>();
+		if (!StringUtils.isBlank(searchJSON.getDeviceName())) {
+			filters.add(OpenSearchQueries.getDeviceNameQuery(searchJSON.getDeviceName()));
+		}
+		if (!StringUtils.isBlank(searchJSON.getSite())) {
+			filters.add(OpenSearchQueries.getSiteQuery(searchJSON.getSite()));
+		}
+		if (!StringUtils.isBlank(searchJSON.getDeviceId())) {
+			filters.add(OpenSearchQueries.getDeviceIdQuery(searchJSON.getDeviceId()));
+		}
 		filters.addAll(Arrays.asList(
 				OpenSearchQueries.getDateRangeQuery(searchJSON.getJavaStartDate(), searchJSON.getJavaEndDate()),
 				OpenSearchQueries.getCustomerIdQuery(searchJSON.getCustomerId())));

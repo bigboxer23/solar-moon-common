@@ -14,6 +14,7 @@ public class SearchJSON {
 	private String timeZone; // America/Chicago, etc
 	private String bucketSize = "30m";
 	private String type;
+	private String site;
 
 	public SearchJSON() {}
 
