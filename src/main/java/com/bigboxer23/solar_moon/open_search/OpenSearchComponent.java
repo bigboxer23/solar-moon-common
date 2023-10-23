@@ -288,7 +288,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			case STS_SEARCH_TYPE, GBS_SEARCH_TYPE -> OpenSearchQueries.getStackedTimeSeriesBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
-			case DATA_SEARCH_TYPE -> OpenSearchQueries.getDataSearch(searchJSON.getOffset());
+			case DATA_SEARCH_TYPE -> OpenSearchQueries.getDataSearch(searchJSON.getOffset(), searchJSON.getSize());
 			default -> null;
 		};
 	}
