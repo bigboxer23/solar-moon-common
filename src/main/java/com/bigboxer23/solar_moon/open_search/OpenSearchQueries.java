@@ -111,8 +111,9 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 						new FieldAndFormat.Builder().field(TOTAL_REAL_POWER).build());
 	}
 
-	public static SearchRequest.Builder getDataSearch(String timezone) {
+	public static SearchRequest.Builder getDataSearch(int offset) {
 		return getBaseBuilder(500)
+				.from(offset)
 				.source(new SourceConfig.Builder()
 						.filter(new SourceFilter.Builder().excludes("a").build())
 						.build())
