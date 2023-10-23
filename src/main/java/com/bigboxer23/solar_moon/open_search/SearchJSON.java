@@ -15,6 +15,7 @@ public class SearchJSON {
 	private String bucketSize = "30m";
 	private String type;
 	private String site;
+	private int offset;
 
 	public SearchJSON() {}
 
