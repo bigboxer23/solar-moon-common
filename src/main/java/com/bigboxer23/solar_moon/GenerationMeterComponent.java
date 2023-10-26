@@ -5,6 +5,7 @@ import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
+import com.bigboxer23.solar_moon.web.TransactionUtil;
 import com.bigboxer23.utils.http.OkHttpUtil;
 import com.bigboxer23.utils.http.RequestBuilderCallback;
 import java.io.IOException;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 import javax.xml.xpath.*;
 import okhttp3.Credentials;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
@@ -133,6 +135,7 @@ public class GenerationMeterComponent implements MeterConstants {
 			device = new Device(TokenGenerator.generateNewToken(), customerId, deviceName);
 			deviceComponent.addDevice(device);
 		}
+		TransactionUtil.addDeviceId(device.getId());
 		DeviceData deviceData = Optional.of(device)
 				.map(server -> parseDeviceInformation(
 						body,

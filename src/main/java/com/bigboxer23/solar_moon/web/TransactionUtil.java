@@ -8,25 +8,7 @@ import org.slf4j.MDC;
 
 /** */
 public class TransactionUtil {
-	private static final ThreadLocal<String> remoteAddress = new ThreadLocal<>();
-
-	private static final ThreadLocal<String> transactionID = new ThreadLocal<>();
-
-	private static final ThreadLocal<String> customerID = new ThreadLocal<>();
-
 	private static String hostName;
-
-	public static String getRemoteAddress() {
-		return remoteAddress.get();
-	}
-
-	public static String getTransactionId() {
-		return transactionID.get();
-	}
-
-	public static String getCustomerId() {
-		return customerID.get();
-	}
 
 	public static String getHostName() {
 		if (hostName == null) {
@@ -42,36 +24,36 @@ public class TransactionUtil {
 		if (address == null || address.isBlank()) {
 			return;
 		}
-		remoteAddress.set(address);
-		transactionID.set(TokenGenerator.generateNewToken());
+		addToMDC(TokenGenerator.generateNewToken(), address, getHostName(), null);
 	}
 
 	public static void clear() {
-		remoteAddress.remove();
-		transactionID.remove();
-		customerID.remove();
+		MDC.clear();
+	}
+
+	public static void addDeviceId(String deviceId) {
+		MDC.put("device.id", deviceId);
 	}
 
 	public static void newTransaction(LambdaRequest request) {
 		if (request == null || request.getHeaders() == null) {
 			return;
 		}
-		remoteAddress.set(request.getHeaders().getXForwardedFor());
-		transactionID.set(request.getHeaders().getAmazonTraceId());
-		customerID.set(AuthenticationUtils.getCustomerIdFromRequest(request));
-		hostName = request.getHeaders().getHost();
-		addToMDC();
+		addToMDC(
+				request.getHeaders().getAmazonTraceId(),
+				request.getHeaders().getXForwardedFor(),
+				request.getHeaders().getHost(),
+				AuthenticationUtils.getCustomerIdFromRequest(request));
 	}
 
 	public static void updateCustomerId(String customerId) {
-		customerID.set(customerId);
 		MDC.put("customer.id", customerId);
 	}
 
-	public static void addToMDC() {
-		MDC.put("transaction.id", getTransactionId());
-		MDC.put("transaction.remote", getRemoteAddress());
-		MDC.put("transaction.host", getHostName());
-		MDC.put("customer.id", getCustomerId());
+	private static void addToMDC(String transactionId, String remoteAddress, String hostName, String customerId) {
+		MDC.put("transaction.id", transactionId);
+		MDC.put("transaction.remote", remoteAddress);
+		MDC.put("transaction.host", hostName);
+		updateCustomerId(customerId);
 	}
 }
