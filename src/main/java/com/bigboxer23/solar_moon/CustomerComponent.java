@@ -4,6 +4,7 @@ import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import java.util.Optional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 // @Component
@@ -18,14 +19,12 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 		return Customer.class;
 	}
 
-	public Customer addCustomer(String email, String customerId, String name) {
-		if (email == null
-				|| customerId == null
-				|| name == null
-				|| email.isBlank()
-				|| customerId.isBlank()
-				|| name.isBlank()) {
-			logger.warn("email, name or customer id is null/empty, cannot add.");
+	public Customer addCustomer(String email, String customerId, String name, String stripeCustomerId) {
+		if (StringUtils.isEmpty(email)
+				|| StringUtils.isEmpty(customerId)
+				|| StringUtils.isEmpty(name)
+				|| StringUtils.isEmpty(stripeCustomerId)) {
+			logger.warn("email, name strip id, or customer id is null/empty, cannot add.");
 			return null;
 		}
 		if (findCustomerByCustomerId(customerId) != null) {
@@ -33,8 +32,8 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			return null;
 		}
 		Customer customer = new Customer(customerId, email, TokenGenerator.generateNewToken(), name);
+		customer.setStripeCustomerId(stripeCustomerId);
 		logger.info("Adding customer " + email);
-		// TODO:MDC this logAction(customer.getCustomerId(), "add");
 		getTable().putItem(customer);
 		return customer;
 	}
@@ -45,14 +44,17 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			return;
 		}
 		logAction(customer.getCustomerId(), "update");
+		Customer existingCustomer = findCustomerByCustomerId(customer.getCustomerId());
 		if (customer.getAccessKey() == null || customer.getAccessKey().isBlank()) {
 			logger.info("generating new access key for " + customer.getCustomerId());
 			customer.setAccessKey(TokenGenerator.generateNewToken());
 		}
-		if (customer.isAdmin()
-				&& !findCustomerByCustomerId(customer.getCustomerId()).isAdmin()) {
+		if (customer.isAdmin() && !existingCustomer.isAdmin()) {
 			logger.warn("Not allowing admin escalation" + customer.getCustomerId());
 			customer.setAdmin(false);
+		}
+		if (!StringUtils.isEmpty(existingCustomer.getStripeCustomerId())) {
+			customer.setStripeCustomerId(existingCustomer.getStripeCustomerId());
 		}
 		// TODO:validation
 		getTable().updateItem(builder -> builder.item(customer));
@@ -77,6 +79,18 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 				? this.getTable()
 						.index(Customer.CUSTOMER_ID_INDEX)
 						.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(customerId)))
+						.stream()
+						.findFirst()
+						.flatMap((page) -> page.items().stream().findFirst())
+						.orElse(null)
+				: null;
+	}
+
+	public Customer findCustomerByStripeCustomerId(String stripeCustomerId) {
+		return stripeCustomerId != null && !stripeCustomerId.isEmpty()
+				? this.getTable()
+						.index(Customer.STRIPE_CUSTOMER_ID_INDEX)
+						.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(stripeCustomerId)))
 						.stream()
 						.findFirst()
 						.flatMap((page) -> page.items().stream().findFirst())

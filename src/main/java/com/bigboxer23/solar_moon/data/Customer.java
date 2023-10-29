@@ -17,6 +17,8 @@ public class Customer {
 
 	public static final String CUSTOMER_ID_INDEX = "customerId-index";
 
+	public static final String STRIPE_CUSTOMER_ID_INDEX = "stripeCustomerId-index";
+
 	public Customer() {}
 
 	public Customer(String customerId) {
@@ -39,6 +41,8 @@ public class Customer {
 
 	@Schema(description = "(internal) id of the customer")
 	private String customerId;
+
+	private String stripeCustomerId;
 
 	private String name;
 
@@ -71,5 +75,10 @@ public class Customer {
 	@DynamoDbSecondaryPartitionKey(indexNames = CUSTOMER_ID_INDEX)
 	public String getCustomerId() {
 		return customerId;
+	}
+
+	@DynamoDbSecondaryPartitionKey(indexNames = STRIPE_CUSTOMER_ID_INDEX)
+	public String getStripeCustomerId() {
+		return stripeCustomerId;
 	}
 }
