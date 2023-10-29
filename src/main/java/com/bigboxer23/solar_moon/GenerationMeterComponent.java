@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 import javax.xml.xpath.*;
 import okhttp3.Credentials;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
