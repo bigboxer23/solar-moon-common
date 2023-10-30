@@ -35,6 +35,7 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 			logger.warn("invalid customer passed, returning 0");
 			return null;
 		}
+		logger.warn("Updating subscription: " + customerId + " " + packs);
 		return getTable().updateItem(builder -> builder.item(new Subscription(customerId, packs)));
 	}
 }
