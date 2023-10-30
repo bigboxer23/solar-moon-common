@@ -1,15 +1,12 @@
 package com.bigboxer23.solar_moon;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.bigboxer23.solar_moon.data.Subscription;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-/**
- *
- */
-public class TestSubscriptionComponent
-{
+/** */
+public class TestSubscriptionComponent {
 	private SubscriptionComponent component = new SubscriptionComponent();
 
 	@Test
