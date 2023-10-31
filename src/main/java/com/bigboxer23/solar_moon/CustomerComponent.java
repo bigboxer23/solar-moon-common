@@ -60,6 +60,17 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 		getTable().updateItem(builder -> builder.item(customer));
 	}
 
+	public Customer findCustomerByEmail(String email) {
+		return !StringUtils.isBlank(email)
+				? this.getTable()
+				.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(email)))
+				.stream()
+				.findFirst()
+				.flatMap((page) -> page.items().stream().findFirst())
+				.orElse(null)
+				: null;
+	}
+
 	public void deleteCustomerByEmail(String email) {
 		Optional.ofNullable(email).filter(e -> !e.isBlank()).ifPresent(e -> {
 			logAction(email, "delete by customer email");

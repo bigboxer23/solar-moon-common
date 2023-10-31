@@ -28,6 +28,15 @@ public class TestCustomerComponent {
 	}
 
 	@Test
+	public void testFindCustomerByEmail() {
+		setupTestCustomer();
+		assertNull(component.findCustomerByEmail(null));
+		assertNull(component.findCustomerByEmail(""));
+		assertNull(component.findCustomerByEmail("1234"));
+		assertNotNull(component.findCustomerByEmail(CUSTOMER_EMAIL));
+	}
+
+	@Test
 	public void testFindCustomerByAccessKey() {
 		setupTestCustomer();
 		assertNull(component.findCustomerIdByAccessKey(null));
