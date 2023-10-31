@@ -20,4 +20,12 @@ public class TestSubscriptionComponent {
 		assertEquals(0, component.getSubscriptionPacks(TestDeviceComponent.clientId));
 		assertEquals(0, component.getSubscriptionPacks("1234"));
 	}
+
+	@Test
+	public void testDeleteSubscription() {
+		component.updateSubscription(TestDeviceComponent.clientId, 1);
+		assertEquals(1, component.getSubscriptionPacks(TestDeviceComponent.clientId));
+		component.deleteSubscription(TestDeviceComponent.clientId);
+		assertEquals(0, component.getSubscriptionPacks(TestDeviceComponent.clientId));
+	}
 }

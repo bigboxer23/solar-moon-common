@@ -38,4 +38,9 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 		logger.warn("Updating subscription: " + customerId + " " + packs);
 		return getTable().updateItem(builder -> builder.item(new Subscription(customerId, packs)));
 	}
+
+	public void deleteSubscription(String customerId) {
+		logger.warn("Deleting subscription: " + customerId);
+		getTable().deleteItem(new Subscription(customerId, -1));
+	}
 }
