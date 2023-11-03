@@ -63,11 +63,11 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 	public Customer findCustomerByEmail(String email) {
 		return !StringUtils.isBlank(email)
 				? this.getTable()
-				.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(email)))
-				.stream()
-				.findFirst()
-				.flatMap((page) -> page.items().stream().findFirst())
-				.orElse(null)
+						.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(email)))
+						.stream()
+						.findFirst()
+						.flatMap((page) -> page.items().stream().findFirst())
+						.orElse(null)
 				: null;
 	}
 

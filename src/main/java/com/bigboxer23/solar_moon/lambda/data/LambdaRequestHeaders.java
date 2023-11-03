@@ -22,4 +22,10 @@ public class LambdaRequestHeaders {
 
 	@Json(name = "X-Amzn-Trace-Id")
 	private String amazonTraceId;
+
+	@Json(name = "Stripe-Signature")
+	private String stripeSignature;
+
+	@Json(name = "session_id")
+	private String sessionId;
 }

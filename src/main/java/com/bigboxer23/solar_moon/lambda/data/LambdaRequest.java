@@ -13,7 +13,7 @@ public class LambdaRequest {
 
 	private String httpMethod;
 
-	private String queryStringParameters;
+	private LambdaQueryStringParameters queryStringParameters;
 
 	private String stageVariables;
 
