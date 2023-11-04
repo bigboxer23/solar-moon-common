@@ -30,13 +30,13 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 				: 0;
 	}
 
-	public Subscription updateSubscription(String customerId, int packs) {
-		if (StringUtils.isBlank(customerId) || packs < 0) {
+	public Subscription updateSubscription(String customerId, int seats) {
+		if (StringUtils.isBlank(customerId) || seats < 0) {
 			logger.warn("invalid customer passed, returning 0");
 			return null;
 		}
-		logger.warn("Updating subscription: " + customerId + " " + packs);
-		return getTable().updateItem(builder -> builder.item(new Subscription(customerId, packs)));
+		logger.warn("Updating subscription: " + customerId + " " + seats);
+		return getTable().updateItem(builder -> builder.item(new Subscription(customerId, seats)));
 	}
 
 	public void deleteSubscription(String customerId) {
