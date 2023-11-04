@@ -20,7 +20,6 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 	public int getSubscriptionPacks(String customerId) {
 		return customerId != null && !customerId.isEmpty()
 				? this.getTable()
-						// .index(Customer.CUSTOMER_ID_INDEX)
 						.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(customerId)))
 						.stream()
 						.findFirst()
