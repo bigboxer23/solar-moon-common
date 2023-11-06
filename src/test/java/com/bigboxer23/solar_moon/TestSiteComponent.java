@@ -16,11 +16,13 @@ import org.junit.jupiter.api.Test;
 /** */
 public class TestSiteComponent {
 
-	private OpenSearchComponent OSComponent = new OpenSearchComponent();
+	private final OpenSearchComponent OSComponent = new OpenSearchComponent();
 
-	private DeviceComponent deviceComponent = new DeviceComponent();
+	private final SubscriptionComponent subscriptionComponent = new SubscriptionComponent();
 
-	private GenerationMeterComponent generationComponent = new GenerationMeterComponent(
+	private final DeviceComponent deviceComponent = new DeviceComponent(subscriptionComponent);
+
+	private final GenerationMeterComponent generationComponent = new GenerationMeterComponent(
 			OSComponent,
 			new AlarmComponent(new OpenWeatherComponent()),
 			deviceComponent,
@@ -28,7 +30,7 @@ public class TestSiteComponent {
 
 	@BeforeEach
 	public void setup() {
-		TestUtils.setupSite(deviceComponent, OSComponent);
+		TestUtils.setupSite(deviceComponent, OSComponent, subscriptionComponent);
 	}
 
 	@Test
