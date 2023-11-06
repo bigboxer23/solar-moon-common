@@ -27,7 +27,9 @@ public class TestOpenSearchComponent {
 
 	private static OpenSearchComponent OSComponent = new OpenSearchComponent();
 
-	private static DeviceComponent deviceComponent = new DeviceComponent();
+	private static final SubscriptionComponent subscriptionComponent = new SubscriptionComponent();
+
+	private static DeviceComponent deviceComponent = new DeviceComponent(subscriptionComponent);
 
 	private static GenerationMeterComponent generationComponent = new GenerationMeterComponent(
 			OSComponent,
@@ -37,7 +39,7 @@ public class TestOpenSearchComponent {
 
 	@BeforeEach
 	public void setup() {
-		TestUtils.setupSite(deviceComponent, OSComponent);
+		TestUtils.setupSite(deviceComponent, OSComponent, subscriptionComponent);
 	}
 
 	@Test

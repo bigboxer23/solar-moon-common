@@ -40,11 +40,12 @@ public class TestUtils {
 	public static void deleteAllCustomerDevices(DeviceComponent deviceComponent) {
 		deviceComponent
 				.getDevices(TestDeviceComponent.clientId)
-				.forEach(device -> deviceComponent.getTable().deleteItem(device));
+				.forEach(device -> deviceComponent.deleteDevice(device.getId(), device.getClientId()));
 	}
 
-	public static void setupSite(DeviceComponent deviceComponent, OpenSearchComponent OSComponent) {
+	public static void setupSite(DeviceComponent deviceComponent, OpenSearchComponent OSComponent, SubscriptionComponent subscriptionComponent) {
 		deleteAllCustomerDevices(deviceComponent);
+		subscriptionComponent.updateSubscription(TestDeviceComponent.clientId, 1);
 		OSComponent.deleteByCustomerId(TestDeviceComponent.clientId);
 		Device testDevice = new Device();
 		testDevice.setClientId(TestDeviceComponent.clientId);
@@ -89,7 +90,7 @@ public class TestUtils {
 		if (isVirtual) {
 			testDevice.setDeviceName(null);
 		}
-		deviceComponent.getTable().putItem(testDevice);
+		deviceComponent.addDevice(testDevice);
 	}
 
 	public static void validateDateData(OpenSearchComponent component, String deviceName, Date date) {

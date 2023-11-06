@@ -14,7 +14,9 @@ public class TestGenerationMeterComponent implements TestConstants {
 
 	private OpenSearchComponent OSComponent = new OpenSearchComponent();
 
-	private DeviceComponent deviceComponent = new DeviceComponent();
+	private final SubscriptionComponent subscriptionComponent = new SubscriptionComponent();
+
+	private DeviceComponent deviceComponent = new DeviceComponent(subscriptionComponent);
 
 	private GenerationMeterComponent generationComponent = new GenerationMeterComponent(
 			OSComponent,
@@ -87,7 +89,7 @@ public class TestGenerationMeterComponent implements TestConstants {
 	@Test
 	public void testHandleDeviceBody() throws XPathExpressionException {
 		String deviceXML = TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, new Date(), -1);
-		TestUtils.setupSite(deviceComponent, OSComponent);
+		TestUtils.setupSite(deviceComponent, OSComponent, subscriptionComponent);
 		assertNull(generationComponent.handleDeviceBody(null, null));
 		assertNull(generationComponent.handleDeviceBody(deviceXML, null));
 		assertNull(generationComponent.handleDeviceBody("", null));

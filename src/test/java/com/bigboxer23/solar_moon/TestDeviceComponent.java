@@ -22,9 +22,10 @@ public class TestDeviceComponent {
 
 	protected static final String SITE = "testSite";
 
-	private DeviceComponent component = new DeviceComponent();
+	private final SubscriptionComponent subscriptionComponent = new SubscriptionComponent();
+	private final DeviceComponent component = new DeviceComponent(subscriptionComponent);
 
-	private OpenSearchComponent OSComponent = new OpenSearchComponent();
+	private final OpenSearchComponent OSComponent = new OpenSearchComponent();
 
 	private Device testDevice = new Device();
 
@@ -102,7 +103,7 @@ public class TestDeviceComponent {
 
 	@Test
 	public void testSiteDelete() {
-		TestUtils.setupSite(component, OSComponent);
+		TestUtils.setupSite(component, OSComponent, subscriptionComponent);
 		Device testSite = component.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
 				.filter(Device::isVirtual)
 				.findFirst()
@@ -122,7 +123,7 @@ public class TestDeviceComponent {
 
 	@Test
 	public void testSiteUpdate() {
-		TestUtils.setupSite(component, OSComponent);
+		TestUtils.setupSite(component, OSComponent, subscriptionComponent);
 		Device testSite = component.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
 				.filter(Device::isVirtual)
 				.findFirst()
@@ -138,6 +139,24 @@ public class TestDeviceComponent {
 		updatedDevices.forEach(device -> assertEquals(device.getSite(), testSite.getSite()));
 	}
 
+	@Test
+	public void testSubscriptionLimit() {
+		for (int ai = 0; ai < 9; ai++)
+		{
+			testDevice.setId(deviceId + ai);
+			testDevice.setName(deviceName + ai);
+			component.addDevice(testDevice);
+		}
+		if (component.addDevice(testDevice)) {
+			fail();
+		}
+		TestUtils.deleteAllCustomerDevices(component);
+		subscriptionComponent.updateSubscription(TestDeviceComponent.clientId, 0);
+		if (component.addDevice(testDevice)) {
+			fail();
+		}
+	}
+
 	@BeforeEach
 	protected void setupTestDevice() {
 		TestUtils.deleteAllCustomerDevices(component);
@@ -145,26 +164,21 @@ public class TestDeviceComponent {
 	}
 
 	protected void setupTestDevice(boolean isVirtual) {
-		try {
-			component.getTable().putItem(testDevice);
-		} catch (DynamoDbException e) {
-			testDevice.setId(deviceId);
-			testDevice.setName(deviceName);
-			testDevice.setDeviceName(deviceName);
-			testDevice.setClientId(clientId);
-			testDevice.setDeviceKey(deviceKey);
-			testDevice.setSite(SITE);
-			if (isVirtual) {
-				testDevice.setVirtual(isVirtual); // only set if true so we can test the initial state is properly
-				// set
-			}
-			Device dbDevice = component.getTable().getItem(testDevice);
-			if (dbDevice != null) {
-				component.getTable().deleteItem(dbDevice);
-			}
-			component.getTable().putItem(testDevice);
-			return;
+		subscriptionComponent.updateSubscription(TestDeviceComponent.clientId, 1);
+		testDevice.setId(deviceId);
+		testDevice.setName(deviceName);
+		testDevice.setDeviceName(deviceName);
+		testDevice.setClientId(clientId);
+		testDevice.setDeviceKey(deviceKey);
+		testDevice.setSite(SITE);
+		if (isVirtual) {
+			testDevice.setVirtual(isVirtual); // only set if true so we can test the initial state is properly
+			// set
 		}
-		fail();
+		Device dbDevice = component.getDevice(testDevice.getId(), testDevice.getClientId());
+		if (dbDevice != null) {
+			component.deleteDevice(testDevice.getId(), testDevice.getClientId());
+		}
+		component.addDevice(testDevice);
 	}
 }

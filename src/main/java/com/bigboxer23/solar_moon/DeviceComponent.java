@@ -11,6 +11,12 @@ import software.amazon.awssdk.utils.StringUtils;
 // @Component
 public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 
+	private SubscriptionComponent subscriptionComponent;
+
+	public DeviceComponent(SubscriptionComponent subscriptionComponent) {
+		this.subscriptionComponent = subscriptionComponent;
+	}
+
 	public static final String NO_SITE = "No Site";
 
 	public Device findDeviceByDeviceKey(String deviceKey) {
@@ -71,21 +77,27 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	public boolean isValidAdd(Device device) {
-		if (StringUtils.isBlank(device.getClientId())
-				|| StringUtils.isBlank(device.getDeviceName())
-				|| StringUtils.isBlank(device.getId())) {
-			return false;
-		}
-		return true;
+		return !StringUtils.isBlank(device.getClientId())
+				&& !StringUtils.isBlank(device.getDeviceName())
+				&& !StringUtils.isBlank(device.getId());
 	}
 
-	public void addDevice(Device device) {
+	public boolean addDevice(Device device) {
+		if (subscriptionComponent.getSubscriptionPacks(device.getClientId()) * 10
+				<= getDevices(device.getClientId()).size()) {
+			logger.warn("Cannot add new device, not enough devices in license: "
+					+ (subscriptionComponent.getSubscriptionPacks(device.getClientId()) * 10)
+					+ ":"
+					+ getDevices(device.getClientId()).size());
+			return false;
+		}
 		if (getDevice(device.getId(), device.getClientId()) != null) {
 			logger.warn(device.getClientId() + ":" + device.getId() + " exists, not putting into db.");
-			return;
+			return false;
 		}
 		logAction("add", device.getId());
 		getTable().putItem(device);
+		return true;
 	}
 
 	public boolean isValidUpdate(Device device) {
