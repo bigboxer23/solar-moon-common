@@ -12,6 +12,15 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 		requiredProperties = {"alarmId", "customerId"})
 public class Alarm {
 
+	public Alarm() {}
+
+	public Alarm(String alarmId, String customerId) {
+		setAlarmId(alarmId);
+		setCustomerId(customerId);
+	}
+
+	public static final String CUSTOMER_INDEX = "customer-index";
+
 	public static final String SITE_CUSTOMER_INDEX = "site-customer-index";
 
 	public static final String SITE_STATE_INDEX = "site-state-index";
@@ -50,10 +59,7 @@ public class Alarm {
 		return deviceId;
 	}
 
-	public long getStartDate() {
-		return startDate;
-	}
-
+	@DynamoDbSecondaryPartitionKey(indexNames = CUSTOMER_INDEX)
 	@DynamoDbSecondarySortKey(indexNames = {SITE_CUSTOMER_INDEX, STATE_CUSTOMER_INDEX, DEVICE_CUSTOMER_INDEX})
 	@DynamoDbSortKey
 	public String getCustomerId() {
