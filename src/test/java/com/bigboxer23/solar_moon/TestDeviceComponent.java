@@ -7,7 +7,6 @@ import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
 /** */
 // @ActiveProfiles("test")
@@ -141,8 +140,7 @@ public class TestDeviceComponent {
 
 	@Test
 	public void testSubscriptionLimit() {
-		for (int ai = 0; ai < 9; ai++)
-		{
+		for (int ai = 0; ai < 9; ai++) {
 			testDevice.setId(deviceId + ai);
 			testDevice.setName(deviceName + ai);
 			component.addDevice(testDevice);

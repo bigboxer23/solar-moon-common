@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon;
 
+import com.bigboxer23.solar_moon.data.Alarm;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.data.WeatherSystemData;
 import java.io.IOException;
@@ -9,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 /** */
 // @Component
-public class AlarmComponent {
+public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 
 	private static final Logger logger = LoggerFactory.getLogger(AlarmComponent.class);
 
@@ -25,5 +26,15 @@ public class AlarmComponent {
 		WeatherSystemData sunriseSunset =
 				openWeatherComponent.getSunriseSunsetFromCityStateCountry("golden valley", "mn", 581);
 		logger.debug("sunrise/sunset " + sunriseSunset.getSunrise() + "," + sunriseSunset.getSunset());
+	}
+
+	@Override
+	protected String getTableName() {
+		return "alarms";
+	}
+
+	@Override
+	protected Class<Alarm> getObjectClass() {
+		return Alarm.class;
 	}
 }
