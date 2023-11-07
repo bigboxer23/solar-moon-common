@@ -43,7 +43,10 @@ public class TestUtils {
 				.forEach(device -> deviceComponent.deleteDevice(device.getId(), device.getClientId()));
 	}
 
-	public static void setupSite(DeviceComponent deviceComponent, OpenSearchComponent OSComponent, SubscriptionComponent subscriptionComponent) {
+	public static void setupSite(
+			DeviceComponent deviceComponent,
+			OpenSearchComponent OSComponent,
+			SubscriptionComponent subscriptionComponent) {
 		deleteAllCustomerDevices(deviceComponent);
 		subscriptionComponent.updateSubscription(TestDeviceComponent.clientId, 1);
 		OSComponent.deleteByCustomerId(TestDeviceComponent.clientId);
