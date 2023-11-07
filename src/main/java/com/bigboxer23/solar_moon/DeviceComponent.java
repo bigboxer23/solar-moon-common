@@ -56,7 +56,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	public List<Device> getDevices(String customerId) {
-		if (customerId == null || customerId.isEmpty()) {
+		if (StringUtils.isBlank(customerId)) {
 			return Collections.emptyList();
 		}
 		logger.debug("Fetching all devices");
@@ -69,7 +69,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	public Device getDevice(String id, String customerId) {
-		if (id == null || customerId == null || id.isBlank() || customerId.isBlank()) {
+		if (StringUtils.isBlank(id) || StringUtils.isBlank(customerId)) {
 			return null;
 		}
 		logAction("get", id);
@@ -101,12 +101,9 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	public boolean isValidUpdate(Device device) {
-		if (StringUtils.isBlank(device.getClientId())
-				|| StringUtils.isBlank(device.getDeviceName())
-				|| StringUtils.isBlank(device.getId())) {
-			return false;
-		}
-		return true;
+		return !StringUtils.isBlank(device.getClientId())
+				&& !StringUtils.isBlank(device.getDeviceName())
+				&& !StringUtils.isBlank(device.getId());
 	}
 
 	public void updateDevice(Device device) {

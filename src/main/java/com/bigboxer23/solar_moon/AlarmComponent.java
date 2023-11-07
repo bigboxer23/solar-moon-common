@@ -1,12 +1,15 @@
 package com.bigboxer23.solar_moon;
 
-import com.bigboxer23.solar_moon.data.Alarm;
-import com.bigboxer23.solar_moon.data.DeviceData;
-import com.bigboxer23.solar_moon.data.WeatherSystemData;
+import com.bigboxer23.solar_moon.data.*;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 // @Component
@@ -26,6 +29,39 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 		WeatherSystemData sunriseSunset =
 				openWeatherComponent.getSunriseSunsetFromCityStateCountry("golden valley", "mn", 581);
 		logger.debug("sunrise/sunset " + sunriseSunset.getSunrise() + "," + sunriseSunset.getSunset());
+	}
+
+	public List<Alarm> getAlarms(String customerId) {
+		if (StringUtils.isBlank(customerId)) {
+			return Collections.emptyList();
+		}
+		logger.debug("Fetching all alarms");
+		return getTable()
+				.index(Alarm.CUSTOMER_INDEX)
+				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(customerId)))
+				.stream()
+				.flatMap(page -> page.items().stream())
+				.collect(Collectors.toList());
+	}
+
+	public Optional<Alarm> updateAlarm(Alarm alarm) {
+		if (alarm == null || StringUtils.isBlank(alarm.getCustomerId()) || StringUtils.isBlank(alarm.getAlarmId())) {
+			logger.warn("invalid alarm, not updating");
+			return Optional.empty();
+		}
+		logger.warn("Updating alarm: " + alarm.getAlarmId());
+		return Optional.ofNullable(getTable().updateItem(builder -> builder.item(alarm)));
+	}
+
+	public void deleteAlarm(String alarmId, String customerId) {
+		logger.warn("Deleting alarm: " + alarmId);
+		getTable().deleteItem(new Alarm(alarmId, customerId));
+	}
+
+	public Optional<Alarm> findAlarmByAlarmId(String alarmId, String customerId) {
+		return !StringUtils.isBlank(alarmId) && !StringUtils.isBlank(customerId)
+				? Optional.ofNullable(this.getTable().getItem(new Alarm(alarmId, customerId)))
+				: Optional.empty();
 	}
 
 	@Override
