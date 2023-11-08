@@ -132,6 +132,10 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		getTable().deleteItem(device);
 	}
 
+	public void deleteDevicesByCustomerId(String customerId) {
+		getDevices(customerId).forEach(device -> deleteDevice(device.getId(), customerId));
+	}
+
 	public void logAction(String action, String id) {
 		logger.info(id + " device " + action);
 	}
