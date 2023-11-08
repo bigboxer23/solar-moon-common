@@ -19,6 +19,13 @@ public class Alarm {
 		setCustomerId(customerId);
 	}
 
+	public Alarm(String alarmId, String customerId, String deviceId, String siteId) {
+		setAlarmId(alarmId);
+		setCustomerId(customerId);
+		setDeviceId(deviceId);
+		setSiteId(siteId);
+	}
+
 	public static final String CUSTOMER_INDEX = "customer-index";
 
 	public static final String SITE_CUSTOMER_INDEX = "site-customer-index";

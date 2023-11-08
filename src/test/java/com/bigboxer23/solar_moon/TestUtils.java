@@ -37,17 +37,11 @@ public class TestUtils {
 		return deviceXML;
 	}
 
-	public static void deleteAllCustomerDevices(DeviceComponent deviceComponent) {
-		deviceComponent
-				.getDevices(TestDeviceComponent.clientId)
-				.forEach(device -> deviceComponent.deleteDevice(device.getId(), device.getClientId()));
-	}
-
 	public static void setupSite(
 			DeviceComponent deviceComponent,
 			OpenSearchComponent OSComponent,
 			SubscriptionComponent subscriptionComponent) {
-		deleteAllCustomerDevices(deviceComponent);
+		deviceComponent.deleteDevicesByCustomerId(TestDeviceComponent.clientId);
 		subscriptionComponent.updateSubscription(TestDeviceComponent.clientId, 1);
 		OSComponent.deleteByCustomerId(TestDeviceComponent.clientId);
 		Device testDevice = new Device();

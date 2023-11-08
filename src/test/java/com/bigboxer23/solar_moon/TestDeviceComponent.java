@@ -148,7 +148,7 @@ public class TestDeviceComponent {
 		if (component.addDevice(testDevice)) {
 			fail();
 		}
-		TestUtils.deleteAllCustomerDevices(component);
+		component.deleteDevicesByCustomerId(TestDeviceComponent.clientId);
 		subscriptionComponent.updateSubscription(TestDeviceComponent.clientId, 0);
 		if (component.addDevice(testDevice)) {
 			fail();
@@ -157,7 +157,7 @@ public class TestDeviceComponent {
 
 	@BeforeEach
 	protected void setupTestDevice() {
-		TestUtils.deleteAllCustomerDevices(component);
+		component.deleteDevicesByCustomerId(TestDeviceComponent.clientId);
 		setupTestDevice(false);
 	}
 

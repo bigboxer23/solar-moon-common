@@ -31,6 +31,37 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 		logger.debug("sunrise/sunset " + sunriseSunset.getSunrise() + "," + sunriseSunset.getSunset());
 	}
 
+	public List<Alarm> filterAlarms(String customerId, String siteId, String deviceId) {
+		if (StringUtils.isBlank(customerId)) {
+			return Collections.emptyList();
+		}
+		if (StringUtils.isBlank(siteId) && StringUtils.isBlank(deviceId)) {
+			return getAlarms(customerId);
+		}
+		if (!StringUtils.isBlank(deviceId)) {
+			return findAlarmsByDevice(customerId, deviceId);
+		}
+		return findAlarmsBySite(customerId, siteId);
+	}
+
+	public List<Alarm> findAlarmsByDevice(String customerId, String deviceId) {
+		return findAlarmsByIndex(Alarm.DEVICE_CUSTOMER_INDEX, deviceId, customerId);
+	}
+
+	public List<Alarm> findAlarmsBySite(String customerId, String siteId) {
+		return findAlarmsByIndex(Alarm.SITE_CUSTOMER_INDEX, siteId, customerId);
+	}
+
+	private List<Alarm> findAlarmsByIndex(String indexName, String partitionId, String sort) {
+		return getTable()
+				.index(indexName)
+				.query(QueryConditional.keyEqualTo(
+						builder -> builder.partitionValue(partitionId).sortValue(sort)))
+				.stream()
+				.flatMap(page -> page.items().stream())
+				.collect(Collectors.toList());
+	}
+
 	public List<Alarm> getAlarms(String customerId) {
 		if (StringUtils.isBlank(customerId)) {
 			return Collections.emptyList();
@@ -56,6 +87,10 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 	public void deleteAlarm(String alarmId, String customerId) {
 		logger.warn("Deleting alarm: " + alarmId);
 		getTable().deleteItem(new Alarm(alarmId, customerId));
+	}
+
+	public void deleteAlarmsByCustomerId(String customerId) {
+		getAlarms(customerId).forEach(alarm -> deleteAlarm(alarm.getAlarmId(), customerId));
 	}
 
 	public Optional<Alarm> findAlarmByAlarmId(String alarmId, String customerId) {
