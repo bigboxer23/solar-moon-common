@@ -25,15 +25,15 @@ import org.opensearch.client.opensearch.core.search.Hit;
 /** */
 public class TestOpenSearchComponent {
 
-	private static OpenSearchComponent OSComponent = new OpenSearchComponent();
+	private static final OpenSearchComponent OSComponent = new OpenSearchComponent();
 
 	private static final SubscriptionComponent subscriptionComponent = new SubscriptionComponent();
 
-	private static DeviceComponent deviceComponent = new DeviceComponent(subscriptionComponent);
+	private static final DeviceComponent deviceComponent = new DeviceComponent(subscriptionComponent);
 
-	private static GenerationMeterComponent generationComponent = new GenerationMeterComponent(
+	private static final GenerationMeterComponent generationComponent = new GenerationMeterComponent(
 			OSComponent,
-			new AlarmComponent(new OpenWeatherComponent()),
+			new AlarmComponent(new OpenWeatherComponent(), deviceComponent),
 			deviceComponent,
 			new SiteComponent(OSComponent, deviceComponent));
 

@@ -1,6 +1,7 @@
 package com.bigboxer23.solar_moon;
 
 import com.bigboxer23.solar_moon.data.*;
+import com.bigboxer23.solar_moon.util.TokenGenerator;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -17,10 +18,13 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 
 	private static final Logger logger = LoggerFactory.getLogger(AlarmComponent.class);
 
-	private OpenWeatherComponent openWeatherComponent;
+	private final OpenWeatherComponent openWeatherComponent;
 
-	public AlarmComponent(OpenWeatherComponent openWeatherComponent) {
+	private final DeviceComponent deviceComponent;
+
+	public AlarmComponent(OpenWeatherComponent openWeatherComponent, DeviceComponent deviceComponent) {
 		this.openWeatherComponent = openWeatherComponent;
+		this.deviceComponent = deviceComponent;
 	}
 
 	public void fireAlarms(List<DeviceData> deviceData) throws IOException {
@@ -29,6 +33,38 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 		WeatherSystemData sunriseSunset =
 				openWeatherComponent.getSunriseSunsetFromCityStateCountry("golden valley", "mn", 581);
 		logger.debug("sunrise/sunset " + sunriseSunset.getSunrise() + "," + sunriseSunset.getSunset());
+	}
+
+	public void resolveActiveAlarms(String customerId, DeviceData device) {
+		findAlarmsByDevice(customerId, device.getDeviceId()).stream()
+				.filter(alarm -> alarm.getState() == 1)
+				.forEach(alarm -> {
+					alarm.setState(0);
+					updateAlarm(alarm);
+				});
+		// TODO: inspect data to see if looks "normal"
+
+	}
+
+	public Optional<Alarm> alarmConditionDetected(String customerId, DeviceData device, String content) {
+		List<Alarm> alarms = findAlarmsByDevice(customerId, device.getDeviceId());
+		Alarm alarm = alarms.stream().filter(a -> a.getState() == 1).findAny().orElseGet(() -> {
+			// TODO: Notification
+			Alarm newAlarm = new Alarm(
+					TokenGenerator.generateNewToken(),
+					customerId,
+					device.getDeviceId(),
+					deviceComponent
+							.findDeviceByName(customerId, device.getSite())
+							.map(Device::getId)
+							.orElse(null));
+			newAlarm.setStartDate(System.currentTimeMillis());
+			newAlarm.setState(1);
+			return newAlarm;
+		});
+		alarm.setLastUpdate(System.currentTimeMillis());
+		alarm.setMessage(content);
+		return updateAlarm(alarm);
 	}
 
 	public List<Alarm> filterAlarms(String customerId, String siteId, String deviceId) {

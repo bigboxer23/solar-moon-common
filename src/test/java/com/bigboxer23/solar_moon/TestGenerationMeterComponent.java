@@ -12,15 +12,15 @@ import org.junit.jupiter.api.Test;
 /** */
 public class TestGenerationMeterComponent implements TestConstants {
 
-	private OpenSearchComponent OSComponent = new OpenSearchComponent();
+	private final OpenSearchComponent OSComponent = new OpenSearchComponent();
 
 	private final SubscriptionComponent subscriptionComponent = new SubscriptionComponent();
 
-	private DeviceComponent deviceComponent = new DeviceComponent(subscriptionComponent);
+	private final DeviceComponent deviceComponent = new DeviceComponent(subscriptionComponent);
 
-	private GenerationMeterComponent generationComponent = new GenerationMeterComponent(
+	private final GenerationMeterComponent generationComponent = new GenerationMeterComponent(
 			OSComponent,
-			new AlarmComponent(new OpenWeatherComponent()),
+			new AlarmComponent(new OpenWeatherComponent(), deviceComponent),
 			deviceComponent,
 			new SiteComponent(OSComponent, deviceComponent));
 

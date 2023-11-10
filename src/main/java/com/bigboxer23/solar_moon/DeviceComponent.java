@@ -3,6 +3,7 @@ package com.bigboxer23.solar_moon;
 import com.bigboxer23.solar_moon.data.Device;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
@@ -11,13 +12,26 @@ import software.amazon.awssdk.utils.StringUtils;
 // @Component
 public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 
-	private SubscriptionComponent subscriptionComponent;
+	private final SubscriptionComponent subscriptionComponent;
 
 	public DeviceComponent(SubscriptionComponent subscriptionComponent) {
 		this.subscriptionComponent = subscriptionComponent;
 	}
 
 	public static final String NO_SITE = "No Site";
+
+	public Optional<Device> findDeviceByName(String customerId, String deviceName) {
+		if (StringUtils.isBlank(deviceName) || StringUtils.isBlank(customerId)) {
+			return Optional.empty();
+		}
+		return getTable()
+				.index(Device.DEVICE_NAME_INDEX)
+				.query(QueryConditional.keyEqualTo(
+						builder -> builder.partitionValue(deviceName).sortValue(customerId)))
+				.stream()
+				.findFirst()
+				.flatMap(page -> page.items().stream().findFirst());
+	}
 
 	public Device findDeviceByDeviceKey(String deviceKey) {
 		if (deviceKey == null || deviceKey.isEmpty()) {
