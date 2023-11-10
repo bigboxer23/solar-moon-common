@@ -148,6 +148,7 @@ public class GenerationMeterComponent implements MeterConstants {
 			logger.info("device was not valid, not handling.");
 			return null;
 		}
+		alarmComponent.resolveActiveAlarms(customerId, deviceData);
 		openSearch.logData(
 				deviceData.getDate() != null ? deviceData.getDate() : new Date(),
 				Collections.singletonList(deviceData));
@@ -221,6 +222,10 @@ public class GenerationMeterComponent implements MeterConstants {
 								value));
 					} catch (NumberFormatException nfe) {
 						logger.warn("bad value retrieved from xml " + attributeName + "\n" + body, nfe);
+						if (nodes.item(i).getAttributes().getNamedItem("value").getNodeValue() == null) {
+							alarmComponent.alarmConditionDetected(
+									customerId, deviceData, "bad value retrieved from device " + attributeName);
+						}
 					}
 				}
 			}

@@ -24,7 +24,7 @@ public class TestSiteComponent {
 
 	private final GenerationMeterComponent generationComponent = new GenerationMeterComponent(
 			OSComponent,
-			new AlarmComponent(new OpenWeatherComponent()),
+			new AlarmComponent(new OpenWeatherComponent(), deviceComponent),
 			deviceComponent,
 			new SiteComponent(OSComponent, deviceComponent));
 

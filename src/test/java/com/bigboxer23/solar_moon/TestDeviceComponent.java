@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -153,6 +154,23 @@ public class TestDeviceComponent {
 		if (component.addDevice(testDevice)) {
 			fail();
 		}
+	}
+
+	@Test
+	public void testFindDeviceByName() {
+		TestUtils.setupSite(component, OSComponent, subscriptionComponent);
+		Optional<Device> device =
+				component.findDeviceByName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
+		assertTrue(device.isPresent());
+		assertFalse(component
+				.findDeviceByName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName)
+				.isPresent());
+		assertFalse(component
+				.findDeviceByName(TestDeviceComponent.clientId + 1, TestDeviceComponent.deviceName + 0)
+				.isPresent());
+		assertFalse(component
+				.findDeviceByName(TestDeviceComponent.clientId, device.get().getId())
+				.isPresent());
 	}
 
 	@BeforeEach

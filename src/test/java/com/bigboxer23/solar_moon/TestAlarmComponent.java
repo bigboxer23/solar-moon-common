@@ -3,6 +3,7 @@ package com.bigboxer23.solar_moon;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.bigboxer23.solar_moon.data.Alarm;
+import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import java.util.List;
 import java.util.Optional;
@@ -12,7 +13,10 @@ import org.junit.jupiter.api.Test;
 /** */
 public class TestAlarmComponent {
 	public static final String TEST_ALARM_ID = "2883206e-9e35-4bdd-8c32-d1b35357b22f";
-	private final AlarmComponent component = new AlarmComponent(new OpenWeatherComponent());
+
+	private final DeviceComponent deviceComponent = new DeviceComponent(new SubscriptionComponent());
+
+	private final AlarmComponent component = new AlarmComponent(new OpenWeatherComponent(), deviceComponent);
 
 	@BeforeEach
 	public void beforeEach() {
@@ -118,5 +122,42 @@ public class TestAlarmComponent {
 				component
 						.filterAlarms(TestDeviceComponent.clientId, TestDeviceComponent.SITE, null)
 						.size());
+	}
+
+	@Test
+	public void testAlarmConditionDetected() throws InterruptedException {
+		Optional<Alarm> alarm = component.alarmConditionDetected(
+				TestDeviceComponent.clientId,
+				new DeviceData(
+						TestDeviceComponent.SITE,
+						TestDeviceComponent.deviceName,
+						TestDeviceComponent.clientId,
+						TestDeviceComponent.deviceId),
+				"Test alarm!");
+		assertTrue(alarm.isPresent());
+		Thread.sleep(1000);
+		Optional<Alarm> alarm2 = component.alarmConditionDetected(
+				TestDeviceComponent.clientId,
+				new DeviceData(
+						TestDeviceComponent.SITE,
+						TestDeviceComponent.deviceName,
+						TestDeviceComponent.clientId,
+						TestDeviceComponent.deviceId),
+				"Test alarm!");
+		assertTrue(alarm2.isPresent());
+		assertTrue(alarm.get().getLastUpdate() < alarm2.get().getLastUpdate());
+		assertEquals(alarm.get().getAlarmId(), alarm2.get().getAlarmId());
+		alarm2.get().setState(0);
+		component.updateAlarm(alarm2.get());
+		alarm2 = component.alarmConditionDetected(
+				TestDeviceComponent.clientId,
+				new DeviceData(
+						TestDeviceComponent.SITE,
+						TestDeviceComponent.deviceName,
+						TestDeviceComponent.clientId,
+						TestDeviceComponent.deviceId),
+				"Test alarm!");
+		assertTrue(alarm2.isPresent());
+		assertNotEquals(alarm.get().getAlarmId(), alarm2.get().getAlarmId());
 	}
 }
