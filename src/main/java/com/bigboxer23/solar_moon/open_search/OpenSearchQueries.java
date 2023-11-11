@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Date;
 import org.opensearch.client.json.JsonData;
 import org.opensearch.client.opensearch._types.FieldSort;
+import org.opensearch.client.opensearch._types.SortOptions;
 import org.opensearch.client.opensearch._types.SortOrder;
 import org.opensearch.client.opensearch._types.Time;
 import org.opensearch.client.opensearch._types.aggregations.*;
@@ -97,6 +98,14 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 
 	public static String getKeywordField(String field) {
 		return field + ".keyword";
+	}
+
+	public static SortOptions sortByTimeStampDesc() {
+		return new SortOptions.Builder()
+				.field(new FieldSort.Builder()
+						.field(TIMESTAMP)
+						.order(SortOrder.Desc)
+						.build()).build();
 	}
 
 	private static SearchRequest.Builder getBaseBuilder(int count) {

@@ -54,7 +54,7 @@ public class TestSiteComponent {
 					TestDeviceComponent.clientId);
 		}
 		OpenSearchUtils.waitForIndexing();
-		assertNull(OSComponent.getLastDeviceEntry(TestDeviceComponent.clientId, TestDeviceComponent.SITE));
+		assertNull(OSComponent.getDeviceEntryWithinLast15Min(TestDeviceComponent.clientId, TestDeviceComponent.SITE));
 		generationComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 4, date, -1), TestDeviceComponent.clientId);
 		OpenSearchUtils.waitForIndexing();
