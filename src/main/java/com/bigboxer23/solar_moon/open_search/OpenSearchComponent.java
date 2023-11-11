@@ -117,7 +117,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		}
 	}
 
-	public DeviceData getLastDeviceEntry(String customerId, String deviceName) {
+	public DeviceData getDeviceEntryWithinLast15Min(String customerId, String deviceName) {
 		return getLastDeviceEntry(
 				deviceName,
 				OpenSearchQueries.getDeviceNameQuery(deviceName),
@@ -129,12 +129,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		try {
 			SearchRequest request = OpenSearchQueries.getSearchRequestBuilder()
 					.query(QueryBuilders.bool().filter(query, queries).build()._toQuery())
-					.sort(new SortOptions.Builder()
-							.field(new FieldSort.Builder()
-									.field(TIMESTAMP)
-									.order(SortOrder.Desc)
-									.build())
-							.build())
+					.sort(OpenSearchQueries.sortByTimeStampDesc())
 					.size(1)
 					.build();
 			SearchResponse<Map> response = getClient().search(request, Map.class);
