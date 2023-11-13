@@ -105,7 +105,8 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.field(new FieldSort.Builder()
 						.field(TIMESTAMP)
 						.order(SortOrder.Desc)
-						.build()).build();
+						.build())
+				.build();
 	}
 
 	private static SearchRequest.Builder getBaseBuilder(int count) {

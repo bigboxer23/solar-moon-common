@@ -58,16 +58,18 @@ public class TestOpenSearchComponent {
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
 		generationComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, prevDate, -1), TestDeviceComponent.clientId);
-		DeviceData data =
-				OSComponent.getDeviceEntryWithinLast15Min(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
+		DeviceData data = OSComponent.getDeviceEntryWithinLast15Min(
+				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
 		assertNull(data);
 		generationComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, nextDate, -1), TestDeviceComponent.clientId);
-		data = OSComponent.getDeviceEntryWithinLast15Min(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
+		data = OSComponent.getDeviceEntryWithinLast15Min(
+				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
 		assertNull(data);
 		generationComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, date, -1), TestDeviceComponent.clientId);
-		data = OSComponent.getDeviceEntryWithinLast15Min(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
+		data = OSComponent.getDeviceEntryWithinLast15Min(
+				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
 		assertNotNull(data);
 		assertTrue(data.isValid());
 		assertNotNull(data.getCustomerId());
