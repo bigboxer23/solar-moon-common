@@ -6,22 +6,15 @@ import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
-import com.bigboxer23.utils.http.OkHttpUtil;
 import com.bigboxer23.utils.http.RequestBuilderCallback;
-import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 import javax.xml.xpath.*;
 import okhttp3.Credentials;
-import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
@@ -71,48 +64,6 @@ public class GenerationMeterComponent implements MeterConstants {
 		this.alarmComponent = alarmComponent;
 		this.deviceComponent = deviceComponent;
 		this.siteComponent = siteComponent;
-	}
-
-	// @Scheduled(fixedDelay = 5000)
-	// @Scheduled(cron = "0 */15 * * * ?")
-	private void fetchData() throws IOException {
-		LocalDateTime fetchDate = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
-		Date date = Date.from(fetchDate.atZone(ZoneId.systemDefault()).toInstant());
-		logger.info("Pulling devices");
-		List<DeviceData> deviceData = deviceComponent.getDevices(false).stream()
-				.filter(device -> !device.isPushedDevice())
-				.map(this::getDeviceInformation)
-				.filter(Objects::nonNull)
-				.collect(Collectors.toList());
-		if (!deviceData.isEmpty()) {
-			openSearch.logData(date, deviceData);
-			alarmComponent.fireAlarms(deviceData);
-		}
-		logger.info("end of fetch data");
-	}
-
-	public DeviceData getDeviceInformation(Device device) {
-		if (device == null || device.isPushedDevice()) {
-			logger.warn("device or user or pw is null, cannot fetch data: " + device);
-			return null;
-		}
-		String body = "";
-		try (Response response = OkHttpUtil.getSynchronous(
-				device.getAddress(), getAuthCallback(device.getUser(), device.getPassword()))) {
-			body = response.body().string();
-			if (!response.isSuccessful()) {
-				logger.warn("getDeviceInformation unable to fetch data: Response code: "
-						+ response.code()
-						+ "\nbody: "
-						+ body);
-				return null;
-			}
-			logger.debug("fetched data: " + body);
-		} catch (IOException e) {
-			logger.warn("getDeviceInformation", e);
-			return null;
-		}
-		return parseDeviceInformation(body, device.getSite(), device.getName(), device.getClientId(), device.getId());
 	}
 
 	public DeviceData handleDeviceBody(String body, String customerId) throws XPathExpressionException {

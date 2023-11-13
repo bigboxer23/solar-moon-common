@@ -2,13 +2,12 @@ package com.bigboxer23.solar_moon;
 
 import com.bigboxer23.solar_moon.data.*;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
@@ -27,18 +26,32 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 		this.deviceComponent = deviceComponent;
 	}
 
-	public void fireAlarms(List<DeviceData> deviceData) throws IOException {
+	/*public void fireAlarms(List<DeviceData> deviceData) throws IOException {
 		logger.debug("checking alarms");
 		// TODO: criteria for actually firing
 		WeatherSystemData sunriseSunset =
 				openWeatherComponent.getSunriseSunsetFromCityStateCountry("golden valley", "mn", 581);
 		logger.debug("sunrise/sunset " + sunriseSunset.getSunrise() + "," + sunriseSunset.getSunset());
+	}*/
+
+	public Optional<Alarm> getMostRecentAlarm(String deviceId) {
+		List<Alarm> alarms = getTable()
+				.index(Alarm.DEVICEID_STARTDATE_INDEX)
+				.query(theBuilder -> theBuilder
+						.limit(1)
+						.scanIndexForward(false)
+						.queryConditional(QueryConditional.keyEqualTo(builder -> builder.partitionValue(deviceId))))
+				.stream()
+				.findFirst()
+				.map(Page::items)
+				.orElse(Collections.emptyList());
+		return alarms.size() > 1 ? Optional.ofNullable(alarms.get(0)) : Optional.empty();
 	}
 
 	public void resolveActiveAlarms(String customerId, DeviceData device) {
-		findAlarmsByDevice(customerId, device.getDeviceId()).stream()
+		getMostRecentAlarm(device.getDeviceId())
 				.filter(alarm -> alarm.getState() == 1)
-				.forEach(alarm -> {
+				.ifPresent(alarm -> {
 					alarm.setState(0);
 					updateAlarm(alarm);
 				});
@@ -95,7 +108,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 						builder -> builder.partitionValue(partitionId).sortValue(sort)))
 				.stream()
 				.flatMap(page -> page.items().stream())
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	public List<Alarm> getAlarms(String customerId) {
@@ -108,7 +121,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(customerId)))
 				.stream()
 				.flatMap(page -> page.items().stream())
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	public Optional<Alarm> updateAlarm(Alarm alarm) {

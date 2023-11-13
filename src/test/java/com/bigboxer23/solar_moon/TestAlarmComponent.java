@@ -160,4 +160,30 @@ public class TestAlarmComponent {
 		assertTrue(alarm2.isPresent());
 		assertNotEquals(alarm.get().getAlarmId(), alarm2.get().getAlarmId());
 	}
+
+	@Test
+	public void getMostRecentAlarm() throws InterruptedException {
+		Optional<Alarm> alarm = component.alarmConditionDetected(
+				TestDeviceComponent.clientId,
+				new DeviceData(
+						TestDeviceComponent.SITE,
+						TestDeviceComponent.deviceName,
+						TestDeviceComponent.clientId,
+						TestDeviceComponent.deviceId),
+				"Test alarm!");
+		assertTrue(alarm.isPresent());
+		alarm.get().setState(0);
+		component.updateAlarm(alarm.get());
+		Thread.sleep(1000);
+		Optional<Alarm> alarm2 = component.alarmConditionDetected(
+				TestDeviceComponent.clientId,
+				new DeviceData(
+						TestDeviceComponent.SITE,
+						TestDeviceComponent.deviceName,
+						TestDeviceComponent.clientId,
+						TestDeviceComponent.deviceId),
+				"Test alarm!");
+		assertTrue(alarm2.isPresent());
+		assertNotEquals(alarm.get().getAlarmId(), alarm2.get().getAlarmId());
+	}
 }
