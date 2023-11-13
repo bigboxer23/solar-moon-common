@@ -65,6 +65,11 @@ public class Device {
 	@Schema(description = "String representation of virtual for dynamodb index", example = "true|false")
 	private String virtualIndex;
 
+	@Schema(
+			description = "Should this device be considered active for the purpose of alerting?",
+			example = "true|false")
+	private boolean disabled;
+
 	public Device() {
 		setVirtual(false);
 	}

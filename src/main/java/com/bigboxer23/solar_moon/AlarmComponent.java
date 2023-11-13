@@ -60,6 +60,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 	}
 
 	public Optional<Alarm> alarmConditionDetected(String customerId, DeviceData device, String content) {
+		logger.warn("Alarm condition detected: " + customerId + " " + device.getDeviceId() + " " + content);
 		List<Alarm> alarms = findAlarmsByDevice(customerId, device.getDeviceId());
 		Alarm alarm = alarms.stream().filter(a -> a.getState() == 1).findAny().orElseGet(() -> {
 			// TODO: Notification
