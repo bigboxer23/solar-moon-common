@@ -3,7 +3,6 @@ package com.bigboxer23.solar_moon;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.bigboxer23.solar_moon.data.Device;
-import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 /** */
 // @ActiveProfiles("test")
-public class TestDeviceComponent {
+public class TestDeviceComponent implements IComponentRegistry {
 
 	protected static final String deviceKey = "2459786f-74c6-42e0-bc37-a501cb87297a";
 	protected static final String deviceName = "testDevice";
@@ -22,79 +21,74 @@ public class TestDeviceComponent {
 
 	protected static final String SITE = "testSite";
 
-	private final SubscriptionComponent subscriptionComponent = new SubscriptionComponent();
-	private final DeviceComponent component = new DeviceComponent(subscriptionComponent);
-
-	private final OpenSearchComponent OSComponent = new OpenSearchComponent();
-
 	private Device testDevice = new Device();
 
 	@Test
 	public void testFindDeviceByDeviceKey() {
-		assertNull(component.findDeviceByDeviceKey(null));
-		assertNull(component.findDeviceByDeviceKey(""));
-		assertNull(component.findDeviceByDeviceKey("1234"));
-		assertNotNull(component.findDeviceByDeviceKey(deviceKey));
+		assertNull(deviceComponent.findDeviceByDeviceKey(null));
+		assertNull(deviceComponent.findDeviceByDeviceKey(""));
+		assertNull(deviceComponent.findDeviceByDeviceKey("1234"));
+		assertNotNull(deviceComponent.findDeviceByDeviceKey(deviceKey));
 	}
 
 	@Test
 	public void testGetDevices() {
-		assertEquals(0, component.getDevices(null).size());
-		assertEquals(0, component.getDevices("").size());
-		assertEquals(1, component.getDevices(clientId).size());
-		assertEquals(0, component.getDevices("tacoClient").size());
+		assertEquals(0, deviceComponent.getDevices(null).size());
+		assertEquals(0, deviceComponent.getDevices("").size());
+		assertEquals(1, deviceComponent.getDevices(clientId).size());
+		assertEquals(0, deviceComponent.getDevices("tacoClient").size());
 	}
 
 	@Test
 	public void testGetDevice() {
-		assertNotNull(component.getDevice(deviceId, clientId));
-		assertNull(component.getDevice(null, null));
-		assertNull(component.getDevice("", null));
-		assertNull(component.getDevice(null, ""));
-		assertNull(component.getDevice("", ""));
-		assertNull(component.getDevice("blah", clientId));
-		assertNull(component.getDevice(deviceId, "blah"));
+		assertNotNull(deviceComponent.getDevice(deviceId, clientId));
+		assertNull(deviceComponent.getDevice(null, null));
+		assertNull(deviceComponent.getDevice("", null));
+		assertNull(deviceComponent.getDevice(null, ""));
+		assertNull(deviceComponent.getDevice("", ""));
+		assertNull(deviceComponent.getDevice("blah", clientId));
+		assertNull(deviceComponent.getDevice(deviceId, "blah"));
 	}
 
 	@Test
 	public void testGetDevicesBySite() {
-		assertTrue(component.getDevicesBySite(null, null).isEmpty());
-		assertTrue(component.getDevicesBySite("", null).isEmpty());
-		assertTrue(component.getDevicesBySite(null, "").isEmpty());
-		assertTrue(component.getDevicesBySite("", "").isEmpty());
-		assertTrue(component.getDevicesBySite(clientId, "blah").isEmpty());
-		assertEquals(1, component.getDevicesBySite(clientId, SITE).size());
+		assertTrue(deviceComponent.getDevicesBySite(null, null).isEmpty());
+		assertTrue(deviceComponent.getDevicesBySite("", null).isEmpty());
+		assertTrue(deviceComponent.getDevicesBySite(null, "").isEmpty());
+		assertTrue(deviceComponent.getDevicesBySite("", "").isEmpty());
+		assertTrue(deviceComponent.getDevicesBySite(clientId, "blah").isEmpty());
+		assertEquals(1, deviceComponent.getDevicesBySite(clientId, SITE).size());
 	}
 
 	@Test
 	public void testGetDevicesVirtual() {
-		assertFalse(component.getDevices(false).stream()
+		assertFalse(deviceComponent.getDevices(false).stream()
 				.filter(device -> clientId.equals(device.getClientId()))
 				.toList()
 				.isEmpty());
 		assertEquals(
 				1,
-				component.getDevices(false).stream()
+				deviceComponent.getDevices(false).stream()
 						.filter(device -> clientId.equals(device.getClientId()))
 						.toList()
 						.size());
-		assertTrue(component.getDevices(true).stream()
+		assertTrue(deviceComponent.getDevices(true).stream()
 				.filter(device -> clientId.equals(device.getClientId()))
 				.toList()
 				.isEmpty());
 		testDevice = new Device();
 		setupTestDevice(true);
-		assertTrue(component.getDevices(false).stream()
+		assertTrue(deviceComponent.getDevices(false).stream()
 				.filter(device -> clientId.equals(device.getClientId()))
 				.toList()
 				.isEmpty());
-		assertFalse(component.getDevices(true).stream()
+		assertFalse(deviceComponent.getDevices(true).stream()
 				.filter(device -> clientId.equals(device.getClientId()))
 				.toList()
 				.isEmpty());
 		assertEquals(
 				1,
-				component.getDevices(true).stream()
+				deviceComponent.getDevices(true).stream()
 						.filter(device -> clientId.equals(device.getClientId()))
 						.toList()
 						.size());
@@ -103,37 +97,39 @@ public class TestDeviceComponent {
 
 	@Test
 	public void testSiteDelete() {
-		TestUtils.setupSite(component, OSComponent, subscriptionComponent);
-		Device testSite = component.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
-				.filter(Device::isVirtual)
-				.findFirst()
-				.orElse(null);
+		TestUtils.setupSite();
+		Device testSite =
+				deviceComponent.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
+						.filter(Device::isVirtual)
+						.findFirst()
+						.orElse(null);
 		assertNotNull(testSite);
-		assertTrue(component
+		assertTrue(deviceComponent
 				.getDevicesBySite(testSite.getClientId(), DeviceComponent.NO_SITE)
 				.isEmpty());
-		component.deleteDevice(testSite.getId(), testSite.getClientId());
-		assertTrue(component
+		deviceComponent.deleteDevice(testSite.getId(), testSite.getClientId());
+		assertTrue(deviceComponent
 				.getDevicesBySite(testSite.getClientId(), testSite.getSite())
 				.isEmpty());
-		List<Device> updatedDevices = component.getDevicesBySite(testSite.getClientId(), DeviceComponent.NO_SITE);
+		List<Device> updatedDevices = deviceComponent.getDevicesBySite(testSite.getClientId(), DeviceComponent.NO_SITE);
 		assertFalse(updatedDevices.isEmpty());
 		updatedDevices.forEach(device -> assertEquals(device.getSite(), DeviceComponent.NO_SITE));
 	}
 
 	@Test
 	public void testSiteUpdate() {
-		TestUtils.setupSite(component, OSComponent, subscriptionComponent);
-		Device testSite = component.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
-				.filter(Device::isVirtual)
-				.findFirst()
-				.orElse(null);
+		TestUtils.setupSite();
+		Device testSite =
+				deviceComponent.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
+						.filter(Device::isVirtual)
+						.findFirst()
+						.orElse(null);
 		assertNotNull(testSite);
-		List<Device> originalDevices = component.getDevicesBySite(testSite.getClientId(), testSite.getSite());
+		List<Device> originalDevices = deviceComponent.getDevicesBySite(testSite.getClientId(), testSite.getSite());
 		testSite.setName(TestDeviceComponent.SITE + 2);
 		testSite.setSite(TestDeviceComponent.SITE + 2);
-		component.updateDevice(testSite);
-		List<Device> updatedDevices = component.getDevicesBySite(testSite.getClientId(), testSite.getSite());
+		deviceComponent.updateDevice(testSite);
+		List<Device> updatedDevices = deviceComponent.getDevicesBySite(testSite.getClientId(), testSite.getSite());
 		assertEquals(originalDevices.size(), updatedDevices.size());
 		assertFalse(updatedDevices.isEmpty());
 		updatedDevices.forEach(device -> assertEquals(device.getSite(), testSite.getSite()));
@@ -144,38 +140,38 @@ public class TestDeviceComponent {
 		for (int ai = 0; ai < 9; ai++) {
 			testDevice.setId(deviceId + ai);
 			testDevice.setName(deviceName + ai);
-			component.addDevice(testDevice);
+			deviceComponent.addDevice(testDevice);
 		}
-		if (component.addDevice(testDevice)) {
+		if (deviceComponent.addDevice(testDevice)) {
 			fail();
 		}
-		component.deleteDevicesByCustomerId(TestDeviceComponent.clientId);
+		deviceComponent.deleteDevicesByCustomerId(TestDeviceComponent.clientId);
 		subscriptionComponent.updateSubscription(TestDeviceComponent.clientId, 0);
-		if (component.addDevice(testDevice)) {
+		if (deviceComponent.addDevice(testDevice)) {
 			fail();
 		}
 	}
 
 	@Test
 	public void testFindDeviceByName() {
-		TestUtils.setupSite(component, OSComponent, subscriptionComponent);
+		TestUtils.setupSite();
 		Optional<Device> device =
-				component.findDeviceByName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
+				deviceComponent.findDeviceByName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
 		assertTrue(device.isPresent());
-		assertFalse(component
+		assertFalse(deviceComponent
 				.findDeviceByName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName)
 				.isPresent());
-		assertFalse(component
+		assertFalse(deviceComponent
 				.findDeviceByName(TestDeviceComponent.clientId + 1, TestDeviceComponent.deviceName + 0)
 				.isPresent());
-		assertFalse(component
+		assertFalse(deviceComponent
 				.findDeviceByName(TestDeviceComponent.clientId, device.get().getId())
 				.isPresent());
 	}
 
 	@BeforeEach
 	protected void setupTestDevice() {
-		component.deleteDevicesByCustomerId(TestDeviceComponent.clientId);
+		deviceComponent.deleteDevicesByCustomerId(TestDeviceComponent.clientId);
 		setupTestDevice(false);
 	}
 
@@ -191,10 +187,10 @@ public class TestDeviceComponent {
 			testDevice.setVirtual(isVirtual); // only set if true so we can test the initial state is properly
 			// set
 		}
-		Device dbDevice = component.getDevice(testDevice.getId(), testDevice.getClientId());
+		Device dbDevice = deviceComponent.getDevice(testDevice.getId(), testDevice.getClientId());
 		if (dbDevice != null) {
-			component.deleteDevice(testDevice.getId(), testDevice.getClientId());
+			deviceComponent.deleteDevice(testDevice.getId(), testDevice.getClientId());
 		}
-		component.addDevice(testDevice);
+		deviceComponent.addDevice(testDevice);
 	}
 }

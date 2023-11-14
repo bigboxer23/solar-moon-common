@@ -3,26 +3,13 @@ package com.bigboxer23.solar_moon;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.bigboxer23.solar_moon.data.DeviceData;
-import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import javax.xml.xpath.XPathExpressionException;
 import org.junit.jupiter.api.Test;
 
 /** */
-public class TestGenerationMeterComponent implements TestConstants {
-
-	private final OpenSearchComponent OSComponent = new OpenSearchComponent();
-
-	private final SubscriptionComponent subscriptionComponent = new SubscriptionComponent();
-
-	private final DeviceComponent deviceComponent = new DeviceComponent(subscriptionComponent);
-
-	private final GenerationMeterComponent generationComponent = new GenerationMeterComponent(
-			OSComponent,
-			new AlarmComponent(new OpenWeatherComponent(), deviceComponent),
-			deviceComponent,
-			new SiteComponent(OSComponent, deviceComponent));
+public class TestGenerationMeterComponent implements TestConstants, IComponentRegistry {
 
 	@Test
 	public void testFindDeviceName() throws XPathExpressionException {
@@ -89,7 +76,7 @@ public class TestGenerationMeterComponent implements TestConstants {
 	@Test
 	public void testHandleDeviceBody() throws XPathExpressionException {
 		String deviceXML = TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, new Date(), -1);
-		TestUtils.setupSite(deviceComponent, OSComponent, subscriptionComponent);
+		TestUtils.setupSite();
 		assertNull(generationComponent.handleDeviceBody(null, null));
 		assertNull(generationComponent.handleDeviceBody(deviceXML, null));
 		assertNull(generationComponent.handleDeviceBody("", null));

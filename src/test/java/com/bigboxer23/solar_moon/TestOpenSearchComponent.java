@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
-import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.open_search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.open_search.OpenSearchUtils;
 import com.bigboxer23.solar_moon.open_search.SearchJSON;
@@ -23,23 +22,10 @@ import org.opensearch.client.opensearch.core.SearchResponse;
 import org.opensearch.client.opensearch.core.search.Hit;
 
 /** */
-public class TestOpenSearchComponent {
-
-	private static final OpenSearchComponent OSComponent = new OpenSearchComponent();
-
-	private static final SubscriptionComponent subscriptionComponent = new SubscriptionComponent();
-
-	private static final DeviceComponent deviceComponent = new DeviceComponent(subscriptionComponent);
-
-	private static final GenerationMeterComponent generationComponent = new GenerationMeterComponent(
-			OSComponent,
-			new AlarmComponent(new OpenWeatherComponent(), deviceComponent),
-			deviceComponent,
-			new SiteComponent(OSComponent, deviceComponent));
-
+public class TestOpenSearchComponent implements IComponentRegistry {
 	@BeforeEach
 	public void setup() {
-		TestUtils.setupSite(deviceComponent, OSComponent, subscriptionComponent);
+		TestUtils.setupSite();
 	}
 
 	@Test
@@ -95,12 +81,12 @@ public class TestOpenSearchComponent {
 		OpenSearchUtils.waitForIndexing();
 		assertNull(OSComponent.getDeviceByTimePeriod(
 				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0, date));
-		TestUtils.validateDateData(OSComponent, future);
-		TestUtils.validateDateData(OSComponent, past);
+		TestUtils.validateDateData(future);
+		TestUtils.validateDateData(past);
 		generationComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, date, -1), TestDeviceComponent.clientId);
 		OpenSearchUtils.waitForIndexing();
-		TestUtils.validateDateData(OSComponent, date);
+		TestUtils.validateDateData(date);
 	}
 
 	@Test
@@ -148,7 +134,7 @@ public class TestOpenSearchComponent {
 
 	@Test
 	public void testTimeSeriesSearch() throws XPathExpressionException {
-		TestUtils.seedOpenSearchData(generationComponent);
+		TestUtils.seedOpenSearchData();
 		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
 		SearchJSON json = new SearchJSON(
@@ -174,7 +160,7 @@ public class TestOpenSearchComponent {
 
 	@Test
 	public void testStackedTimeSeriesSearch() throws XPathExpressionException {
-		TestUtils.seedOpenSearchData(generationComponent);
+		TestUtils.seedOpenSearchData();
 		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
 		SearchJSON json = new SearchJSON(
@@ -232,7 +218,7 @@ public class TestOpenSearchComponent {
 
 	@Test
 	public void testMaxCurrentSearch() throws XPathExpressionException {
-		TestUtils.seedOpenSearchData(generationComponent);
+		TestUtils.seedOpenSearchData();
 		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
 		SearchJSON json = new SearchJSON(
@@ -259,7 +245,7 @@ public class TestOpenSearchComponent {
 
 	@Test
 	public void testAverageTotalSearch() throws XPathExpressionException {
-		TestUtils.seedOpenSearchData(generationComponent);
+		TestUtils.seedOpenSearchData();
 		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
 		SearchJSON json = new SearchJSON(

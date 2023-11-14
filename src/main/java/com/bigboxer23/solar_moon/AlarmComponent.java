@@ -1,8 +1,13 @@
 package com.bigboxer23.solar_moon;
 
 import com.bigboxer23.solar_moon.data.*;
+import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
+import com.bigboxer23.solar_moon.open_search.OpenSearchQueries;
+import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -21,9 +26,15 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 
 	private final DeviceComponent deviceComponent;
 
-	public AlarmComponent(OpenWeatherComponent openWeatherComponent, DeviceComponent deviceComponent) {
+	private final OpenSearchComponent OSComponent;
+
+	public AlarmComponent(
+			OpenWeatherComponent openWeatherComponent,
+			DeviceComponent deviceComponent,
+			OpenSearchComponent OSComponent) {
 		this.openWeatherComponent = openWeatherComponent;
 		this.deviceComponent = deviceComponent;
+		this.OSComponent = OSComponent;
 	}
 
 	/*public void fireAlarms(List<DeviceData> deviceData) throws IOException {
@@ -147,6 +158,29 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 		return !StringUtils.isBlank(alarmId) && !StringUtils.isBlank(customerId)
 				? Optional.ofNullable(this.getTable().getItem(new Alarm(alarmId, customerId)))
 				: Optional.empty();
+	}
+
+	public Optional<Alarm> checkDevice(Device device) {
+		if (device == null) {
+			logger.warn("Null device, can't check.");
+			return Optional.empty();
+		}
+		DeviceData data =
+				OSComponent.getLastDeviceEntry(device.getName(), OpenSearchQueries.getDeviceIdQuery(device.getId()));
+		if (data == null) {
+			logger.debug("likely new device with no data " + device.getId());
+			return Optional.empty();
+		}
+		if (!device.isDisabled()
+				&& data.getDate().getTime()
+						< new Date(System.currentTimeMillis() - TimeConstants.THIRTY_MINUTES).getTime()) {
+			return alarmConditionDetected(
+					data.getCustomerId(),
+					data,
+					"No data recently from device.  Last data: "
+							+ new SimpleDateFormat(MeterConstants.DATE_PATTERN).format(data.getDate()));
+		}
+		return Optional.empty();
 	}
 
 	@Override
