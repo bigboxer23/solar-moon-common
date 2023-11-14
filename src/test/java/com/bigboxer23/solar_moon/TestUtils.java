@@ -16,7 +16,7 @@ import java.util.TimeZone;
 import javax.xml.xpath.XPathExpressionException;
 
 /** */
-public class TestUtils {
+public class TestUtils implements IComponentRegistry {
 
 	public static String getDeviceXML(String deviceName, Date date, float realPower) {
 		return getDeviceXML(TestConstants.device2Xml, deviceName, date, realPower);
@@ -37,10 +37,7 @@ public class TestUtils {
 		return deviceXML;
 	}
 
-	public static void setupSite(
-			DeviceComponent deviceComponent,
-			OpenSearchComponent OSComponent,
-			SubscriptionComponent subscriptionComponent) {
+	public static void setupSite() {
 		deviceComponent.deleteDevicesByCustomerId(TestDeviceComponent.clientId);
 		subscriptionComponent.updateSubscription(TestDeviceComponent.clientId, 1);
 		OSComponent.deleteByCustomerId(TestDeviceComponent.clientId);
@@ -48,12 +45,12 @@ public class TestUtils {
 		testDevice.setClientId(TestDeviceComponent.clientId);
 		testDevice.setSite(TestDeviceComponent.SITE);
 		for (int ai = 0; ai < 5; ai++) {
-			addDevice(deviceComponent, TestDeviceComponent.deviceName + ai, testDevice, false);
+			addDevice(TestDeviceComponent.deviceName + ai, testDevice, false);
 		}
-		addDevice(deviceComponent, TestDeviceComponent.SITE, testDevice, true);
+		addDevice(TestDeviceComponent.SITE, testDevice, true);
 	}
 
-	public static void seedOpenSearchData(GenerationMeterComponent generationComponent)
+	public static void seedOpenSearchData()
 			throws XPathExpressionException {
 		LocalDateTime ldt = LocalDateTime.ofInstant(
 						TimeUtils.get15mRoundedDate().toInstant(), ZoneId.systemDefault())
@@ -79,7 +76,7 @@ public class TestUtils {
 		OpenSearchUtils.waitForIndexing();
 	}
 
-	private static void addDevice(DeviceComponent deviceComponent, String name, Device testDevice, boolean isVirtual) {
+	private static void addDevice(String name, Device testDevice, boolean isVirtual) {
 		testDevice.setId(TokenGenerator.generateNewToken());
 		testDevice.setName(name);
 		testDevice.setDeviceName(name);
@@ -90,13 +87,13 @@ public class TestUtils {
 		deviceComponent.addDevice(testDevice);
 	}
 
-	public static void validateDateData(OpenSearchComponent component, String deviceName, Date date) {
-		DeviceData data = component.getDeviceByTimePeriod(TestDeviceComponent.clientId, deviceName, date);
+	public static void validateDateData(String deviceName, Date date) {
+		DeviceData data = OSComponent.getDeviceByTimePeriod(TestDeviceComponent.clientId, deviceName, date);
 		assertNotNull(data);
 		assertEquals(date, data.getDate());
 	}
 
-	public static void validateDateData(OpenSearchComponent component, Date date) {
-		validateDateData(component, TestDeviceComponent.deviceName + 0, date);
+	public static void validateDateData(Date date) {
+		validateDateData(TestDeviceComponent.deviceName + 0, date);
 	}
 }
