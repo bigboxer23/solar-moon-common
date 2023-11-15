@@ -99,7 +99,7 @@ public class GenerationMeterComponent implements MeterConstants {
 			logger.info("device was not valid, not handling.");
 			return null;
 		}
-		alarmComponent.resolveActiveAlarms(customerId, deviceData);
+		alarmComponent.resolveActiveAlarms(deviceData);
 		openSearch.logData(
 				deviceData.getDate() != null ? deviceData.getDate() : new Date(),
 				Collections.singletonList(deviceData));

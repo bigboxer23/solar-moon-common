@@ -115,6 +115,8 @@ public class TestCustomerComponent implements IComponentRegistry {
 		customerComponent.updateCustomer(customer);
 		assertEquals(
 				"tacos",
-				customerComponent.findCustomerByCustomerId(TestDeviceComponent.clientId).getAccessKey());
+				customerComponent
+						.findCustomerByCustomerId(TestDeviceComponent.clientId)
+						.getAccessKey());
 	}
 }

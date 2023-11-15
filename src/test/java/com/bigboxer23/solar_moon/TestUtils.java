@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
-import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.open_search.OpenSearchUtils;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import java.text.SimpleDateFormat;
@@ -50,8 +49,7 @@ public class TestUtils implements IComponentRegistry {
 		addDevice(TestDeviceComponent.SITE, testDevice, true);
 	}
 
-	public static void seedOpenSearchData()
-			throws XPathExpressionException {
+	public static void seedOpenSearchData() throws XPathExpressionException {
 		LocalDateTime ldt = LocalDateTime.ofInstant(
 						TimeUtils.get15mRoundedDate().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
