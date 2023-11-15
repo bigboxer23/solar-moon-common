@@ -56,14 +56,15 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 				.findFirst()
 				.map(Page::items)
 				.orElse(Collections.emptyList());
-		return alarms.size() > 1 ? Optional.ofNullable(alarms.get(0)) : Optional.empty();
+		return !alarms.isEmpty() ? Optional.ofNullable(alarms.get(0)) : Optional.empty();
 	}
 
-	public void resolveActiveAlarms(String customerId, DeviceData device) {
+	public void resolveActiveAlarms(DeviceData device) {
 		getMostRecentAlarm(device.getDeviceId())
 				.filter(alarm -> alarm.getState() == 1)
 				.ifPresent(alarm -> {
 					alarm.setState(0);
+					alarm.setEndDate(new Date().getTime());
 					updateAlarm(alarm);
 				});
 		// TODO: inspect data to see if looks "normal"

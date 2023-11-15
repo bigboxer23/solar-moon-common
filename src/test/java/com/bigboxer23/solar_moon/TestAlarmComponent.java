@@ -7,16 +7,14 @@ import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.open_search.OpenSearchUtils;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
-
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import javax.xml.xpath.XPathExpressionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import javax.xml.xpath.XPathExpressionException;
 
 /** */
 public class TestAlarmComponent implements IComponentRegistry {
@@ -198,8 +196,7 @@ public class TestAlarmComponent implements IComponentRegistry {
 	}
 
 	@Test
-	public void checkDevice() throws XPathExpressionException
-	{
+	public void checkDevice() throws XPathExpressionException {
 		// test invalid device
 		assertFalse(alarmComponent.checkDevice(null).isPresent());
 		TestUtils.setupSite();
@@ -224,16 +221,14 @@ public class TestAlarmComponent implements IComponentRegistry {
 		Optional<Alarm> alarm = alarmComponent.checkDevice(device.get());
 		assertTrue(alarm.isPresent());
 
-		//test disabled device, old OpenSearch
-		alarmComponent.deleteAlarmsByCustomerId(TestDeviceComponent.clientId);
-		device.get().setDisabled(true);
-		deviceComponent.updateDevice(device.get());
-		assertTrue(deviceComponent.getDevice(device.get().getId(), device.get().getClientId()).isDisabled());
-		alarm = alarmComponent.checkDevice(device.get());
-		assertFalse(alarm.isPresent());
+		// test update to existing alarm
+		Optional<Alarm> checkedAlarm = alarmComponent.checkDevice(device.get());
+		assertTrue(checkedAlarm.isPresent());
+		assertEquals(alarm.get().getAlarmId(), checkedAlarm.get().getAlarmId());
+		assertEquals(alarm.get().getStartDate(), checkedAlarm.get().getStartDate());
+		assertNotEquals(alarm.get().getLastUpdate(), checkedAlarm.get().getLastUpdate());
 
-
-		//test device, valid OpenSearch
+		// test device, valid OpenSearch
 		generationComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(
 						TestDeviceComponent.deviceName + 0,
@@ -243,6 +238,39 @@ public class TestAlarmComponent implements IComponentRegistry {
 						(55)),
 				TestDeviceComponent.clientId);
 		OpenSearchUtils.waitForIndexing();
+		checkedAlarm = alarmComponent.checkDevice(device.get());
+		assertFalse(checkedAlarm.isPresent());
+
+		// Validate we have a record of the alarm and its properly "cleared"
+		alarm = alarmComponent.findAlarmByAlarmId(
+				alarm.get().getAlarmId(), alarm.get().getCustomerId());
+		assertTrue(alarm.isPresent());
+		assertEquals(0, alarm.get().getState());
+		assertTrue(alarm.get().getEndDate() > 0);
+
+		// Check we create new alarm after current is cleared
+		OSComponent.deleteByCustomerId(TestDeviceComponent.clientId);
+		generationComponent.handleDeviceBody(
+				TestUtils.getDeviceXML(
+						TestDeviceComponent.deviceName + 0,
+						Date.from(ldt.minusMinutes(31)
+								.atZone(ZoneId.systemDefault())
+								.toInstant()),
+						(55)),
+				TestDeviceComponent.clientId);
+		OpenSearchUtils.waitForIndexing();
+		checkedAlarm = alarmComponent.checkDevice(device.get());
+		assertTrue(checkedAlarm.isPresent());
+		assertEquals(1, checkedAlarm.get().getState());
+		assertNotEquals(alarm.get().getAlarmId(), checkedAlarm.get().getAlarmId());
+
+		// test disabled device, old OpenSearch
+		alarmComponent.deleteAlarmsByCustomerId(TestDeviceComponent.clientId);
+		device.get().setDisabled(true);
+		deviceComponent.updateDevice(device.get());
+		assertTrue(deviceComponent
+				.getDevice(device.get().getId(), device.get().getClientId())
+				.isDisabled());
 		alarm = alarmComponent.checkDevice(device.get());
 		assertFalse(alarm.isPresent());
 
