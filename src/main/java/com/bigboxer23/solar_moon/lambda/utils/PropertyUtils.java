@@ -20,11 +20,6 @@ public class PropertyUtils {
 				return null;
 			}
 		}
-		return props.getProperty(property);
+		return props.getProperty(property, System.getenv(property));
 	}
-
-	/*properties = new Properties();
-	InputStream inputStream =
-			getClass().getClassLoader().getResourceAsStream("application.properties");
-	properties.load(inputStream);*/
 }
