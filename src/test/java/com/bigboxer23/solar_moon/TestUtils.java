@@ -36,12 +36,12 @@ public class TestUtils implements IComponentRegistry {
 		return deviceXML;
 	}
 
-	public static void setupSite() {
-		deviceComponent.deleteDevicesByCustomerId(TestDeviceComponent.clientId);
-		subscriptionComponent.updateSubscription(TestDeviceComponent.clientId, 1);
-		OSComponent.deleteByCustomerId(TestDeviceComponent.clientId);
+	public static void setupSite(String customerId) {
+		deviceComponent.deleteDevicesByCustomerId(customerId);
+		subscriptionComponent.updateSubscription(customerId, 1);
+		OSComponent.deleteByCustomerId(customerId);
 		Device testDevice = new Device();
-		testDevice.setClientId(TestDeviceComponent.clientId);
+		testDevice.setClientId(customerId);
 		testDevice.setSite(TestDeviceComponent.SITE);
 		for (int ai = 0; ai < 5; ai++) {
 			addDevice(TestDeviceComponent.deviceName + ai, testDevice, false);
@@ -49,7 +49,11 @@ public class TestUtils implements IComponentRegistry {
 		addDevice(TestDeviceComponent.SITE, testDevice, true);
 	}
 
-	public static void seedOpenSearchData() throws XPathExpressionException {
+	public static void setupSite() {
+		setupSite(TestDeviceComponent.clientId);
+	}
+
+	public static void seedOpenSearchData(String customerId) throws XPathExpressionException {
 		LocalDateTime ldt = LocalDateTime.ofInstant(
 						TimeUtils.get15mRoundedDate().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
@@ -58,7 +62,7 @@ public class TestUtils implements IComponentRegistry {
 						TestDeviceComponent.SITE,
 						Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()),
 						5),
-				TestDeviceComponent.clientId);
+				customerId);
 		for (int aj = 0; aj < 1; aj++) {
 			for (int ai = 0; ai < 10; ai++) {
 				generationComponent.handleDeviceBody(
@@ -68,10 +72,14 @@ public class TestUtils implements IComponentRegistry {
 										.atZone(ZoneId.systemDefault())
 										.toInstant()),
 								(5 * ai)),
-						TestDeviceComponent.clientId);
+						customerId);
 			}
 		}
 		OpenSearchUtils.waitForIndexing();
+	}
+
+	public static void seedOpenSearchData() throws XPathExpressionException {
+		seedOpenSearchData(TestDeviceComponent.clientId);
 	}
 
 	private static void addDevice(String name, Device testDevice, boolean isVirtual) {
