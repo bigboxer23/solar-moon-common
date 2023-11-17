@@ -17,11 +17,42 @@ import javax.xml.xpath.XPathExpressionException;
 /** */
 public class TestUtils implements IComponentRegistry {
 
-	public static String getDeviceXML(String deviceName, Date date, float realPower) {
-		return getDeviceXML(TestConstants.device2Xml, deviceName, date, realPower);
+	public static String getDeviceXML(String deviceName, Date date, float avgCurrent) {
+		return getDeviceXML(TestConstants.device2Xml, deviceName, date, avgCurrent, -1, -1, -1, -1);
 	}
 
-	public static String getDeviceXML(String deviceXML, String deviceName, Date date, float realPower) {
+	public static String getDeviceXML(
+			String deviceName,
+			Date date,
+			float avgCurrent,
+			float avgVoltage,
+			float powerFactor,
+			float totalEnergyConsumed,
+			float totalRealPower) {
+		return getDeviceXML(
+				TestConstants.device2Xml,
+				deviceName,
+				date,
+				avgCurrent,
+				avgVoltage,
+				powerFactor,
+				totalEnergyConsumed,
+				totalRealPower);
+	}
+
+	public static String getDeviceXML(String deviceXML, String deviceName, Date date, float avgCurrent) {
+		return getDeviceXML(deviceXML, deviceName, date, avgCurrent, -1, -1, -1, -1);
+	}
+
+	public static String getDeviceXML(
+			String deviceXML,
+			String deviceName,
+			Date date,
+			float avgCurrent,
+			float avgVoltage,
+			float powerFactor,
+			float totalEnergyConsumed,
+			float totalRealPower) {
 		if (deviceName != null && !deviceName.isBlank()) {
 			deviceXML = deviceXML.replace(TestDeviceComponent.deviceName, deviceName);
 		}
@@ -30,8 +61,20 @@ public class TestUtils implements IComponentRegistry {
 			sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 			deviceXML = deviceXML.replace(TestConstants.date, sdf.format(date));
 		}
-		if (realPower >= 0) {
-			deviceXML = deviceXML.replace("57.2345", "" + realPower);
+		if (totalRealPower >= 0) {
+			deviceXML = deviceXML.replace("2.134055", "" + totalRealPower);
+		}
+		if (avgCurrent >= 0) {
+			deviceXML = deviceXML.replace("57.2345", "" + avgCurrent);
+		}
+		if (avgVoltage >= 0) {
+			deviceXML = deviceXML.replace("4285.5", "" + avgVoltage);
+		}
+		if (totalEnergyConsumed >= 0) {
+			deviceXML = deviceXML.replace("9703343", "" + totalEnergyConsumed);
+		}
+		if (powerFactor >= 0) {
+			deviceXML = deviceXML.replace("89.123", "" + powerFactor);
 		}
 		return deviceXML;
 	}
