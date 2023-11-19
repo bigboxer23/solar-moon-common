@@ -62,6 +62,9 @@ public class SiteComponent {
 	}
 
 	private boolean shouldAddSiteDevice(DeviceData device) {
+		if (DeviceComponent.NO_SITE.equals(device.getSite())) {
+			return false;
+		}
 		OpenSearchUtils.waitForIndexing();
 		int deviceCount = component
 				.getDevicesBySite(device.getCustomerId(), device.getSite())
