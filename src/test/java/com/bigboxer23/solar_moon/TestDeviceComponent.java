@@ -32,11 +32,11 @@ public class TestDeviceComponent implements IComponentRegistry {
 	}
 
 	@Test
-	public void testGetDevices() {
-		assertEquals(0, deviceComponent.getDevices(null).size());
-		assertEquals(0, deviceComponent.getDevices("").size());
-		assertEquals(1, deviceComponent.getDevices(clientId).size());
-		assertEquals(0, deviceComponent.getDevices("tacoClient").size());
+	public void testGetDevicesForCustomerId() {
+		assertEquals(0, deviceComponent.getDevicesForCustomerId(null).size());
+		assertEquals(0, deviceComponent.getDevicesForCustomerId("").size());
+		assertEquals(1, deviceComponent.getDevicesForCustomerId(clientId).size());
+		assertEquals(0, deviceComponent.getDevicesForCustomerId("tacoClient").size());
 	}
 
 	@Test

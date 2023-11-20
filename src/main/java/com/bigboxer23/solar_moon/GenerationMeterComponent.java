@@ -139,7 +139,7 @@ public class GenerationMeterComponent implements MeterConstants {
 			return null;
 		}
 		logger.debug("finding device from device name/customer id " + deviceName + " " + customerId);
-		return deviceComponent.getDevices(customerId).stream()
+		return deviceComponent.getDevicesForCustomerId(customerId).stream()
 				.filter(server -> deviceName.equals(server.getDeviceName()))
 				.findAny()
 				.orElseGet(() -> {

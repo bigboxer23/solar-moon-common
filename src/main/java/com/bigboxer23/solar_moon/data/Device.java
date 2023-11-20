@@ -2,6 +2,7 @@ package com.bigboxer23.solar_moon.data;
 
 import com.bigboxer23.solar_moon.DeviceComponent;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Optional;
 import lombok.Data;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
@@ -135,5 +136,9 @@ public class Device {
 	public void setVirtual(boolean isVirtual) {
 		virtual = isVirtual;
 		virtualIndex = isVirtual + "";
+	}
+
+	public String getDisplayName() {
+		return Optional.ofNullable(getName()).orElse(getDeviceName());
 	}
 }

@@ -267,7 +267,7 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 	@Test
 	public void testAddingNewDeviceViaDataPush() throws XPathExpressionException {
 		String deviceName = TestDeviceComponent.deviceName + "shouldNotExist";
-		assertFalse(deviceComponent.getDevices(TestDeviceComponent.clientId).stream()
+		assertFalse(deviceComponent.getDevicesForCustomerId(TestDeviceComponent.clientId).stream()
 				.filter(d -> !d.isVirtual())
 				.anyMatch(device -> device.getDeviceName().equalsIgnoreCase(deviceName)));
 		LocalDateTime ldt = LocalDateTime.ofInstant(
@@ -281,7 +281,7 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 								.toInstant()),
 						5),
 				TestDeviceComponent.clientId);
-		Device SNEDevice = deviceComponent.getDevices(TestDeviceComponent.clientId).stream()
+		Device SNEDevice = deviceComponent.getDevicesForCustomerId(TestDeviceComponent.clientId).stream()
 				.filter(d -> !d.isVirtual())
 				.filter(device -> device.getDeviceName().equalsIgnoreCase(deviceName))
 				.findAny()

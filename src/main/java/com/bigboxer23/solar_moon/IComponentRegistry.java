@@ -19,14 +19,15 @@ public interface IComponentRegistry {
 
 	OpenWeatherComponent weatherComponent = new OpenWeatherComponent();
 
-	AlarmComponent alarmComponent = new AlarmComponent(weatherComponent, deviceComponent, OSComponent);
+	NotificationComponent notificationComponent = new NotificationComponent();
+
+	AlarmComponent alarmComponent =
+			new AlarmComponent(weatherComponent, deviceComponent, OSComponent, notificationComponent);
 
 	SiteComponent siteComponent = new SiteComponent(OSComponent, deviceComponent);
 
 	GenerationMeterComponent generationComponent =
 			new GenerationMeterComponent(OSComponent, alarmComponent, deviceComponent, siteComponent);
-
-	NotificationComponent notificationComponent = new NotificationComponent();
 
 	Logger logger = LoggerFactory.getLogger(IComponentRegistry.class);
 }

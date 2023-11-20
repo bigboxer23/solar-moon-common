@@ -1,6 +1,8 @@
 package com.bigboxer23.solar_moon;
 
 import com.bigboxer23.solar_moon.data.*;
+import com.bigboxer23.solar_moon.notifications.AlarmEmailTemplateContent;
+import com.bigboxer23.solar_moon.notifications.NotificationComponent;
 import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.open_search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.util.TimeConstants;
@@ -28,13 +30,17 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 
 	private final OpenSearchComponent OSComponent;
 
+	private final NotificationComponent notificationComponent;
+
 	public AlarmComponent(
 			OpenWeatherComponent openWeatherComponent,
 			DeviceComponent deviceComponent,
-			OpenSearchComponent OSComponent) {
+			OpenSearchComponent OSComponent,
+			NotificationComponent notificationComponent) {
 		this.openWeatherComponent = openWeatherComponent;
 		this.deviceComponent = deviceComponent;
 		this.OSComponent = OSComponent;
+		this.notificationComponent = notificationComponent;
 	}
 
 	/*public void fireAlarms(List<DeviceData> deviceData) throws IOException {
@@ -71,21 +77,22 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 
 	}
 
-	public Optional<Alarm> alarmConditionDetected(String customerId, DeviceData device, String content) {
-		logger.warn("Alarm condition detected: " + customerId + " " + device.getDeviceId() + " " + content);
-		List<Alarm> alarms = findAlarmsByDevice(customerId, device.getDeviceId());
+	public Optional<Alarm> alarmConditionDetected(String customerId, DeviceData deviceData, String content) {
+		logger.warn("Alarm condition detected: " + customerId + " " + deviceData.getDeviceId() + " " + content);
+		List<Alarm> alarms = findAlarmsByDevice(customerId, deviceData.getDeviceId());
 		Alarm alarm = alarms.stream().filter(a -> a.getState() == 1).findAny().orElseGet(() -> {
-			// TODO: Notification
 			Alarm newAlarm = new Alarm(
 					TokenGenerator.generateNewToken(),
 					customerId,
-					device.getDeviceId(),
+					deviceData.getDeviceId(),
 					deviceComponent
-							.findDeviceByName(customerId, device.getSite())
+							.findDeviceByName(customerId, deviceData.getSite())
 							.map(Device::getId)
 							.orElse(null));
 			newAlarm.setStartDate(System.currentTimeMillis());
 			newAlarm.setState(1);
+			AlarmEmailTemplateContent alarmEmail = new AlarmEmailTemplateContent(customerId, deviceData, newAlarm);
+			notificationComponent.sendNotification(alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
 			return newAlarm;
 		});
 		alarm.setLastUpdate(System.currentTimeMillis());
