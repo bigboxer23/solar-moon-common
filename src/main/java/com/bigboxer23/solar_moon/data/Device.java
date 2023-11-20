@@ -70,6 +70,8 @@ public class Device {
 			example = "true|false")
 	private boolean disabled;
 
+	private String mock;
+
 	public Device() {
 		setVirtual(false);
 	}
