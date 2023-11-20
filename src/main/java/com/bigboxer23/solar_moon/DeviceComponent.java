@@ -69,7 +69,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 				.collect(Collectors.toList());
 	}
 
-	public List<Device> getDevices(String customerId) {
+	public List<Device> getDevicesForCustomerId(String customerId) {
 		if (StringUtils.isBlank(customerId)) {
 			return Collections.emptyList();
 		}
@@ -98,11 +98,11 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 
 	public boolean addDevice(Device device) {
 		if (subscriptionComponent.getSubscriptionPacks(device.getClientId()) * 10
-				<= getDevices(device.getClientId()).size()) {
+				<= getDevicesForCustomerId(device.getClientId()).size()) {
 			logger.warn("Cannot add new device, not enough devices in license: "
 					+ (subscriptionComponent.getSubscriptionPacks(device.getClientId()) * 10)
 					+ ":"
-					+ getDevices(device.getClientId()).size());
+					+ getDevicesForCustomerId(device.getClientId()).size());
 			return false;
 		}
 		if (getDevice(device.getId(), device.getClientId()) != null) {
@@ -147,7 +147,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	public void deleteDevicesByCustomerId(String customerId) {
-		getDevices(customerId).forEach(device -> deleteDevice(device.getId(), customerId));
+		getDevicesForCustomerId(customerId).forEach(device -> deleteDevice(device.getId(), customerId));
 	}
 
 	public void logAction(String action, String id) {

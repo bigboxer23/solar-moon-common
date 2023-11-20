@@ -125,4 +125,13 @@ public class TestGenerationMeterComponent implements TestConstants, IComponentRe
 				TestDeviceComponent.deviceId);
 		assertNull(aDeviceData.getDate());
 	}
+
+	@Test
+	public void calcTotalRealPower() {
+		float avgVoltage = 290f;
+		float avgCurrent = 67.56f;
+		float powerFactor = .99f;
+		double rp = (avgVoltage * avgCurrent * Math.abs(powerFactor / 100) * Math.sqrt(3)) / 1000f;
+		System.out.println(rp);
+	}
 }

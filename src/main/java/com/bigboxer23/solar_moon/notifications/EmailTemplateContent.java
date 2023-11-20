@@ -5,6 +5,9 @@ import lombok.Data;
 /** */
 @Data
 public class EmailTemplateContent {
+
+	public EmailTemplateContent() {}
+
 	public EmailTemplateContent(
 			String templateName, String title, String customerName, String bodyContent1, String buttonContent) {
 		setTemplateName(templateName);
