@@ -7,6 +7,7 @@ import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.open_search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
+import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -92,7 +93,15 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 			newAlarm.setStartDate(System.currentTimeMillis());
 			newAlarm.setState(1);
 			AlarmEmailTemplateContent alarmEmail = new AlarmEmailTemplateContent(customerId, deviceData, newAlarm);
-			notificationComponent.sendNotification(alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
+			if (alarmEmail.isNotificationEnabled()) {
+				notificationComponent.sendNotification(alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
+			} else {
+				logger.warn("New notification detected, but not sending email"
+						+ " as requested "
+						+ customerId
+						+ " "
+						+ deviceData.getDeviceId());
+			}
 			return newAlarm;
 		});
 		alarm.setLastUpdate(System.currentTimeMillis());
@@ -179,6 +188,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 			logger.debug("likely new device with no data " + device.getId());
 			return Optional.empty();
 		}
+		TransactionUtil.addDeviceId(device.getId());
+		TransactionUtil.updateCustomerId(device.getClientId());
 		if (!device.isDisabled()
 				&& data.getDate().getTime()
 						< new Date(System.currentTimeMillis() - TimeConstants.THIRTY_MINUTES).getTime()) {
@@ -188,6 +199,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 					"No data recently from device.  Last data: "
 							+ new SimpleDateFormat(MeterConstants.DATE_PATTERN).format(data.getDate()));
 		}
+		TransactionUtil.clear();
 		return Optional.empty();
 	}
 

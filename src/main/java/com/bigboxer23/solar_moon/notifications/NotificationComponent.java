@@ -32,7 +32,7 @@ public class NotificationComponent {
 				.region(Region.US_WEST_2)
 				.credentialsProvider(DefaultCredentialsProvider.create())
 				.build(); ) {
-			logger.debug("Sending email to " + recipient);
+			logger.info("Sending email to " + recipient);
 			client.sendEmail(SendEmailRequest.builder()
 					.destination(Destination.builder().toAddresses(recipient).build())
 					.message(Message.builder()
