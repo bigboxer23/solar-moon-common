@@ -71,6 +71,9 @@ public class Device {
 			example = "true|false")
 	private boolean disabled;
 
+	@Schema(description = "Should notifications be sent if alert state is detected?", example = "true|false")
+	private boolean notificationsDisabled;
+
 	private String mock;
 
 	public Device() {
