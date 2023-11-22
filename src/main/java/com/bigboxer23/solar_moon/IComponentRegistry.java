@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon;
 
+import com.bigboxer23.solar_moon.maintenance.MaintenanceComponent;
 import com.bigboxer23.solar_moon.notifications.NotificationComponent;
 import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import com.squareup.moshi.Moshi;
@@ -28,6 +29,8 @@ public interface IComponentRegistry {
 
 	GenerationMeterComponent generationComponent =
 			new GenerationMeterComponent(OSComponent, alarmComponent, deviceComponent, siteComponent);
+
+	MaintenanceComponent maintenanceComponent = new MaintenanceComponent();
 
 	Logger logger = LoggerFactory.getLogger(IComponentRegistry.class);
 }
