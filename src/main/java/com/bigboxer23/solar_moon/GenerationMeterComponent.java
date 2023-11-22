@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import software.amazon.awssdk.utils.StringUtils;
 
 /** Class to read data from the generation meter web interface */
 // @Component
@@ -89,11 +88,7 @@ public class GenerationMeterComponent implements MeterConstants {
 		TransactionUtil.addDeviceId(device.getId());
 		DeviceData deviceData = Optional.of(device)
 				.map(server -> parseDeviceInformation(
-						body,
-						server.getSite(),
-						StringUtils.isBlank(server.getName()) ? server.getDeviceName() : server.getName(),
-						customerId,
-						server.getId()))
+						body, server.getSite(), server.getDisplayName(), customerId, server.getId()))
 				.filter(DeviceData::isValid)
 				.orElse(null);
 		if (deviceData == null) {
