@@ -50,6 +50,10 @@ public class TransactionUtil {
 		MDC.put("customer.id", customerId);
 	}
 
+	public static void updateServiceCalled(String service) {
+		MDC.put("service.name", service);
+	}
+
 	private static void addToMDC(String transactionId, String remoteAddress, String hostName, String customerId) {
 		MDC.put("transaction.id", transactionId);
 		MDC.put("transaction.remote", remoteAddress);
