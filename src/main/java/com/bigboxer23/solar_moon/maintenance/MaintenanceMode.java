@@ -16,6 +16,7 @@ public class MaintenanceMode {
 		maintenanceMode = "y";
 		isInMaintenanceMode = true;
 	}
+
 	@DynamoDbPartitionKey
 	public String getMaintenanceMode() {
 		return maintenanceMode;

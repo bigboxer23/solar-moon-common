@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon.notifications;
 
+import com.bigboxer23.solar_moon.lambda.utils.PropertyUtils;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.MustacheFactory;
 import java.io.IOException;
@@ -10,6 +11,7 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ses.SesClient;
 import software.amazon.awssdk.services.ses.model.*;
+import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 public class NotificationComponent {
@@ -19,6 +21,8 @@ public class NotificationComponent {
 	private static final MustacheFactory mf = new DefaultMustacheFactory("templates");
 
 	private static final String SENDER = "info@solarmoonanalytics.com";
+
+	private final String recipientOverride = PropertyUtils.getProperty("recipient_override");
 
 	public void sendNotification(String recipient, String subject, EmailTemplateContent template) {
 		StringWriter content = new StringWriter();
@@ -34,7 +38,9 @@ public class NotificationComponent {
 				.build(); ) {
 			logger.info("Sending email to " + recipient);
 			client.sendEmail(SendEmailRequest.builder()
-					.destination(Destination.builder().toAddresses(recipient).build())
+					.destination(Destination.builder()
+							.toAddresses(getRecipient(recipient))
+							.build())
 					.message(Message.builder()
 							.subject(Content.builder().data(subject).build())
 							.body(Body.builder()
@@ -48,5 +54,9 @@ public class NotificationComponent {
 		} catch (SesException e) {
 			logger.warn(e.awsErrorDetails().errorMessage(), e);
 		}
+	}
+
+	private String getRecipient(String recipient) {
+		return StringUtils.isBlank(recipientOverride) ? recipient : recipientOverride;
 	}
 }
