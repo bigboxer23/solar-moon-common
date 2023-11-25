@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
@@ -82,6 +83,18 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 				.collect(Collectors.toList());
 	}
 
+	public Optional<Device> findDeviceById(String id) {
+		if (StringUtils.isBlank(id)) {
+			return Optional.empty();
+		}
+		return getTable()
+				.query(QueryConditional.keyEqualTo(
+						Key.builder().partitionValue(id).build()))
+				.items()
+				.stream()
+				.findFirst();
+	}
+
 	public Device getDevice(String id, String customerId) {
 		if (StringUtils.isBlank(id) || StringUtils.isBlank(customerId)) {
 			return null;
@@ -144,6 +157,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 			});
 		}
 		getTable().deleteItem(device);
+		IComponentRegistry.deviceUpdateComponent.delete(device.getId());
 	}
 
 	public void deleteDevicesByCustomerId(String customerId) {

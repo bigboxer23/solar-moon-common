@@ -83,6 +83,7 @@ public class TestUtils implements IComponentRegistry {
 		deviceComponent.deleteDevicesByCustomerId(customerId);
 		subscriptionComponent.updateSubscription(customerId, 1);
 		OSComponent.deleteByCustomerId(customerId);
+		alarmComponent.deleteAlarmsByCustomerId(customerId);
 		Device testDevice = new Device();
 		testDevice.setClientId(customerId);
 		testDevice.setSite(TestDeviceComponent.SITE);
@@ -94,6 +95,12 @@ public class TestUtils implements IComponentRegistry {
 
 	public static void setupSite() {
 		setupSite(TestDeviceComponent.clientId);
+	}
+
+	public static Device getDevice() {
+		return deviceComponent
+				.findDeviceByName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0)
+				.orElse(null);
 	}
 
 	public static void seedOpenSearchData(String customerId) throws XPathExpressionException {

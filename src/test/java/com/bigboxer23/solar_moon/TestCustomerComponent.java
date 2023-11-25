@@ -9,7 +9,7 @@ import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 /** */
 // @ActiveProfiles("test")
 public class TestCustomerComponent implements IComponentRegistry {
-	protected static final String CUSTOMER_EMAIL = "noop@noreply.org";
+	protected static final String CUSTOMER_EMAIL = "noreply@solarmoonanalytics.com";
 	protected static final String CUSTOMER_NAME = "mr fake customer";
 	protected static final String CUSTOMER_ACCESS_KEY = "4ab84ed3-0ce1-4615-b919-c34c7b619702";
 

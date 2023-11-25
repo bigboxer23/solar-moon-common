@@ -12,42 +12,40 @@ import org.junit.jupiter.api.Test;
 // @ActiveProfiles("test")
 public class TestDeviceComponent implements IComponentRegistry {
 
-	protected static final String deviceKey = "2459786f-74c6-42e0-bc37-a501cb87297a";
 	protected static final String deviceName = "testDevice";
 
 	protected static final String clientId = "0badd0c2-450b-4204-80d5-c7c77fc13500";
 
-	protected static final String deviceId = "edc76a9b-e451-4592-996e-0e54410bae5e";
-
 	protected static final String SITE = "testSite";
-
-	private Device testDevice = new Device();
 
 	@Test
 	public void testFindDeviceByDeviceKey() {
 		assertNull(deviceComponent.findDeviceByDeviceKey(null));
 		assertNull(deviceComponent.findDeviceByDeviceKey(""));
 		assertNull(deviceComponent.findDeviceByDeviceKey("1234"));
-		assertNotNull(deviceComponent.findDeviceByDeviceKey(deviceKey));
+		Device device = TestUtils.getDevice();
+		device.setDeviceKey("2459786f-74c6-42e0-bc37-a501cb87297a");
+		deviceComponent.updateDevice(device);
+		assertNotNull(deviceComponent.findDeviceByDeviceKey(TestUtils.getDevice().getDeviceKey()));
 	}
 
 	@Test
 	public void testGetDevicesForCustomerId() {
 		assertEquals(0, deviceComponent.getDevicesForCustomerId(null).size());
 		assertEquals(0, deviceComponent.getDevicesForCustomerId("").size());
-		assertEquals(1, deviceComponent.getDevicesForCustomerId(clientId).size());
+		assertEquals(6, deviceComponent.getDevicesForCustomerId(clientId).size());
 		assertEquals(0, deviceComponent.getDevicesForCustomerId("tacoClient").size());
 	}
 
 	@Test
 	public void testGetDevice() {
-		assertNotNull(deviceComponent.getDevice(deviceId, clientId));
+		assertNotNull(deviceComponent.getDevice(TestUtils.getDevice().getId(), clientId));
 		assertNull(deviceComponent.getDevice(null, null));
 		assertNull(deviceComponent.getDevice("", null));
 		assertNull(deviceComponent.getDevice(null, ""));
 		assertNull(deviceComponent.getDevice("", ""));
 		assertNull(deviceComponent.getDevice("blah", clientId));
-		assertNull(deviceComponent.getDevice(deviceId, "blah"));
+		assertNull(deviceComponent.getDevice(TestUtils.getDevice().getId(), "blah"));
 	}
 
 	@Test
@@ -57,7 +55,7 @@ public class TestDeviceComponent implements IComponentRegistry {
 		assertTrue(deviceComponent.getDevicesBySite(null, "").isEmpty());
 		assertTrue(deviceComponent.getDevicesBySite("", "").isEmpty());
 		assertTrue(deviceComponent.getDevicesBySite(clientId, "blah").isEmpty());
-		assertEquals(1, deviceComponent.getDevicesBySite(clientId, SITE).size());
+		assertEquals(6, deviceComponent.getDevicesBySite(clientId, SITE).size());
 	}
 
 	@Test
@@ -67,32 +65,15 @@ public class TestDeviceComponent implements IComponentRegistry {
 				.toList()
 				.isEmpty());
 		assertEquals(
-				1,
+				5,
 				deviceComponent.getDevices(false).stream()
 						.filter(device -> clientId.equals(device.getClientId()))
 						.toList()
 						.size());
-		assertTrue(deviceComponent.getDevices(true).stream()
+		assertEquals(1, deviceComponent.getDevices(true).stream()
 				.filter(device -> clientId.equals(device.getClientId()))
 				.toList()
-				.isEmpty());
-		testDevice = new Device();
-		setupTestDevice(true);
-		assertTrue(deviceComponent.getDevices(false).stream()
-				.filter(device -> clientId.equals(device.getClientId()))
-				.toList()
-				.isEmpty());
-		assertFalse(deviceComponent.getDevices(true).stream()
-				.filter(device -> clientId.equals(device.getClientId()))
-				.toList()
-				.isEmpty());
-		assertEquals(
-				1,
-				deviceComponent.getDevices(true).stream()
-						.filter(device -> clientId.equals(device.getClientId()))
-						.toList()
-						.size());
-		testDevice = new Device();
+				.size());
 	}
 
 	@Test
@@ -137,8 +118,9 @@ public class TestDeviceComponent implements IComponentRegistry {
 
 	@Test
 	public void testSubscriptionLimit() {
+		Device testDevice = new Device();
 		for (int ai = 0; ai < 9; ai++) {
-			testDevice.setId(deviceId + ai);
+			testDevice.setId("test-" + ai);
 			testDevice.setName(deviceName + ai);
 			deviceComponent.addDevice(testDevice);
 		}
@@ -169,28 +151,13 @@ public class TestDeviceComponent implements IComponentRegistry {
 				.isPresent());
 	}
 
-	@BeforeEach
-	protected void setupTestDevice() {
-		deviceComponent.deleteDevicesByCustomerId(TestDeviceComponent.clientId);
-		setupTestDevice(false);
+	@Test
+	public void findDeviceById() {
+		assertTrue(deviceComponent.findDeviceById(TestUtils.getDevice().getId()).isPresent());
 	}
 
-	protected void setupTestDevice(boolean isVirtual) {
-		subscriptionComponent.updateSubscription(TestDeviceComponent.clientId, 1);
-		testDevice.setId(deviceId);
-		testDevice.setName(deviceName);
-		testDevice.setDeviceName(deviceName);
-		testDevice.setClientId(clientId);
-		testDevice.setDeviceKey(deviceKey);
-		testDevice.setSite(SITE);
-		if (isVirtual) {
-			testDevice.setVirtual(isVirtual); // only set if true so we can test the initial state is properly
-			// set
-		}
-		Device dbDevice = deviceComponent.getDevice(testDevice.getId(), testDevice.getClientId());
-		if (dbDevice != null) {
-			deviceComponent.deleteDevice(testDevice.getId(), testDevice.getClientId());
-		}
-		deviceComponent.addDevice(testDevice);
+	@BeforeEach
+	protected void setupTestDevice() {
+		TestUtils.setupSite();
 	}
 }
