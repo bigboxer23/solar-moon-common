@@ -185,7 +185,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 							d2.getSite(),
 							"No data recently from device.  Last"
 									+ " data: "
-									+ new SimpleDateFormat(MeterConstants.DATE_PATTERN).format(d.getLastUpdate()));
+									+ new SimpleDateFormat(MeterConstants.DATE_PATTERN).format(d.getLastUpdate())).ifPresent(alarms::add);
 				}));
 		return alarms;
 	}

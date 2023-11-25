@@ -83,6 +83,7 @@ public class TestUtils implements IComponentRegistry {
 		deviceComponent.deleteDevicesByCustomerId(customerId);
 		subscriptionComponent.updateSubscription(customerId, 1);
 		OSComponent.deleteByCustomerId(customerId);
+		alarmComponent.deleteAlarmsByCustomerId(customerId);
 		Device testDevice = new Device();
 		testDevice.setClientId(customerId);
 		testDevice.setSite(TestDeviceComponent.SITE);

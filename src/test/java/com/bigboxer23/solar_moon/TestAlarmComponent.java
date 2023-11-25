@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.bigboxer23.solar_moon.data.Alarm;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.open_search.OpenSearchUtils;
+import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -12,6 +13,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import javax.xml.xpath.XPathExpressionException;
+
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -255,6 +258,19 @@ public class TestAlarmComponent implements IComponentRegistry {
 		alarm = alarmComponent.checkDevice(device.get());
 		assertFalse(alarm.isPresent());
 
+		alarmComponent.deleteAlarmsByCustomerId(TestDeviceComponent.clientId);
+	}
+
+	@SneakyThrows
+	@Test
+	public void quickCheckDevices() {
+		Device device = TestUtils.getDevice();
+		assertEquals(0, alarmComponent.getAlarms(TestDeviceComponent.clientId).size());
+		assertEquals(0, alarmComponent.quickCheckDevices().size());
+		deviceUpdateComponent.update(device.getId(), System.currentTimeMillis() - TimeConstants.THIRTY_MINUTES + 2000);
+		assertEquals(0, alarmComponent.quickCheckDevices().size());
+		Thread.sleep(2000);
+		assertEquals(1, alarmComponent.quickCheckDevices().size());
 		alarmComponent.deleteAlarmsByCustomerId(TestDeviceComponent.clientId);
 	}
 }
