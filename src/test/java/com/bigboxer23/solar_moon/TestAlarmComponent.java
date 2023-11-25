@@ -60,7 +60,7 @@ public class TestAlarmComponent implements IComponentRegistry {
 		alarm = new Alarm(
 				TokenGenerator.generateNewToken(),
 				TestDeviceComponent.clientId,
-				TestDeviceComponent.deviceId + 2,
+				"Test-" + 2,
 				TestDeviceComponent.SITE);
 		alarmComponent.updateAlarm(alarm);
 		List<Alarm> alarms = alarmComponent.findAlarmsByDevice(device.getClientId(), device.getId());
@@ -98,13 +98,13 @@ public class TestAlarmComponent implements IComponentRegistry {
 		alarm = new Alarm(
 				TokenGenerator.generateNewToken(),
 				device.getClientId(),
-				TestDeviceComponent.deviceId + 2,
+				"Test-" + 2,
 				device.getSite());
 		alarmComponent.updateAlarm(alarm);
 		alarm = new Alarm(
 				TokenGenerator.generateNewToken(),
 				device.getClientId(),
-				TestDeviceComponent.deviceId + 1,
+				"Test-" + 1,
 				TestDeviceComponent.SITE + 1);
 		alarmComponent.updateAlarm(alarm);
 
