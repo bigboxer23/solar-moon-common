@@ -32,5 +32,7 @@ public interface IComponentRegistry {
 
 	MaintenanceComponent maintenanceComponent = new MaintenanceComponent();
 
+	DeviceUpdateComponent deviceUpdateComponent = new DeviceUpdateComponent();
+
 	Logger logger = LoggerFactory.getLogger(IComponentRegistry.class);
 }
