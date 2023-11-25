@@ -191,8 +191,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 		TransactionUtil.addDeviceId(device.getId());
 		TransactionUtil.updateCustomerId(device.getClientId());
 		if (!device.isDisabled()
-				&& data.getDate().getTime()
-						< new Date(System.currentTimeMillis() - TimeConstants.THIRTY_MINUTES).getTime()) {
+				&& data.getDate().getTime() < new Date(System.currentTimeMillis() - TimeConstants.HOUR).getTime()) {
 			return alarmConditionDetected(
 					data.getCustomerId(),
 					data,
