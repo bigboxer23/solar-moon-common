@@ -9,10 +9,7 @@ import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
@@ -78,21 +75,21 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 
 	}
 
-	public Optional<Alarm> alarmConditionDetected(String customerId, DeviceData deviceData, String content) {
-		logger.warn("Alarm condition detected: " + customerId + " " + deviceData.getDeviceId() + " " + content);
-		List<Alarm> alarms = findAlarmsByDevice(customerId, deviceData.getDeviceId());
+	public Optional<Alarm> alarmConditionDetected(String customerId, String deviceId, String site, String content) {
+		logger.warn("Alarm condition detected: " + customerId + " " + deviceId + " " + content);
+		List<Alarm> alarms = findAlarmsByDevice(customerId, deviceId);
 		Alarm alarm = alarms.stream().filter(a -> a.getState() == 1).findAny().orElseGet(() -> {
 			Alarm newAlarm = new Alarm(
 					TokenGenerator.generateNewToken(),
 					customerId,
-					deviceData.getDeviceId(),
+					deviceId,
 					deviceComponent
-							.findDeviceByName(customerId, deviceData.getSite())
+							.findDeviceByName(customerId, site)
 							.map(Device::getId)
 							.orElse(null));
 			newAlarm.setStartDate(System.currentTimeMillis());
 			newAlarm.setState(1);
-			AlarmEmailTemplateContent alarmEmail = new AlarmEmailTemplateContent(customerId, deviceData, newAlarm);
+			AlarmEmailTemplateContent alarmEmail = new AlarmEmailTemplateContent(customerId, deviceId, newAlarm);
 			if (alarmEmail.isNotificationEnabled()) {
 				notificationComponent.sendNotification(alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
 			} else {
@@ -100,7 +97,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 						+ " as requested "
 						+ customerId
 						+ " "
-						+ deviceData.getDeviceId());
+						+ deviceId);
 			}
 			return newAlarm;
 		});
@@ -177,6 +174,22 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 				: Optional.empty();
 	}
 
+	public List<Alarm> quickCheckDevices() {
+		List<Alarm> alarms = new ArrayList<>();
+		IComponentRegistry.deviceUpdateComponent
+				.queryByTimeRange(System.currentTimeMillis() - TimeConstants.THIRTY_MINUTES)
+				.forEach(d -> deviceComponent.findDeviceById(d.getDeviceId()).ifPresent(d2 -> {
+					alarmConditionDetected(
+							d2.getClientId(),
+							d2.getId(),
+							d2.getSite(),
+							"No data recently from device.  Last"
+									+ " data: "
+									+ new SimpleDateFormat(MeterConstants.DATE_PATTERN).format(d.getLastUpdate()));
+				}));
+		return alarms;
+	}
+
 	public Optional<Alarm> checkDevice(Device device) {
 		if (device == null) {
 			logger.warn("Null device, can't check.");
@@ -194,7 +207,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 				&& data.getDate().getTime() < new Date(System.currentTimeMillis() - TimeConstants.HOUR).getTime()) {
 			return alarmConditionDetected(
 					data.getCustomerId(),
-					data,
+					data.getDeviceId(),
+					data.getSite(),
 					"No data recently from device.  Last data: "
 							+ new SimpleDateFormat(MeterConstants.DATE_PATTERN).format(data.getDate()));
 		}

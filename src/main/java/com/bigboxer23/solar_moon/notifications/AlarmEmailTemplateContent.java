@@ -4,7 +4,6 @@ import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Alarm;
 import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.data.Device;
-import com.bigboxer23.solar_moon.data.DeviceData;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import lombok.Data;
@@ -21,10 +20,10 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 
 	private Device device;
 
-	public AlarmEmailTemplateContent(String customerId, DeviceData deviceData, Alarm alarm) {
+	public AlarmEmailTemplateContent(String customerId, String deviceId, Alarm alarm) {
 		super("email.template.html", "Potential issue detected with device", "", "", "See active alarms");
 		Customer customer = customerComponent.findCustomerByCustomerId(customerId);
-		device = deviceComponent.getDevice(deviceData.getDeviceId(), deviceData.getCustomerId());
+		device = deviceComponent.getDevice(deviceId, customerId);
 		setRecipient(customer.getEmail());
 		setCustomerName("Hello " + customer.getName());
 		setDeviceId(device.getId());

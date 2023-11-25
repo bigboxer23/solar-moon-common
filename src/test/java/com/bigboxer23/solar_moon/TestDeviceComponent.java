@@ -169,6 +169,11 @@ public class TestDeviceComponent implements IComponentRegistry {
 				.isPresent());
 	}
 
+	@Test
+	public void findDeviceById() {
+		assertTrue(deviceComponent.findDeviceById(deviceId).isPresent());
+	}
+
 	@BeforeEach
 	protected void setupTestDevice() {
 		deviceComponent.deleteDevicesByCustomerId(TestDeviceComponent.clientId);
