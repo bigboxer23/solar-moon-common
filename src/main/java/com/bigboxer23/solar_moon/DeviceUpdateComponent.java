@@ -37,8 +37,7 @@ public class DeviceUpdateComponent extends AbstractDynamodbComponent<DeviceUpdat
 	}
 
 	public void deleteByCustomerId(String customerId) {
-		IComponentRegistry.deviceComponent.getDevicesForCustomerId(customerId)
-				.forEach(d -> delete(d.getId()));
+		IComponentRegistry.deviceComponent.getDevicesForCustomerId(customerId).forEach(d -> delete(d.getId()));
 	}
 
 	public Iterable<DeviceUpdateData> getDevices() {

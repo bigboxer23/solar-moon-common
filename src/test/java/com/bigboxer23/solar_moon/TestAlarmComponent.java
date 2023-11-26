@@ -13,7 +13,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import javax.xml.xpath.XPathExpressionException;
-
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,10 +60,7 @@ public class TestAlarmComponent implements IComponentRegistry {
 		Alarm alarm = new Alarm(TEST_ALARM_ID, device.getClientId(), device.getId(), device.getSite());
 		alarmComponent.updateAlarm(alarm);
 		alarm = new Alarm(
-				TokenGenerator.generateNewToken(),
-				TestDeviceComponent.clientId,
-				"Test-" + 2,
-				TestDeviceComponent.SITE);
+				TokenGenerator.generateNewToken(), TestDeviceComponent.clientId, "Test-" + 2, TestDeviceComponent.SITE);
 		alarmComponent.updateAlarm(alarm);
 		List<Alarm> alarms = alarmComponent.findAlarmsByDevice(device.getClientId(), device.getId());
 		assertEquals(1, alarms.size());
@@ -74,16 +70,10 @@ public class TestAlarmComponent implements IComponentRegistry {
 	@Test
 	public void testFilterBySiteId() {
 		Device device = TestUtils.getDevice();
-		Alarm alarm = new Alarm(
-				TEST_ALARM_ID, device.getClientId(),
-				device.getId(),
-				device.getSite());
+		Alarm alarm = new Alarm(TEST_ALARM_ID, device.getClientId(), device.getId(), device.getSite());
 		alarmComponent.updateAlarm(alarm);
 		alarm = new Alarm(
-				TokenGenerator.generateNewToken(),
-				device.getClientId(),
-				device.getId(),
-				TestDeviceComponent.SITE + 1);
+				TokenGenerator.generateNewToken(), device.getClientId(), device.getId(), TestDeviceComponent.SITE + 1);
 		alarmComponent.updateAlarm(alarm);
 		List<Alarm> alarms = alarmComponent.findAlarmsBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE);
 		assertEquals(1, alarms.size());
@@ -93,22 +83,12 @@ public class TestAlarmComponent implements IComponentRegistry {
 	@Test
 	public void testFilterAlarms() {
 		Device device = TestUtils.getDevice();
-		Alarm alarm = new Alarm(
-				TEST_ALARM_ID, device.getClientId(),
-				device.getId(),
-				device.getSite());
+		Alarm alarm = new Alarm(TEST_ALARM_ID, device.getClientId(), device.getId(), device.getSite());
+		alarmComponent.updateAlarm(alarm);
+		alarm = new Alarm(TokenGenerator.generateNewToken(), device.getClientId(), "Test-" + 2, device.getSite());
 		alarmComponent.updateAlarm(alarm);
 		alarm = new Alarm(
-				TokenGenerator.generateNewToken(),
-				device.getClientId(),
-				"Test-" + 2,
-				device.getSite());
-		alarmComponent.updateAlarm(alarm);
-		alarm = new Alarm(
-				TokenGenerator.generateNewToken(),
-				device.getClientId(),
-				"Test-" + 1,
-				TestDeviceComponent.SITE + 1);
+				TokenGenerator.generateNewToken(), device.getClientId(), "Test-" + 1, TestDeviceComponent.SITE + 1);
 		alarmComponent.updateAlarm(alarm);
 
 		assertEquals(0, alarmComponent.filterAlarms(null, null, null).size());
@@ -130,8 +110,7 @@ public class TestAlarmComponent implements IComponentRegistry {
 		assertEquals(
 				1,
 				alarmComponent
-						.filterAlarms(
-								device.getClientId(), TestDeviceComponent.SITE, device.getId())
+						.filterAlarms(device.getClientId(), TestDeviceComponent.SITE, device.getId())
 						.size());
 		assertEquals(
 				1,

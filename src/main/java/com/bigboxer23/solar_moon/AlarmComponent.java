@@ -178,15 +178,16 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 		List<Alarm> alarms = new ArrayList<>();
 		IComponentRegistry.deviceUpdateComponent
 				.queryByTimeRange(System.currentTimeMillis() - TimeConstants.THIRTY_MINUTES)
-				.forEach(d -> deviceComponent.findDeviceById(d.getDeviceId()).ifPresent(d2 -> {
-					alarmConditionDetected(
-							d2.getClientId(),
-							d2.getId(),
-							d2.getSite(),
-							"No data recently from device.  Last"
-									+ " data: "
-									+ new SimpleDateFormat(MeterConstants.DATE_PATTERN).format(d.getLastUpdate())).ifPresent(alarms::add);
-				}));
+				.forEach(d -> deviceComponent
+						.findDeviceById(d.getDeviceId())
+						.flatMap(d2 -> alarmConditionDetected(
+								d2.getClientId(),
+								d2.getId(),
+								d2.getSite(),
+								"No data recently from device. "
+										+ " Last data: "
+										+ new SimpleDateFormat(MeterConstants.DATE_PATTERN).format(d.getLastUpdate())))
+						.ifPresent(alarms::add));
 		return alarms;
 	}
 
@@ -212,7 +213,6 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 					"No data recently from device.  Last data: "
 							+ new SimpleDateFormat(MeterConstants.DATE_PATTERN).format(data.getDate()));
 		}
-		TransactionUtil.clear();
 		return Optional.empty();
 	}
 
