@@ -26,7 +26,8 @@ public class TestDeviceComponent implements IComponentRegistry {
 		Device device = TestUtils.getDevice();
 		device.setDeviceKey("2459786f-74c6-42e0-bc37-a501cb87297a");
 		deviceComponent.updateDevice(device);
-		assertNotNull(deviceComponent.findDeviceByDeviceKey(TestUtils.getDevice().getDeviceKey()));
+		assertNotNull(
+				deviceComponent.findDeviceByDeviceKey(TestUtils.getDevice().getDeviceKey()));
 	}
 
 	@Test
@@ -70,10 +71,12 @@ public class TestDeviceComponent implements IComponentRegistry {
 						.filter(device -> clientId.equals(device.getClientId()))
 						.toList()
 						.size());
-		assertEquals(1, deviceComponent.getDevices(true).stream()
-				.filter(device -> clientId.equals(device.getClientId()))
-				.toList()
-				.size());
+		assertEquals(
+				1,
+				deviceComponent.getDevices(true).stream()
+						.filter(device -> clientId.equals(device.getClientId()))
+						.toList()
+						.size());
 	}
 
 	@Test

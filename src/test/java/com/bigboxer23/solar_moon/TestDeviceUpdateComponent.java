@@ -28,11 +28,9 @@ public class TestDeviceUpdateComponent implements IComponentRegistry {
 	}
 
 	@BeforeAll
-	public static void beforeAll()
-	{
+	public static void beforeAll() {
 		TestUtils.setupSite();
-		deviceComponent.getDevicesForCustomerId(TestDeviceComponent.clientId)
-				.forEach(d -> ids.add(d.getId()));
+		deviceComponent.getDevicesForCustomerId(TestDeviceComponent.clientId).forEach(d -> ids.add(d.getId()));
 	}
 
 	@AfterAll
