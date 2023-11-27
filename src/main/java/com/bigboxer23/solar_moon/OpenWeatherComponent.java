@@ -42,6 +42,7 @@ public class OpenWeatherComponent {
 	//			CacheBuilder.newBuilder().expireAfterAccess(3, TimeUnit.DAYS).build();
 
 	private Map<String, Location> locationCache = new HashMap<>();
+
 	//			CacheBuilder.newBuilder().expireAfterAccess(30, TimeUnit.DAYS).build();
 
 	protected Location getLatLongFromCity(String city, String state, int countryCode) {

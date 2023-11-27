@@ -199,11 +199,13 @@
         <configuration>
           <java>
             <googleJavaFormat>
-              <version>1.15.0</version>
+              <version>1.17.0</version>
               <style>AOSP</style>
               <reflowLongStrings>true</reflowLongStrings>
             </googleJavaFormat>
-            <palantirJavaFormat/>
+            <palantirJavaFormat>
+              <version>2.35.0</version>
+            </palantirJavaFormat>
             <indent>
               <tabs>true</tabs>
               <spacesPerTab>4</spacesPerTab>

@@ -68,6 +68,10 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 		getMostRecentAlarm(device.getDeviceId())
 				.filter(alarm -> alarm.getState() == 1)
 				.ifPresent(alarm -> {
+					logger.warn("Resolving alarm for "
+							+ device.getName()
+							+ " "
+							+ device.getDate().getTime());
 					alarm.setState(0);
 					alarm.setEndDate(new Date().getTime());
 					updateAlarm(alarm);
@@ -176,6 +180,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 	}
 
 	public List<Alarm> quickCheckDevices() {
+		logger.info("Checking for non-responsive devices");
 		List<Alarm> alarms = new ArrayList<>();
 		IComponentRegistry.deviceUpdateComponent
 				.queryByTimeRange(System.currentTimeMillis() - TimeConstants.THIRTY_MINUTES)
