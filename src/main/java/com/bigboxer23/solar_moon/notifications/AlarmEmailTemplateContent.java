@@ -6,6 +6,7 @@ import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.data.Device;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import lombok.Data;
 import software.amazon.awssdk.utils.StringUtils;
 
@@ -22,10 +23,10 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 
 	public AlarmEmailTemplateContent(String customerId, String deviceId, Alarm alarm) {
 		super("email.template.html", "Potential issue detected with device", "", "", "See active alarms");
-		Customer customer = customerComponent.findCustomerByCustomerId(customerId);
+		Optional<Customer> customer = customerComponent.findCustomerByCustomerId(customerId);
 		device = deviceComponent.getDevice(deviceId, customerId);
-		setRecipient(customer.getEmail());
-		setCustomerName("Hello " + customer.getName());
+		setRecipient(customer.map(Customer::getEmail).orElse(null));
+		setCustomerName("Hello " + customer.map(Customer::getName).orElse(null));
 		setDeviceId(device.getId());
 		setSubject("Potential issue with your solar energy device " + device.getDisplayName());
 		setLink("/alarms?device=" + URLEncoder.encode(device.getDisplayName(), StandardCharsets.UTF_8));
@@ -46,6 +47,6 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 	}
 
 	public boolean isNotificationEnabled() {
-		return !device.isNotificationsDisabled();
+		return !device.isNotificationsDisabled() && !StringUtils.isBlank(getRecipient());
 	}
 }

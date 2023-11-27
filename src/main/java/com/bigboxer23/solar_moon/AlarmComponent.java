@@ -81,7 +81,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 	}
 
 	public Optional<Alarm> alarmConditionDetected(String customerId, String deviceId, String site, String content) {
-		logger.warn("Alarm condition detected: " + customerId + " " + deviceId + " " + content);
+		logger.warn("Alarm condition detected: " + deviceId + " " + content);
+		Boolean[] isNew = {false};
 		List<Alarm> alarms = findAlarmsByDevice(customerId, deviceId);
 		Alarm alarm = alarms.stream().filter(a -> a.getState() == 1).findAny().orElseGet(() -> {
 			Alarm newAlarm = new Alarm(
@@ -94,15 +95,15 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 							.orElse(null));
 			newAlarm.setStartDate(System.currentTimeMillis());
 			newAlarm.setState(1);
+			isNew[0] = true;
 			AlarmEmailTemplateContent alarmEmail = new AlarmEmailTemplateContent(customerId, deviceId, newAlarm);
-			if (alarmEmail.isNotificationEnabled()) {
-				notificationComponent.sendNotification(alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
-			} else {
-				logger.warn("New notification detected, but not sending email"
-						+ " as requested "
-						+ customerId
-						+ " "
-						+ deviceId);
+			if (isNew[0]) {
+				if (alarmEmail.isNotificationEnabled()) {
+					notificationComponent.sendNotification(
+							alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
+				} else {
+					logger.warn("New notification detected, but not sending" + " email as requested.");
+				}
 			}
 			return newAlarm;
 		});
@@ -186,13 +187,18 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 				.queryByTimeRange(System.currentTimeMillis() - TimeConstants.THIRTY_MINUTES)
 				.forEach(d -> deviceComponent
 						.findDeviceById(d.getDeviceId())
-						.flatMap(d2 -> alarmConditionDetected(
-								d2.getClientId(),
-								d2.getId(),
-								d2.getSite(),
-								"No data recently from device. "
-										+ " Last data: "
-										+ new SimpleDateFormat(MeterConstants.DATE_PATTERN).format(d.getLastUpdate())))
+						.flatMap(d2 -> {
+							TransactionUtil.addDeviceId(d2.getId());
+							TransactionUtil.updateCustomerId(d2.getClientId());
+							return alarmConditionDetected(
+									d2.getClientId(),
+									d2.getId(),
+									d2.getSite(),
+									"No data recently from device. "
+											+ " Last data: "
+											+ new SimpleDateFormat(MeterConstants.DATE_PATTERN)
+													.format(d.getLastUpdate()));
+						})
 						.ifPresent(alarms::add));
 		return alarms;
 	}

@@ -79,11 +79,15 @@ public class TestUtils implements IComponentRegistry {
 		return deviceXML;
 	}
 
-	public static void setupSite(String customerId) {
+	public static void nukeCustomerId(String customerId) {
 		deviceComponent.deleteDevicesByCustomerId(customerId);
 		subscriptionComponent.updateSubscription(customerId, 1);
 		OSComponent.deleteByCustomerId(customerId);
 		alarmComponent.deleteAlarmsByCustomerId(customerId);
+	}
+
+	public static void setupSite(String customerId) {
+		nukeCustomerId(customerId);
 		Device testDevice = new Device();
 		testDevice.setClientId(customerId);
 		testDevice.setSite(TestDeviceComponent.SITE);
