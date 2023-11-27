@@ -44,11 +44,12 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			return;
 		}
 		logAction(customer.getCustomerId(), "update");
-		Customer existingCustomer = findCustomerByCustomerId(customer.getCustomerId());
 		if (customer.getAccessKey() == null || customer.getAccessKey().isBlank()) {
 			logger.info("generating new access key for " + customer.getCustomerId());
 			customer.setAccessKey(TokenGenerator.generateNewToken());
 		}
+		Customer existingCustomer =
+				findCustomerByCustomerId(customer.getCustomerId()).get();
 		if (customer.isAdmin() && !existingCustomer.isAdmin()) {
 			logger.warn("Not allowing admin escalation" + customer.getCustomerId());
 			customer.setAdmin(false);
@@ -79,22 +80,21 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 	}
 
 	public void deleteCustomerByCustomerId(String customerId) {
-		Optional.ofNullable(findCustomerByCustomerId(customerId)).ifPresent(customer -> {
-			logAction(customer.getCustomerId(), "delete by customer id");
-			getTable().deleteItem(customer);
+		findCustomerByCustomerId(customerId).ifPresent(c -> {
+			logAction(c.getCustomerId(), "delete by customer id");
+			getTable().deleteItem(c);
 		});
 	}
 
-	public Customer findCustomerByCustomerId(String customerId) {
-		return customerId != null && !customerId.isEmpty()
-				? this.getTable()
+	public Optional<Customer> findCustomerByCustomerId(String customerId) {
+		return customerId == null || customerId.isEmpty()
+				? Optional.empty()
+				: this.getTable()
 						.index(Customer.CUSTOMER_ID_INDEX)
 						.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(customerId)))
 						.stream()
 						.findFirst()
-						.flatMap((page) -> page.items().stream().findFirst())
-						.orElse(null)
-				: null;
+						.flatMap((page) -> page.items().stream().findFirst());
 	}
 
 	public Customer findCustomerByStripeCustomerId(String stripeCustomerId) {

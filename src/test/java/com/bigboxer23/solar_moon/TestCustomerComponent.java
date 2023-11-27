@@ -109,7 +109,9 @@ public class TestCustomerComponent implements IComponentRegistry {
 	@Test
 	public void testUpdateCustomer() {
 		new TestCustomerComponent().setupTestCustomer();
-		Customer customer = customerComponent.findCustomerByCustomerId(TestDeviceComponent.clientId);
+		Customer customer = customerComponent
+				.findCustomerByCustomerId(TestDeviceComponent.clientId)
+				.get();
 		customerComponent.updateCustomer(null);
 		customer.setAccessKey("tacos");
 		customerComponent.updateCustomer(customer);
@@ -117,6 +119,7 @@ public class TestCustomerComponent implements IComponentRegistry {
 				"tacos",
 				customerComponent
 						.findCustomerByCustomerId(TestDeviceComponent.clientId)
+						.get()
 						.getAccessKey());
 	}
 }
