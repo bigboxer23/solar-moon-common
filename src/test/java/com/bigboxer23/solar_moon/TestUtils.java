@@ -125,7 +125,11 @@ public class TestUtils implements IComponentRegistry {
 								Date.from(ldt.minusMinutes(15 * ai)
 										.atZone(ZoneId.systemDefault())
 										.toInstant()),
-								(5 * ai)),
+								(5 * ai),
+								230,
+								1,
+								(15 * ai),
+								(10 * ai)),
 						customerId);
 			}
 		}

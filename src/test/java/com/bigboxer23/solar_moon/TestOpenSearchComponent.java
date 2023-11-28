@@ -14,6 +14,7 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import javax.xml.xpath.XPathExpressionException;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opensearch.client.opensearch._types.aggregations.Aggregate;
@@ -31,7 +32,12 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 	@Test
 	public void testGetTotalEnergyConsumed() {
 		// test invalid case
-		assertNull(OSComponent.getTotalEnergyConsumed(TestDeviceComponent.deviceName));
+		assertNull(OSComponent.getTotalEnergyConsumed(TestDeviceComponent.deviceName + System.currentTimeMillis()));
+	}
+
+	@AfterAll
+	public static void afterAll() {
+		TestUtils.nukeCustomerId(TestDeviceComponent.clientId);
 	}
 
 	@Test
@@ -153,6 +159,9 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 				.buckets()
 				.array();
 		for (int ai = 0; ai < buckets.size() - 1; ai++) {
+			System.out.println(buckets.get(ai).aggregations().get("1").avg().value()
+					+ " "
+					+ buckets.get(ai + 1).aggregations().get("1").avg().value());
 			assertTrue(buckets.get(ai).aggregations().get("1").avg().value()
 					> buckets.get(ai + 1).aggregations().get("1").avg().value());
 		}
@@ -231,8 +240,7 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 		json.setTimeZone(ZonedDateTime.now().getZone().getId());
 		SearchResponse response = OSComponent.search(json);
 		assertEquals(
-				333.70001220703125,
-				((Aggregate) response.aggregations().get("max")).max().value());
+				90.0, ((Aggregate) response.aggregations().get("max")).max().value());
 		assertFalse(response.hits().hits().isEmpty());
 		assertEquals(
 				"[0.0]",
@@ -258,10 +266,11 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 		json.setTimeZone(ZonedDateTime.now().getZone().getId());
 		SearchResponse response = OSComponent.search(json);
 		assertEquals(2, response.aggregations().size());
-		assertEquals(0, ((Aggregate) response.aggregations().get("total")).sum().value());
 		assertEquals(
-				166.85000076293946,
-				((Aggregate) response.aggregations().get("avg")).avg().value());
+				-9.7032755E7,
+				((Aggregate) response.aggregations().get("total")).sum().value());
+		assertEquals(
+				45.0, ((Aggregate) response.aggregations().get("avg")).avg().value());
 	}
 
 	@Test
@@ -281,6 +290,7 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 								.toInstant()),
 						5),
 				TestDeviceComponent.clientId);
+		OpenSearchUtils.waitForIndexing();
 		Device SNEDevice = deviceComponent.getDevicesForCustomerId(TestDeviceComponent.clientId).stream()
 				.filter(d -> !d.isVirtual())
 				.filter(device -> device.getDeviceName().equalsIgnoreCase(deviceName))
@@ -288,7 +298,6 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 				.orElse(null);
 		assertNotNull(SNEDevice);
 		assertNull(SNEDevice.getName());
-
 		assertNotNull(OSComponent.getLastDeviceEntry(
 				SNEDevice.getDeviceName(),
 				OpenSearchQueries.getDeviceNameQuery(SNEDevice.getDeviceName()),

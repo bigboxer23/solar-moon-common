@@ -33,7 +33,14 @@ public class DeviceData {
 	}
 
 	public boolean isValid() {
-		return getAttributes().size() > 4;
+		if (getAttributes().size() <= 4) {
+			return false;
+		}
+		return getAverageVoltage() > -1
+				&& getAverageCurrent() > -1
+				&& getPowerFactor() > -1
+				&& getTotalRealPower() > -1
+				&& getTotalEnergyConsumed() > -1;
 	}
 
 	private float doubleToFloat(Object value) {
