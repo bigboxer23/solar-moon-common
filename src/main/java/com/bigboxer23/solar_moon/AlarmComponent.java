@@ -8,7 +8,6 @@ import com.bigboxer23.solar_moon.open_search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -194,10 +193,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 									d2.getClientId(),
 									d2.getId(),
 									d2.getSite(),
-									"No data recently from device. "
-											+ " Last data: "
-											+ new SimpleDateFormat(MeterConstants.DATE_PATTERN)
-													.format(d.getLastUpdate()));
+									"No data recently from device. " + " Last data: " + d.getLastUpdate());
 						})
 						.ifPresent(alarms::add));
 		return alarms;
@@ -223,7 +219,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 					data.getDeviceId(),
 					data.getSite(),
 					"No data recently from device.  Last data: "
-							+ new SimpleDateFormat(MeterConstants.DATE_PATTERN).format(data.getDate()));
+							+ data.getDate().getTime());
 		}
 		return Optional.empty();
 	}
