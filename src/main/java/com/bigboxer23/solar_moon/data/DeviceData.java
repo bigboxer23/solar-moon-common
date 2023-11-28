@@ -38,7 +38,7 @@ public class DeviceData {
 		}
 		return getAverageVoltage() > -1
 				&& getAverageCurrent() > -1
-				&& getPowerFactor() > -1
+				&& getPowerFactor() != -1 // Check only for -1, b/c could be negative
 				&& getTotalRealPower() > -1
 				&& getTotalEnergyConsumed() > -1;
 	}
