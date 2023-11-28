@@ -186,6 +186,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 				.queryByTimeRange(System.currentTimeMillis() - TimeConstants.THIRTY_MINUTES)
 				.forEach(d -> deviceComponent
 						.findDeviceById(d.getDeviceId())
+						.filter(d2 -> !d2.isDisabled())
 						.flatMap(d2 -> {
 							TransactionUtil.addDeviceId(d2.getId());
 							TransactionUtil.updateCustomerId(d2.getClientId());
