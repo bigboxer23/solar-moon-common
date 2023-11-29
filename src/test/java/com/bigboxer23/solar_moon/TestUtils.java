@@ -107,6 +107,10 @@ public class TestUtils implements IComponentRegistry {
 				.orElse(null);
 	}
 
+	public static Device getSite() {
+		return deviceComponent.getDevicesForCustomerId(TestDeviceComponent.clientId).stream().filter(Device::isVirtual).findAny().get();
+	}
+
 	public static void seedOpenSearchData(String customerId) throws XPathExpressionException {
 		LocalDateTime ldt = LocalDateTime.ofInstant(
 						TimeUtils.get15mRoundedDate().toInstant(), ZoneId.systemDefault())

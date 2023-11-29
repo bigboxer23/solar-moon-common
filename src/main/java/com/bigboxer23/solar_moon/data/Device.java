@@ -76,6 +76,16 @@ public class Device {
 
 	private String mock;
 
+	private String city;
+
+	private String state;
+
+	private String country;
+
+	private double latitude = -1;
+
+	private double longitude = -1;
+
 	public Device() {
 		setVirtual(false);
 	}

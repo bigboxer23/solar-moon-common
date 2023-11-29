@@ -109,6 +109,23 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 				&& !StringUtils.isBlank(device.getId());
 	}
 
+	private void maybeUpdateLocationData(Device device) {
+		if (device.isVirtual()
+				&& device.getLongitude() == -1
+				&& device.getLatitude() == -1
+				&& !StringUtils.isBlank(device.getCity())
+				&& !StringUtils.isBlank(device.getState())
+				&& !StringUtils.isBlank(device.getCountry())) {
+			IComponentRegistry.locationComponent
+					.getLatLongFromText(device.getCity(), device.getState(), device.getCountry())
+					.ifPresent(location -> {
+						List<Double> points = location.place().geometry().point();
+						device.setLatitude(points.get(1));
+						device.setLongitude(points.get(0));
+					});
+		}
+	}
+
 	public boolean addDevice(Device device) {
 		if (subscriptionComponent.getSubscriptionPacks(device.getClientId()) * 10
 				<= getDevicesForCustomerId(device.getClientId()).size()) {
@@ -122,6 +139,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 			logger.warn(device.getClientId() + ":" + device.getId() + " exists, not putting into db.");
 			return false;
 		}
+		maybeUpdateLocationData(device);
 		logAction("add", device.getId());
 		getTable().putItem(device);
 		return true;
@@ -144,6 +162,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 				});
 			}
 		}
+		maybeUpdateLocationData(device);
 		getTable().updateItem(builder -> builder.item(device));
 	}
 

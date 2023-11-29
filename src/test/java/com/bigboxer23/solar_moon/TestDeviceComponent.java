@@ -159,6 +159,29 @@ public class TestDeviceComponent implements IComponentRegistry {
 		assertTrue(deviceComponent.findDeviceById(TestUtils.getDevice().getId()).isPresent());
 	}
 
+	@Test
+	public void deviceLocationUpdate() {
+		Device device = TestUtils.getSite();
+		assertEquals(-1, device.getLatitude());
+		assertEquals(-1, device.getLongitude());
+		device.setCity("Minneapolis");
+		deviceComponent.updateDevice(device);
+		assertEquals(-1, TestUtils.getSite().getLatitude());
+		device.setState("MN");
+		deviceComponent.updateDevice(device);
+		assertEquals(-1, TestUtils.getSite().getLatitude());
+		device.setCountry("USA");
+		deviceComponent.updateDevice(device);
+		assertEquals(44.97902, TestUtils.getSite().getLatitude());
+
+		device = TestUtils.getDevice();
+		device.setCity("Minneapolis");
+		device.setState("MN");
+		device.setCountry("USA");
+		deviceComponent.updateDevice(device);
+		assertEquals(-1, TestUtils.getDevice().getLatitude());
+	}
+
 	@BeforeEach
 	protected void setupTestDevice() {
 		TestUtils.setupSite();

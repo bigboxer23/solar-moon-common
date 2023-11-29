@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon;
 
+import com.bigboxer23.solar_moon.location.LocationComponent;
 import com.bigboxer23.solar_moon.maintenance.MaintenanceComponent;
 import com.bigboxer23.solar_moon.notifications.NotificationComponent;
 import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
@@ -33,6 +34,8 @@ public interface IComponentRegistry {
 	MaintenanceComponent maintenanceComponent = new MaintenanceComponent();
 
 	DeviceUpdateComponent deviceUpdateComponent = new DeviceUpdateComponent();
+
+	LocationComponent locationComponent = new LocationComponent();
 
 	Logger logger = LoggerFactory.getLogger(IComponentRegistry.class);
 }
