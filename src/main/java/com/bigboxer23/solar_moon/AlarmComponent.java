@@ -183,7 +183,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 		logger.info("Checking for non-responsive devices");
 		List<Alarm> alarms = new ArrayList<>();
 		IComponentRegistry.deviceUpdateComponent
-				.queryByTimeRange(System.currentTimeMillis() - TimeConstants.THIRTY_MINUTES)
+				.queryByTimeRange(System.currentTimeMillis() - TimeConstants.FORTY_FIVE_MINUTES)
 				.forEach(d -> deviceComponent
 						.findDeviceById(d.getDeviceId())
 						.filter(d2 -> !d2.isDisabled())
@@ -214,8 +214,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 		TransactionUtil.addDeviceId(device.getId());
 		TransactionUtil.updateCustomerId(device.getClientId());
 		if (!device.isDisabled()
-				&& data.getDate().getTime()
-						< new Date(System.currentTimeMillis() - TimeConstants.FORTY_FIVE_MINUTES).getTime()) {
+				&& data.getDate().getTime() < new Date(System.currentTimeMillis() - TimeConstants.HOUR).getTime()) {
 			return alarmConditionDetected(
 					data.getCustomerId(),
 					data.getDeviceId(),

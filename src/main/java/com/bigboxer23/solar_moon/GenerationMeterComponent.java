@@ -100,6 +100,11 @@ public class GenerationMeterComponent implements MeterConstants {
 				&& deviceData.getDate().getTime() > System.currentTimeMillis() - TimeConstants.HOUR) {
 			alarmComponent.resolveActiveAlarms(deviceData);
 		}
+		IComponentRegistry.locationComponent.addLocationData(
+				deviceData,
+				deviceComponent
+						.findDeviceByName(device.getClientId(), device.getSite())
+						.orElse(null));
 		openSearch.logData(
 				deviceData.getDate() != null ? deviceData.getDate() : new Date(),
 				Collections.singletonList(deviceData));
