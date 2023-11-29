@@ -36,6 +36,10 @@ public class SiteComponent {
 							.filter(Device::isVirtual)
 							.findAny()
 							.orElse(null);
+					/*Device site = deviceComponent
+					.findDeviceByName(device.getClientId(), device.getSite())
+					.orElse(null)*/
+					// TODO:replace with this, should be more efficient than full scan
 					if (site == null) {
 						logger.warn("cannot find site " + device.getCustomerId() + ":" + device.getSite());
 						return;
@@ -55,6 +59,7 @@ public class SiteComponent {
 					if (totalRealPower > -1) {
 						siteDevice.setTotalRealPower(Math.max(0, siteDevice.getTotalRealPower()) + totalRealPower);
 					}
+					IComponentRegistry.locationComponent.addLocationData(siteDevice, site);
 					logger.info("adding virtual device " + device.getSite() + " : " + device.getDate());
 					openSearch.logData(device.getDate(), Collections.singletonList(siteDevice));
 					OpenSearchUtils.waitForIndexing();
