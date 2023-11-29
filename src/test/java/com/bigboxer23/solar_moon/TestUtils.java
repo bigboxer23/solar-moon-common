@@ -108,7 +108,10 @@ public class TestUtils implements IComponentRegistry {
 	}
 
 	public static Device getSite() {
-		return deviceComponent.getDevicesForCustomerId(TestDeviceComponent.clientId).stream().filter(Device::isVirtual).findAny().get();
+		return deviceComponent.getDevicesForCustomerId(TestDeviceComponent.clientId).stream()
+				.filter(Device::isVirtual)
+				.findAny()
+				.get();
 	}
 
 	public static void seedOpenSearchData(String customerId) throws XPathExpressionException {
