@@ -36,6 +36,9 @@ public class DeviceData {
 		if (getAttributes().size() <= 4) {
 			return false;
 		}
+		if (isVirtual()) {
+			return true;
+		}
 		return getAverageVoltage() > -1
 				&& getAverageCurrent() > -1
 				&& getPowerFactor() != -1 // Check only for -1, b/c could be negative
@@ -96,7 +99,13 @@ public class DeviceData {
 	}
 
 	public void setIsVirtual() {
-		addAttribute(new DeviceAttribute("Virtual", "", true));
+		addAttribute(new DeviceAttribute(VIRTUAL, "", true));
+	}
+
+	public boolean isVirtual() {
+		return (Boolean) Optional.ofNullable(attributes.get(VIRTUAL))
+				.map(DeviceAttribute::getValue)
+				.orElse(false);
 	}
 
 	public String getTotalEnergyConsumedUnit() {

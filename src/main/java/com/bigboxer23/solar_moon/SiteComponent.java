@@ -49,7 +49,7 @@ public class SiteComponent {
 					DeviceData siteDevice =
 							new DeviceData(site.getSite(), site.getName(), site.getClientId(), site.getId());
 					siteDevice.setIsVirtual();
-
+					siteDevice.setDate(device.getDate());
 					float totalEnergyConsumed = getPushedDeviceValues(siteDevices, site, DeviceData::getEnergyConsumed);
 					if (totalEnergyConsumed > -1) {
 						siteDevice.setEnergyConsumed(
@@ -61,7 +61,7 @@ public class SiteComponent {
 					}
 					IComponentRegistry.locationComponent.addLocationData(siteDevice, site);
 					logger.info("adding virtual device " + device.getSite() + " : " + device.getDate());
-					openSearch.logData(device.getDate(), Collections.singletonList(siteDevice));
+					openSearch.logData(siteDevice.getDate(), Collections.singletonList(siteDevice));
 					OpenSearchUtils.waitForIndexing();
 				});
 	}

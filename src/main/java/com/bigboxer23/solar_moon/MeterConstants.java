@@ -30,6 +30,8 @@ public interface MeterConstants {
 	String AVG_VOLT = "Average Voltage (L-N)";
 	String TOTAL_PF = "Total (System) Power Factor";
 
+	String VIRTUAL = "Virtual";
+
 	String SITE = "site";
 
 	String CUSTOMER_ID = "customer-id";

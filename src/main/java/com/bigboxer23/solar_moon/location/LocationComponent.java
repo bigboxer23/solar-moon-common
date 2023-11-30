@@ -45,7 +45,7 @@ public class LocationComponent {
 			return;
 		}
 		if (site.getLatitude() == -1 && site.getLongitude() == -1) {
-			logger.info("no location data, can't write day/night");
+			logger.debug("no location data, can't write day/night");
 			return;
 		}
 		if (data.getDate() == null) {
