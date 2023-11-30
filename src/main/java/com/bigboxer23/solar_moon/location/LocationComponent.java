@@ -40,8 +40,12 @@ public class LocationComponent {
 	}
 
 	public void addLocationData(DeviceData data, Device site) {
-		if (data == null || !data.isValid() || site == null) {
+		if (data == null || !data.isValid()) {
 			logger.warn("Device invalid, not adding location data");
+			return;
+		}
+		if (site == null) {
+			logger.debug("No site, not adding location data");
 			return;
 		}
 		if (site.getLatitude() == -1 && site.getLongitude() == -1) {

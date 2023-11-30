@@ -40,6 +40,8 @@ public class Alarm {
 
 	public static final String DEVICEID_STARTDATE_INDEX = "deviceId-startDate-index";
 
+	public static final String EMAILED_CUSTOMER_INDEX = "emailed-customerId-index";
+
 	private String alarmId;
 
 	private String deviceId;
@@ -58,6 +60,13 @@ public class Alarm {
 
 	private int state;
 
+	private long emailed = 0;
+
+	@DynamoDbSecondaryPartitionKey(indexNames = EMAILED_CUSTOMER_INDEX)
+	public long getEmailed() {
+		return emailed;
+	}
+
 	@DynamoDbPartitionKey
 	public String getAlarmId() {
 		return alarmId;
@@ -69,7 +78,8 @@ public class Alarm {
 	}
 
 	@DynamoDbSecondaryPartitionKey(indexNames = CUSTOMER_INDEX)
-	@DynamoDbSecondarySortKey(indexNames = {SITE_CUSTOMER_INDEX, STATE_CUSTOMER_INDEX, DEVICE_CUSTOMER_INDEX})
+	@DynamoDbSecondarySortKey(
+			indexNames = {SITE_CUSTOMER_INDEX, STATE_CUSTOMER_INDEX, DEVICE_CUSTOMER_INDEX, EMAILED_CUSTOMER_INDEX})
 	@DynamoDbSortKey
 	public String getCustomerId() {
 		return customerId;

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.xml.xpath.XPathExpressionException;
 import lombok.SneakyThrows;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,12 @@ public class TestAlarmComponent implements IComponentRegistry {
 	@BeforeAll
 	public static void before() {
 		TestUtils.setupSite();
+	}
+
+	@AfterAll
+	public static void after() {
+		TestUtils.nukeCustomerId(TestDeviceComponent.clientId);
+		TestUtils.nukeCustomerId(TestDeviceComponent.clientId + "invalid");
 	}
 
 	@Test
@@ -131,6 +138,7 @@ public class TestAlarmComponent implements IComponentRegistry {
 		Optional<Alarm> alarm = alarmComponent.alarmConditionDetected(
 				device.getClientId(), device.getId(), device.getSite(), "Test alarm!");
 		assertTrue(alarm.isPresent());
+		assertEquals(0, alarm.get().getEmailed());
 		Thread.sleep(1000);
 		Optional<Alarm> alarm2 = alarmComponent.alarmConditionDetected(
 				device.getClientId(), device.getId(), device.getSite(), "Test alarm!");
@@ -252,4 +260,65 @@ public class TestAlarmComponent implements IComponentRegistry {
 		assertEquals(1, alarmComponent.quickCheckDevices().size());
 		alarmComponent.deleteAlarmsByCustomerId(TestDeviceComponent.clientId);
 	}
+
+	@SneakyThrows
+	@Test
+	public void findNonEmailedAlarms() {
+		assertTrue(alarmComponent
+				.findNonEmailedAlarms(TestDeviceComponent.clientId)
+				.isEmpty());
+		Device device = TestUtils.getDevice();
+		assertNotNull(device);
+		Optional<Alarm> alarm = alarmComponent.alarmConditionDetected(
+				device.getClientId(), device.getId(), device.getSite(), "Test alarm!");
+		assertTrue(alarm.isPresent());
+		assertEquals(0, alarm.get().getEmailed());
+		Thread.sleep(1000);
+		Optional<Alarm> alarm2 = alarmComponent.alarmConditionDetected(
+				device.getClientId(), device.getId(), device.getSite(), "Test alarm!");
+		assertTrue(alarm2.isPresent());
+
+		assertEquals(
+				1,
+				alarmComponent
+						.findNonEmailedAlarms(TestDeviceComponent.clientId)
+						.size());
+
+		alarmComponent.alarmConditionDetected(
+				device.getClientId(), device.getId() + "invalild", device.getSite(), "Test alarm!");
+		assertEquals(
+				2,
+				alarmComponent
+						.findNonEmailedAlarms(TestDeviceComponent.clientId)
+						.size());
+		alarm.get().setEmailed(1);
+		alarmComponent.updateAlarm(alarm.get());
+		assertEquals(
+				1,
+				alarmComponent
+						.findNonEmailedAlarms(TestDeviceComponent.clientId)
+						.size());
+		assertTrue(alarmComponent
+				.findNonEmailedAlarms(TestDeviceComponent.clientId + "invalid")
+				.isEmpty());
+
+		alarmComponent.alarmConditionDetected(
+				TestDeviceComponent.clientId + "invalid", device.getId(), device.getSite(), "Test alarm!");
+		assertEquals(
+				1,
+				alarmComponent
+						.findNonEmailedAlarms(TestDeviceComponent.clientId + "invalid")
+						.size());
+		assertEquals(
+				1,
+				alarmComponent
+						.findNonEmailedAlarms(TestDeviceComponent.clientId)
+						.size());
+		assertEquals(2, alarmComponent.findNonEmailedAlarms().size());
+	}
+
+	/*@Test
+	public void sendPendingNotifications() {
+		alarmComponent.sendPendingNotifications();
+	}*/
 }

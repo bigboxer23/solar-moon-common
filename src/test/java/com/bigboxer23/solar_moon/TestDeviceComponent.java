@@ -140,8 +140,9 @@ public class TestDeviceComponent implements IComponentRegistry {
 		Optional<Device> device = deviceComponent.findDeviceByDeviceName(
 				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
 		assertTrue(device.isPresent());
-		assertFalse(deviceComponent.findDeviceByDeviceName(
-				TestDeviceComponent.clientId, "pretty" + TestDeviceComponent.deviceName + 0).isPresent());
+		assertFalse(deviceComponent
+				.findDeviceByDeviceName(TestDeviceComponent.clientId, "pretty" + TestDeviceComponent.deviceName + 0)
+				.isPresent());
 
 		assertFalse(deviceComponent
 				.findDeviceByDeviceName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName)
@@ -160,8 +161,9 @@ public class TestDeviceComponent implements IComponentRegistry {
 		Optional<Device> device = deviceComponent.findDeviceByName(
 				TestDeviceComponent.clientId, "pretty" + TestDeviceComponent.deviceName + 0);
 		assertTrue(device.isPresent());
-		assertFalse(deviceComponent.findDeviceByName(
-				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0).isPresent());
+		assertFalse(deviceComponent
+				.findDeviceByName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0)
+				.isPresent());
 
 		assertFalse(deviceComponent
 				.findDeviceByName(TestDeviceComponent.clientId, "pretty" + TestDeviceComponent.deviceName)
@@ -170,8 +172,7 @@ public class TestDeviceComponent implements IComponentRegistry {
 				.findDeviceByName(TestDeviceComponent.clientId + 1, "pretty" + TestDeviceComponent.deviceName + 0)
 				.isPresent());
 		assertFalse(deviceComponent
-				.findDeviceByName(
-						TestDeviceComponent.clientId, device.get().getId())
+				.findDeviceByName(TestDeviceComponent.clientId, device.get().getId())
 				.isPresent());
 	}
 

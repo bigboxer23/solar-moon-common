@@ -5,6 +5,7 @@ import com.bigboxer23.solar_moon.util.TokenGenerator;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.slf4j.MDC;
+import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 public class TransactionUtil {
@@ -32,6 +33,10 @@ public class TransactionUtil {
 	}
 
 	public static void addDeviceId(String deviceId) {
+		if (StringUtils.isBlank(deviceId)) {
+			MDC.remove("device.id");
+			return;
+		}
 		MDC.put("device.id", deviceId);
 	}
 

@@ -72,6 +72,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 							+ " "
 							+ device.getDate().getTime());
 					alarm.setState(0);
+					alarm.setEmailed(1);
 					alarm.setEndDate(new Date().getTime());
 					updateAlarm(alarm);
 				});
@@ -81,7 +82,6 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 
 	public Optional<Alarm> alarmConditionDetected(String customerId, String deviceId, String site, String content) {
 		logger.warn("Alarm condition detected: " + deviceId + " " + content);
-		Boolean[] isNew = {false};
 		List<Alarm> alarms = findAlarmsByDevice(customerId, deviceId);
 		Alarm alarm = alarms.stream().filter(a -> a.getState() == 1).findAny().orElseGet(() -> {
 			Alarm newAlarm = new Alarm(
@@ -94,21 +94,37 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 							.orElse(null));
 			newAlarm.setStartDate(System.currentTimeMillis());
 			newAlarm.setState(1);
-			isNew[0] = true;
-			AlarmEmailTemplateContent alarmEmail = new AlarmEmailTemplateContent(customerId, deviceId, newAlarm);
-			if (isNew[0]) {
-				if (alarmEmail.isNotificationEnabled()) {
-					notificationComponent.sendNotification(
-							alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
-				} else {
-					logger.warn("New notification detected, but not sending" + " email as requested.");
-				}
-			}
 			return newAlarm;
 		});
 		alarm.setLastUpdate(System.currentTimeMillis());
 		alarm.setMessage(content);
 		return updateAlarm(alarm);
+	}
+
+	public void sendPendingNotifications() {
+		logger.info("Checking for pending notifications");
+		Map<String, List<Alarm>> customerSortedAlarms = new HashMap<>();
+		findNonEmailedAlarms().forEach(alarm -> {
+			if (!customerSortedAlarms.containsKey(alarm.getCustomerId())) {
+				customerSortedAlarms.put(alarm.getCustomerId(), new ArrayList<>());
+			}
+			customerSortedAlarms.get(alarm.getCustomerId()).add(alarm);
+		});
+
+		customerSortedAlarms.forEach((customerId, alarms) -> {
+			TransactionUtil.updateCustomerId(customerId);
+			logger.info("Starting sending notifications");
+			AlarmEmailTemplateContent alarmEmail = new AlarmEmailTemplateContent(customerId, alarms);
+			if (alarmEmail.isNotificationEnabled()) {
+				notificationComponent.sendNotification(alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
+			} else {
+				logger.warn("New notification detected, but not sending email as requested.");
+			}
+			alarms.forEach(a -> {
+				a.setEmailed(System.currentTimeMillis());
+				updateAlarm(a);
+			});
+		});
 	}
 
 	public List<Alarm> filterAlarms(String customerId, String siteId, String deviceId) {
@@ -130,6 +146,25 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 
 	public List<Alarm> findAlarmsBySite(String customerId, String siteId) {
 		return findAlarmsByIndex(Alarm.SITE_CUSTOMER_INDEX, siteId, customerId);
+	}
+
+	public List<Alarm> findNonEmailedAlarms(String customerId) {
+		return getTable()
+				.index(Alarm.EMAILED_CUSTOMER_INDEX)
+				.query(QueryConditional.keyEqualTo(
+						builder -> builder.partitionValue(0).sortValue(customerId)))
+				.stream()
+				.flatMap(page -> page.items().stream())
+				.toList();
+	}
+
+	public List<Alarm> findNonEmailedAlarms() {
+		return getTable()
+				.index(Alarm.EMAILED_CUSTOMER_INDEX)
+				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(0)))
+				.stream()
+				.flatMap(page -> page.items().stream())
+				.toList();
 	}
 
 	private List<Alarm> findAlarmsByIndex(String indexName, String partitionId, String sort) {
