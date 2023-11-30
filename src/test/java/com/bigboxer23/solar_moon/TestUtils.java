@@ -103,7 +103,7 @@ public class TestUtils implements IComponentRegistry {
 
 	public static Device getDevice() {
 		return deviceComponent
-				.findDeviceByName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0)
+				.findDeviceByDeviceName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0)
 				.orElse(null);
 	}
 
@@ -149,7 +149,7 @@ public class TestUtils implements IComponentRegistry {
 
 	private static void addDevice(String name, Device testDevice, boolean isVirtual) {
 		testDevice.setId(TokenGenerator.generateNewToken());
-		testDevice.setName(name);
+		testDevice.setName("pretty" + name);
 		testDevice.setDeviceName(name);
 		testDevice.setVirtual(isVirtual);
 		if (isVirtual) {

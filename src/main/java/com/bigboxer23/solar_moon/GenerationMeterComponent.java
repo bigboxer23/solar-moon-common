@@ -103,7 +103,7 @@ public class GenerationMeterComponent implements MeterConstants {
 		IComponentRegistry.locationComponent.addLocationData(
 				deviceData,
 				deviceComponent
-						.findDeviceByName(device.getClientId(), device.getSite())
+						.findDeviceByDeviceName(device.getClientId(), device.getSite())
 						.orElse(null));
 		openSearch.logData(
 				deviceData.getDate() != null ? deviceData.getDate() : new Date(),
