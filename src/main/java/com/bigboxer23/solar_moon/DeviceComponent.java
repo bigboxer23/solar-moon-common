@@ -21,7 +21,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 
 	public static final String NO_SITE = "No Site";
 
-	public Optional<Device> findDeviceByName(String customerId, String deviceName) {
+	public Optional<Device> findDeviceByDeviceName(String customerId, String deviceName) {
 		if (StringUtils.isBlank(deviceName) || StringUtils.isBlank(customerId)) {
 			return Optional.empty();
 		}
@@ -29,6 +29,19 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 				.index(Device.DEVICE_NAME_INDEX)
 				.query(QueryConditional.keyEqualTo(
 						builder -> builder.partitionValue(deviceName).sortValue(customerId)))
+				.stream()
+				.findFirst()
+				.flatMap(page -> page.items().stream().findFirst());
+	}
+
+	public Optional<Device> findDeviceByName(String customerId, String name) {
+		if (StringUtils.isBlank(name) || StringUtils.isBlank(customerId)) {
+			return Optional.empty();
+		}
+		return getTable()
+				.index(Device.NAME_INDEX)
+				.query(QueryConditional.keyEqualTo(
+						builder -> builder.partitionValue(name).sortValue(customerId)))
 				.stream()
 				.findFirst()
 				.flatMap(page -> page.items().stream().findFirst());

@@ -165,8 +165,8 @@ public class TestAlarmComponent implements IComponentRegistry {
 		// test invalid device
 		assertFalse(alarmComponent.checkDevice(null).isPresent());
 		// test device but no OpenSearch
-		Optional<Device> device =
-				deviceComponent.findDeviceByName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
+		Optional<Device> device = deviceComponent.findDeviceByDeviceName(
+				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
 		assertTrue(device.isPresent());
 		assertFalse(alarmComponent.checkDevice(device.get()).isPresent());
 

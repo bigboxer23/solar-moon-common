@@ -89,7 +89,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 					customerId,
 					deviceId,
 					deviceComponent
-							.findDeviceByName(customerId, site)
+							.findDeviceByDeviceName(customerId, site)
 							.map(Device::getId)
 							.orElse(null));
 			newAlarm.setStartDate(System.currentTimeMillis());

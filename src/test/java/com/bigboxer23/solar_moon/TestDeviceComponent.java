@@ -81,7 +81,6 @@ public class TestDeviceComponent implements IComponentRegistry {
 
 	@Test
 	public void testSiteDelete() {
-		TestUtils.setupSite();
 		Device testSite =
 				deviceComponent.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
 						.filter(Device::isVirtual)
@@ -102,7 +101,6 @@ public class TestDeviceComponent implements IComponentRegistry {
 
 	@Test
 	public void testSiteUpdate() {
-		TestUtils.setupSite();
 		Device testSite =
 				deviceComponent.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
 						.filter(Device::isVirtual)
@@ -138,19 +136,42 @@ public class TestDeviceComponent implements IComponentRegistry {
 	}
 
 	@Test
-	public void testFindDeviceByName() {
-		TestUtils.setupSite();
-		Optional<Device> device =
-				deviceComponent.findDeviceByName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
+	public void testFindDeviceByDeviceName() {
+		Optional<Device> device = deviceComponent.findDeviceByDeviceName(
+				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
 		assertTrue(device.isPresent());
+		assertFalse(deviceComponent.findDeviceByDeviceName(
+				TestDeviceComponent.clientId, "pretty" + TestDeviceComponent.deviceName + 0).isPresent());
+
 		assertFalse(deviceComponent
-				.findDeviceByName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName)
+				.findDeviceByDeviceName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName)
 				.isPresent());
 		assertFalse(deviceComponent
-				.findDeviceByName(TestDeviceComponent.clientId + 1, TestDeviceComponent.deviceName + 0)
+				.findDeviceByDeviceName(TestDeviceComponent.clientId + 1, TestDeviceComponent.deviceName + 0)
 				.isPresent());
 		assertFalse(deviceComponent
-				.findDeviceByName(TestDeviceComponent.clientId, device.get().getId())
+				.findDeviceByDeviceName(
+						TestDeviceComponent.clientId, device.get().getId())
+				.isPresent());
+	}
+
+	@Test
+	public void findDeviceByName() {
+		Optional<Device> device = deviceComponent.findDeviceByName(
+				TestDeviceComponent.clientId, "pretty" + TestDeviceComponent.deviceName + 0);
+		assertTrue(device.isPresent());
+		assertFalse(deviceComponent.findDeviceByName(
+				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0).isPresent());
+
+		assertFalse(deviceComponent
+				.findDeviceByName(TestDeviceComponent.clientId, "pretty" + TestDeviceComponent.deviceName)
+				.isPresent());
+		assertFalse(deviceComponent
+				.findDeviceByName(TestDeviceComponent.clientId + 1, "pretty" + TestDeviceComponent.deviceName + 0)
+				.isPresent());
+		assertFalse(deviceComponent
+				.findDeviceByName(
+						TestDeviceComponent.clientId, device.get().getId())
 				.isPresent());
 	}
 
