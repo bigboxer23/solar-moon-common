@@ -7,6 +7,7 @@ import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.open_search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
+import com.bigboxer23.solar_moon.weather.OpenWeatherComponent;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.util.*;
 import org.slf4j.Logger;

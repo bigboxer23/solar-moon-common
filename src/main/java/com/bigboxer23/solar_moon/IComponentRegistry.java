@@ -4,6 +4,7 @@ import com.bigboxer23.solar_moon.location.LocationComponent;
 import com.bigboxer23.solar_moon.maintenance.MaintenanceComponent;
 import com.bigboxer23.solar_moon.notifications.NotificationComponent;
 import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
+import com.bigboxer23.solar_moon.weather.OpenWeatherComponent;
 import com.squareup.moshi.Moshi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

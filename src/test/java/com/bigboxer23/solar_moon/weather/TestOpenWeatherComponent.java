@@ -1,7 +1,8 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.weather;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Location;
 import com.bigboxer23.solar_moon.data.WeatherSystemData;
 import org.junit.jupiter.api.MethodOrderer;
@@ -11,7 +12,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 /** */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class TestOpenWeatherComponent implements IComponentRegistry {
+public class TestOpenWeatherComponent implements IComponentRegistry
+{
 
 	@Test
 	@Order(1)
