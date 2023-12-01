@@ -1,13 +1,15 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.search;
 
-import static com.bigboxer23.solar_moon.open_search.OpenSearchConstants.*;
+import static com.bigboxer23.solar_moon.search.OpenSearchConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.TestConstants;
+import com.bigboxer23.solar_moon.TestUtils;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
-import com.bigboxer23.solar_moon.open_search.OpenSearchQueries;
-import com.bigboxer23.solar_moon.open_search.OpenSearchUtils;
-import com.bigboxer23.solar_moon.open_search.SearchJSON;
+import com.bigboxer23.solar_moon.ingest.MeterConstants;
+import com.bigboxer23.solar_moon.util.TimeUtils;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -23,7 +25,7 @@ import org.opensearch.client.opensearch.core.SearchResponse;
 import org.opensearch.client.opensearch.core.search.Hit;
 
 /** */
-public class TestOpenSearchComponent implements IComponentRegistry {
+public class TestOpenSearchComponent implements IComponentRegistry, TestConstants {
 	@BeforeEach
 	public void setup() {
 		TestUtils.setupSite();
@@ -32,12 +34,12 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 	@Test
 	public void testGetTotalEnergyConsumed() {
 		// test invalid case
-		assertNull(OSComponent.getTotalEnergyConsumed(TestDeviceComponent.deviceName + System.currentTimeMillis()));
+		assertNull(OSComponent.getTotalEnergyConsumed(deviceName + System.currentTimeMillis()));
 	}
 
 	@AfterAll
 	public static void afterAll() {
-		TestUtils.nukeCustomerId(TestDeviceComponent.clientId);
+		TestUtils.nukeCustomerId(CUSTOMER_ID);
 	}
 
 	@Test
@@ -48,31 +50,24 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 				Date.from(ldt.minusMinutes(30).atZone(ZoneId.systemDefault()).toInstant());
 		Date nextDate =
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
-		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, prevDate, -1), TestDeviceComponent.clientId);
-		DeviceData data = OSComponent.getDeviceEntryWithinLast15Min(
-				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
+		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, prevDate, -1), CUSTOMER_ID);
+		DeviceData data = OSComponent.getDeviceEntryWithinLast15Min(CUSTOMER_ID, deviceName + 0);
 		assertNull(data);
-		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, nextDate, -1), TestDeviceComponent.clientId);
-		data = OSComponent.getDeviceEntryWithinLast15Min(
-				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
+		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, nextDate, -1), CUSTOMER_ID);
+		data = OSComponent.getDeviceEntryWithinLast15Min(CUSTOMER_ID, deviceName + 0);
 		assertNull(data);
-		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, date, -1), TestDeviceComponent.clientId);
-		data = OSComponent.getDeviceEntryWithinLast15Min(
-				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
+		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, date, -1), CUSTOMER_ID);
+		data = OSComponent.getDeviceEntryWithinLast15Min(CUSTOMER_ID, deviceName + 0);
 		assertNotNull(data);
 		assertTrue(data.isValid());
 		assertNotNull(data.getCustomerId());
-		assertEquals(TestDeviceComponent.clientId, data.getCustomerId());
+		assertEquals(CUSTOMER_ID, data.getCustomerId());
 	}
 
 	@Test
 	public void testGetDeviceByTimePeriod() throws XPathExpressionException, InterruptedException {
 		Date date = TimeUtils.get15mRoundedDate();
-		assertNull(OSComponent.getDeviceByTimePeriod(
-				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0, date));
+		assertNull(OSComponent.getDeviceByTimePeriod(CUSTOMER_ID, deviceName + 0, date));
 
 		LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 		Date past =
@@ -80,17 +75,13 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 		Date future =
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
 
-		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, past, -1), TestDeviceComponent.clientId);
-		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, future, -1), TestDeviceComponent.clientId);
+		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, past, -1), CUSTOMER_ID);
+		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, future, -1), CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
-		assertNull(OSComponent.getDeviceByTimePeriod(
-				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0, date));
+		assertNull(OSComponent.getDeviceByTimePeriod(CUSTOMER_ID, deviceName + 0, date));
 		TestUtils.validateDateData(future);
 		TestUtils.validateDateData(past);
-		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, date, -1), TestDeviceComponent.clientId);
+		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, date, -1), CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
 		TestUtils.validateDateData(date);
 	}
@@ -103,39 +94,17 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 				Date.from(ldt.minusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
 		Date nextDate =
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
-		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, date, -1), TestDeviceComponent.clientId);
-		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, prevDate, -1), TestDeviceComponent.clientId);
-		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, nextDate, -1), TestDeviceComponent.clientId);
-		assertEquals(
-				1,
-				OSComponent.getSiteDevicesCountByTimePeriod(
-						TestDeviceComponent.clientId, TestDeviceComponent.SITE, date));
-		assertEquals(
-				1,
-				OSComponent.getSiteDevicesCountByTimePeriod(
-						TestDeviceComponent.clientId, TestDeviceComponent.SITE, prevDate));
-		assertEquals(
-				1,
-				OSComponent.getSiteDevicesCountByTimePeriod(
-						TestDeviceComponent.clientId, TestDeviceComponent.SITE, nextDate));
+		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, date, -1), CUSTOMER_ID);
+		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, prevDate, -1), CUSTOMER_ID);
+		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, nextDate, -1), CUSTOMER_ID);
+		assertEquals(1, OSComponent.getSiteDevicesCountByTimePeriod(CUSTOMER_ID, SITE, date));
+		assertEquals(1, OSComponent.getSiteDevicesCountByTimePeriod(CUSTOMER_ID, SITE, prevDate));
+		assertEquals(1, OSComponent.getSiteDevicesCountByTimePeriod(CUSTOMER_ID, SITE, nextDate));
 
-		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, nextDate, -1), TestDeviceComponent.clientId);
-		assertEquals(
-				1,
-				OSComponent.getSiteDevicesCountByTimePeriod(
-						TestDeviceComponent.clientId, TestDeviceComponent.SITE, date));
-		assertEquals(
-				1,
-				OSComponent.getSiteDevicesCountByTimePeriod(
-						TestDeviceComponent.clientId, TestDeviceComponent.SITE, prevDate));
-		assertEquals(
-				2,
-				OSComponent.getSiteDevicesCountByTimePeriod(
-						TestDeviceComponent.clientId, TestDeviceComponent.SITE, nextDate));
+		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, nextDate, -1), CUSTOMER_ID);
+		assertEquals(1, OSComponent.getSiteDevicesCountByTimePeriod(CUSTOMER_ID, SITE, date));
+		assertEquals(1, OSComponent.getSiteDevicesCountByTimePeriod(CUSTOMER_ID, SITE, prevDate));
+		assertEquals(2, OSComponent.getSiteDevicesCountByTimePeriod(CUSTOMER_ID, SITE, nextDate));
 	}
 
 	@Test
@@ -144,8 +113,8 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
 		SearchJSON json = new SearchJSON(
-				TestDeviceComponent.clientId,
-				TestDeviceComponent.deviceName + 0,
+				CUSTOMER_ID,
+				deviceName + 0,
 				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
 				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
 						.getTime());
@@ -173,8 +142,8 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
 		SearchJSON json = new SearchJSON(
-				TestDeviceComponent.clientId,
-				TestDeviceComponent.SITE,
+				CUSTOMER_ID,
+				SITE,
 				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
 				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
 						.getTime());
@@ -231,8 +200,8 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
 		SearchJSON json = new SearchJSON(
-				TestDeviceComponent.clientId,
-				TestDeviceComponent.deviceName + 0,
+				CUSTOMER_ID,
+				deviceName + 0,
 				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
 				Date.from(ldt.minusDays(7).atZone(ZoneId.systemDefault()).toInstant())
 						.getTime());
@@ -257,8 +226,8 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
 		SearchJSON json = new SearchJSON(
-				TestDeviceComponent.clientId,
-				TestDeviceComponent.deviceName + 0,
+				CUSTOMER_ID,
+				deviceName + 0,
 				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
 				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
 						.getTime());
@@ -275,8 +244,8 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 
 	@Test
 	public void testAddingNewDeviceViaDataPush() throws XPathExpressionException {
-		String deviceName = TestDeviceComponent.deviceName + "shouldNotExist";
-		assertFalse(deviceComponent.getDevicesForCustomerId(TestDeviceComponent.clientId).stream()
+		String deviceName = TestConstants.deviceName + "shouldNotExist";
+		assertFalse(deviceComponent.getDevicesForCustomerId(CUSTOMER_ID).stream()
 				.filter(d -> !d.isVirtual())
 				.anyMatch(device -> device.getDeviceName().equalsIgnoreCase(deviceName)));
 		LocalDateTime ldt = LocalDateTime.ofInstant(
@@ -289,9 +258,9 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 								.atZone(ZoneId.systemDefault())
 								.toInstant()),
 						5),
-				TestDeviceComponent.clientId);
+				CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
-		Device SNEDevice = deviceComponent.getDevicesForCustomerId(TestDeviceComponent.clientId).stream()
+		Device SNEDevice = deviceComponent.getDevicesForCustomerId(CUSTOMER_ID).stream()
 				.filter(d -> !d.isVirtual())
 				.filter(device -> device.getDeviceName().equalsIgnoreCase(deviceName))
 				.findAny()
@@ -301,6 +270,6 @@ public class TestOpenSearchComponent implements IComponentRegistry {
 		assertNotNull(OSComponent.getLastDeviceEntry(
 				SNEDevice.getDeviceName(),
 				OpenSearchQueries.getDeviceNameQuery(SNEDevice.getDeviceName()),
-				OpenSearchQueries.getCustomerIdQuery(TestDeviceComponent.clientId)));
+				OpenSearchQueries.getCustomerIdQuery(CUSTOMER_ID)));
 	}
 }

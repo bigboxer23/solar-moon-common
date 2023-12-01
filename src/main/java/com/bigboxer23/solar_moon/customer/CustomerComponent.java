@@ -1,13 +1,13 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.customer;
 
 import com.bigboxer23.solar_moon.data.Customer;
+import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import java.util.Optional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
-// @Component
 public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 	@Override
 	protected String getTableName() {
@@ -27,7 +27,7 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			logger.warn("email, name strip id, or customer id is null/empty, cannot add.");
 			return null;
 		}
-		if (findCustomerByCustomerId(customerId) != null) {
+		if (findCustomerByCustomerId(customerId).isPresent()) {
 			logger.debug(customerId + ":" + email + " exists, not putting into db");
 			return null;
 		}

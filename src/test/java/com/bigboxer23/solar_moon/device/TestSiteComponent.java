@@ -1,8 +1,12 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.device;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.bigboxer23.solar_moon.open_search.OpenSearchUtils;
+import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.TestConstants;
+import com.bigboxer23.solar_moon.TestUtils;
+import com.bigboxer23.solar_moon.search.OpenSearchUtils;
+import com.bigboxer23.solar_moon.util.TimeUtils;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -13,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** */
-public class TestSiteComponent implements IComponentRegistry {
+public class TestSiteComponent implements IComponentRegistry, TestConstants {
 
 	@BeforeEach
 	public void setup() {
@@ -29,23 +33,20 @@ public class TestSiteComponent implements IComponentRegistry {
 		}
 		latch.await();
 		OpenSearchUtils.waitForIndexing();
-		assertNotNull(OSComponent.getDeviceByTimePeriod(TestDeviceComponent.clientId, TestDeviceComponent.SITE, date));
+		assertNotNull(OSComponent.getDeviceByTimePeriod(CUSTOMER_ID, SITE, date));
 	}
 
 	@Test
 	public void testHandleSite() throws XPathExpressionException {
 		Date date = TimeUtils.get15mRoundedDate();
 		for (int ai = 0; ai < 4; ai++) {
-			generationComponent.handleDeviceBody(
-					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + ai, date, -1),
-					TestDeviceComponent.clientId);
+			generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, date, -1), CUSTOMER_ID);
 		}
 		OpenSearchUtils.waitForIndexing();
-		assertNull(OSComponent.getDeviceEntryWithinLast15Min(TestDeviceComponent.clientId, TestDeviceComponent.SITE));
-		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 4, date, -1), TestDeviceComponent.clientId);
+		assertNull(OSComponent.getDeviceEntryWithinLast15Min(CUSTOMER_ID, SITE));
+		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 4, date, -1), CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
-		TestUtils.validateDateData(TestDeviceComponent.SITE, date);
+		TestUtils.validateDateData(SITE, date);
 	}
 
 	@Test
@@ -57,31 +58,24 @@ public class TestSiteComponent implements IComponentRegistry {
 		Date future =
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
 		for (int ai = 0; ai < 4; ai++) {
-			generationComponent.handleDeviceBody(
-					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + ai, date, -1),
-					TestDeviceComponent.clientId);
+			generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, date, -1), CUSTOMER_ID);
 		}
 		for (int ai = 0; ai < 5; ai++) {
-			generationComponent.handleDeviceBody(
-					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + ai, past, -1),
-					TestDeviceComponent.clientId);
+			generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, past, -1), CUSTOMER_ID);
 		}
 		OpenSearchUtils.waitForIndexing();
-		TestUtils.validateDateData(TestDeviceComponent.SITE, past);
-		assertNull(OSComponent.getDeviceByTimePeriod(TestDeviceComponent.clientId, TestDeviceComponent.SITE, date));
+		TestUtils.validateDateData(SITE, past);
+		assertNull(OSComponent.getDeviceByTimePeriod(CUSTOMER_ID, SITE, date));
 
 		for (int ai = 0; ai < 5; ai++) {
-			generationComponent.handleDeviceBody(
-					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + ai, future, -1),
-					TestDeviceComponent.clientId);
+			generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, future, -1), CUSTOMER_ID);
 		}
 		OpenSearchUtils.waitForIndexing();
-		TestUtils.validateDateData(TestDeviceComponent.SITE, future);
-		assertNull(OSComponent.getDeviceByTimePeriod(TestDeviceComponent.clientId, TestDeviceComponent.SITE, date));
-		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 4, date, -1), TestDeviceComponent.clientId);
+		TestUtils.validateDateData(SITE, future);
+		assertNull(OSComponent.getDeviceByTimePeriod(CUSTOMER_ID, SITE, date));
+		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 4, date, -1), CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
-		TestUtils.validateDateData(TestDeviceComponent.SITE, date);
+		TestUtils.validateDateData(SITE, date);
 	}
 
 	private class TestHandleBodyRunnable implements Runnable {
@@ -99,9 +93,7 @@ public class TestSiteComponent implements IComponentRegistry {
 		@SneakyThrows
 		@Override
 		public void run() {
-			generationComponent.handleDeviceBody(
-					TestUtils.getDeviceXML(TestDeviceComponent.deviceName + count, date, -1),
-					TestDeviceComponent.clientId);
+			generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + count, date, -1), CUSTOMER_ID);
 			latch.countDown();
 		}
 	}

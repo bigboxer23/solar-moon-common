@@ -1,4 +1,4 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.ingest;
 
 /** */
 public interface MeterConstants {

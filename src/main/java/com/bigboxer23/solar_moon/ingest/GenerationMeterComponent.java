@@ -1,9 +1,13 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.ingest;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.alarm.AlarmComponent;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
-import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
+import com.bigboxer23.solar_moon.device.DeviceComponent;
+import com.bigboxer23.solar_moon.device.SiteComponent;
+import com.bigboxer23.solar_moon.search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import com.bigboxer23.solar_moon.web.TransactionUtil;

@@ -1,8 +1,9 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.maintenance;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

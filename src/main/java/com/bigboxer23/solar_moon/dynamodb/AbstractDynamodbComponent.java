@@ -1,4 +1,4 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.dynamodb;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

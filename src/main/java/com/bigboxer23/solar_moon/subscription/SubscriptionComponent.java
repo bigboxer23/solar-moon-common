@@ -1,6 +1,7 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.subscription;
 
 import com.bigboxer23.solar_moon.data.Subscription;
+import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 

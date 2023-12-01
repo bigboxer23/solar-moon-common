@@ -1,4 +1,4 @@
-package com.bigboxer23.solar_moon.open_search;
+package com.bigboxer23.solar_moon.search;
 
 /** */
 public interface OpenSearchConstants {

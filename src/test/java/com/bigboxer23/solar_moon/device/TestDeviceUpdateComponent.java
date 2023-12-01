@@ -1,8 +1,11 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.device;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.TestConstants;
+import com.bigboxer23.solar_moon.TestUtils;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceUpdateData;
 import java.util.HashSet;
@@ -14,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** */
-public class TestDeviceUpdateComponent implements IComponentRegistry {
+public class TestDeviceUpdateComponent implements IComponentRegistry, TestConstants {
 
 	private static final Set<String> ids = new HashSet<>();
 
@@ -30,7 +33,7 @@ public class TestDeviceUpdateComponent implements IComponentRegistry {
 	@BeforeAll
 	public static void beforeAll() {
 		TestUtils.setupSite();
-		deviceComponent.getDevicesForCustomerId(TestDeviceComponent.clientId).forEach(d -> ids.add(d.getId()));
+		deviceComponent.getDevicesForCustomerId(CUSTOMER_ID).forEach(d -> ids.add(d.getId()));
 	}
 
 	@AfterAll

@@ -3,6 +3,15 @@ package com.bigboxer23.solar_moon;
 /** */
 public interface TestConstants {
 
+	double testLatitude = 44.986;
+	double testLongitude = -93.37777;
+
+	String deviceName = "testDevice";
+
+	String CUSTOMER_ID = "0badd0c2-450b-4204-80d5-c7c77fc13500";
+
+	String SITE = "testSite";
+
 	String device1Name = "Test generator 1";
 	String device1Xml = "<DAS>\n"
 			+ "<mode>LOGFILEUPLOAD</mode>"
@@ -87,7 +96,7 @@ public interface TestConstants {
 			+ "<devices>\n"
 			+ "<device>\n"
 			+ "<name>"
-			+ TestDeviceComponent.deviceName
+			+ deviceName
 			+ "</name>\n"
 			+ "<address>100</address>\n"
 			+ "<type>Power Measurement ION xxxx</type>\n"
@@ -198,7 +207,7 @@ public interface TestConstants {
 			+ "<devices>\n"
 			+ "<device>\n"
 			+ "<name>"
-			+ TestDeviceComponent.deviceName
+			+ deviceName
 			+ "</name>\n"
 			+ "<address>100</address>\n"
 			+ "<type>Power Measurement ION 8600</type>\n"
@@ -368,7 +377,7 @@ public interface TestConstants {
 			+ "<devices>\n"
 			+ "<device>\n"
 			+ "<name>"
-			+ TestDeviceComponent.deviceName
+			+ deviceName
 			+ "</name>\n"
 			+ "<address>100</address>\n"
 			+ "<type>Power Measurement ION 8600</type>\n"
@@ -391,7 +400,7 @@ public interface TestConstants {
 			+ "<devices>\n"
 			+ "<device>\n"
 			+ "<name>"
-			+ TestDeviceComponent.deviceName
+			+ deviceName
 			+ "</name>\n"
 			+ "<address>100</address>\n"
 			+ "<type>Power Measurement ION 8600</type>\n"
@@ -415,7 +424,7 @@ public interface TestConstants {
 			+ "<devices>\n"
 			+ "<device>\n"
 			+ "<name>"
-			+ TestDeviceComponent.deviceName
+			+ deviceName
 			+ "</name>\n"
 			+ "<address>100</address>\n"
 			+ "<type>Power Measurement ION 8600</type>\n"
@@ -430,8 +439,4 @@ public interface TestConstants {
 			+ "</device>\n"
 			+ "</devices>\n"
 			+ "</DAS>";
-
-	// GV, MN
-	double testLatitude = 44.986;
-	double testLongitude = -93.37777;
 }

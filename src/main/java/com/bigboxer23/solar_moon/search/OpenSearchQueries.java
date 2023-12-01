@@ -1,6 +1,6 @@
-package com.bigboxer23.solar_moon.open_search;
+package com.bigboxer23.solar_moon.search;
 
-import com.bigboxer23.solar_moon.MeterConstants;
+import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;

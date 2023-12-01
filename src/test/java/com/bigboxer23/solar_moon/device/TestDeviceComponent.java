@@ -1,7 +1,10 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.device;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.TestConstants;
+import com.bigboxer23.solar_moon.TestUtils;
 import com.bigboxer23.solar_moon.data.Device;
 import java.util.List;
 import java.util.Optional;
@@ -10,14 +13,7 @@ import org.junit.jupiter.api.Test;
 
 /** */
 // @ActiveProfiles("test")
-public class TestDeviceComponent implements IComponentRegistry {
-
-	protected static final String deviceName = "testDevice";
-
-	protected static final String clientId = "0badd0c2-450b-4204-80d5-c7c77fc13500";
-
-	protected static final String SITE = "testSite";
-
+public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 	@Test
 	public void testFindDeviceByDeviceKey() {
 		assertNull(deviceComponent.findDeviceByDeviceKey(null));
@@ -34,18 +30,18 @@ public class TestDeviceComponent implements IComponentRegistry {
 	public void testGetDevicesForCustomerId() {
 		assertEquals(0, deviceComponent.getDevicesForCustomerId(null).size());
 		assertEquals(0, deviceComponent.getDevicesForCustomerId("").size());
-		assertEquals(6, deviceComponent.getDevicesForCustomerId(clientId).size());
+		assertEquals(6, deviceComponent.getDevicesForCustomerId(CUSTOMER_ID).size());
 		assertEquals(0, deviceComponent.getDevicesForCustomerId("tacoClient").size());
 	}
 
 	@Test
 	public void testGetDevice() {
-		assertNotNull(deviceComponent.getDevice(TestUtils.getDevice().getId(), clientId));
+		assertNotNull(deviceComponent.getDevice(TestUtils.getDevice().getId(), CUSTOMER_ID));
 		assertNull(deviceComponent.getDevice(null, null));
 		assertNull(deviceComponent.getDevice("", null));
 		assertNull(deviceComponent.getDevice(null, ""));
 		assertNull(deviceComponent.getDevice("", ""));
-		assertNull(deviceComponent.getDevice("blah", clientId));
+		assertNull(deviceComponent.getDevice("blah", CUSTOMER_ID));
 		assertNull(deviceComponent.getDevice(TestUtils.getDevice().getId(), "blah"));
 	}
 
@@ -55,37 +51,36 @@ public class TestDeviceComponent implements IComponentRegistry {
 		assertTrue(deviceComponent.getDevicesBySite("", null).isEmpty());
 		assertTrue(deviceComponent.getDevicesBySite(null, "").isEmpty());
 		assertTrue(deviceComponent.getDevicesBySite("", "").isEmpty());
-		assertTrue(deviceComponent.getDevicesBySite(clientId, "blah").isEmpty());
-		assertEquals(6, deviceComponent.getDevicesBySite(clientId, SITE).size());
+		assertTrue(deviceComponent.getDevicesBySite(CUSTOMER_ID, "blah").isEmpty());
+		assertEquals(6, deviceComponent.getDevicesBySite(CUSTOMER_ID, SITE).size());
 	}
 
 	@Test
 	public void testGetDevicesVirtual() {
 		assertFalse(deviceComponent.getDevices(false).stream()
-				.filter(device -> clientId.equals(device.getClientId()))
+				.filter(device -> CUSTOMER_ID.equals(device.getClientId()))
 				.toList()
 				.isEmpty());
 		assertEquals(
 				5,
 				deviceComponent.getDevices(false).stream()
-						.filter(device -> clientId.equals(device.getClientId()))
+						.filter(device -> CUSTOMER_ID.equals(device.getClientId()))
 						.toList()
 						.size());
 		assertEquals(
 				1,
 				deviceComponent.getDevices(true).stream()
-						.filter(device -> clientId.equals(device.getClientId()))
+						.filter(device -> CUSTOMER_ID.equals(device.getClientId()))
 						.toList()
 						.size());
 	}
 
 	@Test
 	public void testSiteDelete() {
-		Device testSite =
-				deviceComponent.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
-						.filter(Device::isVirtual)
-						.findFirst()
-						.orElse(null);
+		Device testSite = deviceComponent.getDevicesBySite(TestConstants.CUSTOMER_ID, TestConstants.SITE).stream()
+				.filter(Device::isVirtual)
+				.findFirst()
+				.orElse(null);
 		assertNotNull(testSite);
 		assertTrue(deviceComponent
 				.getDevicesBySite(testSite.getClientId(), DeviceComponent.NO_SITE)
@@ -101,15 +96,14 @@ public class TestDeviceComponent implements IComponentRegistry {
 
 	@Test
 	public void testSiteUpdate() {
-		Device testSite =
-				deviceComponent.getDevicesBySite(TestDeviceComponent.clientId, TestDeviceComponent.SITE).stream()
-						.filter(Device::isVirtual)
-						.findFirst()
-						.orElse(null);
+		Device testSite = deviceComponent.getDevicesBySite(TestConstants.CUSTOMER_ID, TestConstants.SITE).stream()
+				.filter(Device::isVirtual)
+				.findFirst()
+				.orElse(null);
 		assertNotNull(testSite);
 		List<Device> originalDevices = deviceComponent.getDevicesBySite(testSite.getClientId(), testSite.getSite());
-		testSite.setName(TestDeviceComponent.SITE + 2);
-		testSite.setSite(TestDeviceComponent.SITE + 2);
+		testSite.setName(TestConstants.SITE + 2);
+		testSite.setSite(TestConstants.SITE + 2);
 		deviceComponent.updateDevice(testSite);
 		List<Device> updatedDevices = deviceComponent.getDevicesBySite(testSite.getClientId(), testSite.getSite());
 		assertEquals(originalDevices.size(), updatedDevices.size());
@@ -128,8 +122,8 @@ public class TestDeviceComponent implements IComponentRegistry {
 		if (deviceComponent.addDevice(testDevice)) {
 			fail();
 		}
-		deviceComponent.deleteDevicesByCustomerId(TestDeviceComponent.clientId);
-		subscriptionComponent.updateSubscription(TestDeviceComponent.clientId, 0);
+		deviceComponent.deleteDevicesByCustomerId(TestConstants.CUSTOMER_ID);
+		subscriptionComponent.updateSubscription(TestConstants.CUSTOMER_ID, 0);
 		if (deviceComponent.addDevice(testDevice)) {
 			fail();
 		}
@@ -137,42 +131,41 @@ public class TestDeviceComponent implements IComponentRegistry {
 
 	@Test
 	public void testFindDeviceByDeviceName() {
-		Optional<Device> device = deviceComponent.findDeviceByDeviceName(
-				TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0);
+		Optional<Device> device =
+				deviceComponent.findDeviceByDeviceName(TestConstants.CUSTOMER_ID, TestConstants.deviceName + 0);
 		assertTrue(device.isPresent());
 		assertFalse(deviceComponent
-				.findDeviceByDeviceName(TestDeviceComponent.clientId, "pretty" + TestDeviceComponent.deviceName + 0)
+				.findDeviceByDeviceName(TestConstants.CUSTOMER_ID, "pretty" + TestConstants.deviceName + 0)
 				.isPresent());
 
 		assertFalse(deviceComponent
-				.findDeviceByDeviceName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName)
+				.findDeviceByDeviceName(TestConstants.CUSTOMER_ID, TestConstants.deviceName)
 				.isPresent());
 		assertFalse(deviceComponent
-				.findDeviceByDeviceName(TestDeviceComponent.clientId + 1, TestDeviceComponent.deviceName + 0)
+				.findDeviceByDeviceName(TestConstants.CUSTOMER_ID + 1, TestConstants.deviceName + 0)
 				.isPresent());
 		assertFalse(deviceComponent
-				.findDeviceByDeviceName(
-						TestDeviceComponent.clientId, device.get().getId())
+				.findDeviceByDeviceName(TestConstants.CUSTOMER_ID, device.get().getId())
 				.isPresent());
 	}
 
 	@Test
 	public void findDeviceByName() {
-		Optional<Device> device = deviceComponent.findDeviceByName(
-				TestDeviceComponent.clientId, "pretty" + TestDeviceComponent.deviceName + 0);
+		Optional<Device> device =
+				deviceComponent.findDeviceByName(TestConstants.CUSTOMER_ID, "pretty" + TestConstants.deviceName + 0);
 		assertTrue(device.isPresent());
 		assertFalse(deviceComponent
-				.findDeviceByName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0)
+				.findDeviceByName(TestConstants.CUSTOMER_ID, TestConstants.deviceName + 0)
 				.isPresent());
 
 		assertFalse(deviceComponent
-				.findDeviceByName(TestDeviceComponent.clientId, "pretty" + TestDeviceComponent.deviceName)
+				.findDeviceByName(TestConstants.CUSTOMER_ID, "pretty" + TestConstants.deviceName)
 				.isPresent());
 		assertFalse(deviceComponent
-				.findDeviceByName(TestDeviceComponent.clientId + 1, "pretty" + TestDeviceComponent.deviceName + 0)
+				.findDeviceByName(TestConstants.CUSTOMER_ID + 1, "pretty" + TestConstants.deviceName + 0)
 				.isPresent());
 		assertFalse(deviceComponent
-				.findDeviceByName(TestDeviceComponent.clientId, device.get().getId())
+				.findDeviceByName(TestConstants.CUSTOMER_ID, device.get().getId())
 				.isPresent());
 	}
 

@@ -1,10 +1,13 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.alarm;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.*;
+import com.bigboxer23.solar_moon.device.DeviceComponent;
+import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.notifications.AlarmEmailTemplateContent;
 import com.bigboxer23.solar_moon.notifications.NotificationComponent;
-import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
-import com.bigboxer23.solar_moon.open_search.OpenSearchQueries;
+import com.bigboxer23.solar_moon.search.OpenSearchComponent;
+import com.bigboxer23.solar_moon.search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
@@ -16,7 +19,6 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
-// @Component
 public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 
 	private static final Logger logger = LoggerFactory.getLogger(AlarmComponent.class);

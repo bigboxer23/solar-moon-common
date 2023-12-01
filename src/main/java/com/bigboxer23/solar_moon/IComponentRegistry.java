@@ -1,9 +1,16 @@
 package com.bigboxer23.solar_moon;
 
+import com.bigboxer23.solar_moon.alarm.AlarmComponent;
+import com.bigboxer23.solar_moon.customer.CustomerComponent;
+import com.bigboxer23.solar_moon.device.DeviceComponent;
+import com.bigboxer23.solar_moon.device.DeviceUpdateComponent;
+import com.bigboxer23.solar_moon.device.SiteComponent;
+import com.bigboxer23.solar_moon.ingest.GenerationMeterComponent;
 import com.bigboxer23.solar_moon.location.LocationComponent;
 import com.bigboxer23.solar_moon.maintenance.MaintenanceComponent;
 import com.bigboxer23.solar_moon.notifications.NotificationComponent;
-import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
+import com.bigboxer23.solar_moon.search.OpenSearchComponent;
+import com.bigboxer23.solar_moon.subscription.SubscriptionComponent;
 import com.bigboxer23.solar_moon.weather.PirateWeatherComponent;
 import com.squareup.moshi.Moshi;
 import org.slf4j.Logger;

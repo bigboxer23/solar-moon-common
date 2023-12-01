@@ -1,7 +1,10 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.ingest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.TestConstants;
+import com.bigboxer23.solar_moon.TestUtils;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import java.text.SimpleDateFormat;
@@ -48,7 +51,7 @@ public class TestGenerationMeterComponent implements TestConstants, IComponentRe
 	public void testCalculatedTotalRealPower() {
 		Device device = TestUtils.getDevice();
 		DeviceData aDeviceData2 = generationComponent.parseDeviceInformation(
-				device2Xml, "site1", TestDeviceComponent.deviceName, device.getClientId(), device.getId());
+				device2Xml, "site1", TestConstants.deviceName, device.getClientId(), device.getId());
 		assertEquals(2.134055f, aDeviceData2.getTotalRealPower());
 		aDeviceData2.setPowerFactor(-aDeviceData2.getPowerFactor());
 		assertEquals(2.134055f, aDeviceData2.getTotalRealPower());
@@ -57,56 +60,56 @@ public class TestGenerationMeterComponent implements TestConstants, IComponentRe
 	@Test
 	public void testParseDeviceInformation() {
 		DeviceData aDeviceData = generationComponent.parseDeviceInformation(
-				device2XmlNull, "site1", TestDeviceComponent.deviceName, device.getClientId(), device.getId());
+				device2XmlNull, "site1", TestConstants.deviceName, device.getClientId(), device.getId());
 		assertNotNull(aDeviceData);
 		assertFalse(aDeviceData.isValid());
 		aDeviceData = generationComponent.parseDeviceInformation(
-				device2Xml, "site1", TestDeviceComponent.deviceName, device.getClientId(), device.getId());
+				device2Xml, "site1", TestConstants.deviceName, device.getClientId(), device.getId());
 		assertNotNull(aDeviceData);
 		assertTrue(aDeviceData.isValid());
 		assertNull(generationComponent.parseDeviceInformation(
-				TestDeviceComponent.deviceName,
-				TestDeviceComponent.deviceName,
-				TestDeviceComponent.deviceName,
+				TestConstants.deviceName,
+				TestConstants.deviceName,
+				TestConstants.deviceName,
 				device.getClientId(),
 				device.getId()));
 	}
 
 	@Test
 	public void testHandleDeviceBody() throws XPathExpressionException {
-		String deviceXML = TestUtils.getDeviceXML(TestDeviceComponent.deviceName + 0, new Date(), -1);
+		String deviceXML = TestUtils.getDeviceXML(TestConstants.deviceName + 0, new Date(), -1);
 		TestUtils.setupSite();
 		assertNull(generationComponent.handleDeviceBody(null, null));
 		assertNull(generationComponent.handleDeviceBody(deviceXML, null));
 		assertNull(generationComponent.handleDeviceBody("", null));
-		assertNull(generationComponent.handleDeviceBody(null, TestDeviceComponent.clientId));
+		assertNull(generationComponent.handleDeviceBody(null, TestConstants.CUSTOMER_ID));
 		assertNull(generationComponent.handleDeviceBody("", null));
 		assertNull(generationComponent.handleDeviceBody(deviceXML, ""));
-		assertNull(generationComponent.handleDeviceBody(null, TestDeviceComponent.clientId));
-		assertNotNull(generationComponent.handleDeviceBody(deviceXML, TestDeviceComponent.clientId + "invalid"));
-		TestUtils.nukeCustomerId(TestDeviceComponent.clientId + "invalid");
-		assertNull(generationComponent.handleDeviceBody(nonUpdateStatus, TestDeviceComponent.clientId));
+		assertNull(generationComponent.handleDeviceBody(null, TestConstants.CUSTOMER_ID));
+		assertNotNull(generationComponent.handleDeviceBody(deviceXML, TestConstants.CUSTOMER_ID + "invalid"));
+		TestUtils.nukeCustomerId(TestConstants.CUSTOMER_ID + "invalid");
+		assertNull(generationComponent.handleDeviceBody(nonUpdateStatus, TestConstants.CUSTOMER_ID));
 		assertNull(generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(device2XmlNull, TestDeviceComponent.deviceName + 0, null, -1),
-				TestDeviceComponent.clientId));
-		assertNotNull(generationComponent.handleDeviceBody(deviceXML, TestDeviceComponent.clientId));
+				TestUtils.getDeviceXML(device2XmlNull, TestConstants.deviceName + 0, null, -1),
+				TestConstants.CUSTOMER_ID));
+		assertNotNull(generationComponent.handleDeviceBody(deviceXML, TestConstants.CUSTOMER_ID));
 	}
 
 	@Test
 	public void testDateRead() {
 		DeviceData aDeviceData = generationComponent.parseDeviceInformation(
-				device2Xml, "site1", TestDeviceComponent.deviceName, device.getClientId(), device.getId());
+				device2Xml, "site1", TestConstants.deviceName, device.getClientId(), device.getId());
 		assertNotNull(aDeviceData.getDate());
 		SimpleDateFormat sdf = new SimpleDateFormat(MeterConstants.DATE_PATTERN);
 		assertEquals(sdf.format(aDeviceData.getDate()), "2020-08-21 12:30:00 CDT");
 		aDeviceData = generationComponent.parseDeviceInformation(
-				device2XmlNoDate, "site1", TestDeviceComponent.deviceName, device.getClientId(), device.getId());
+				device2XmlNoDate, "site1", TestConstants.deviceName, device.getClientId(), device.getId());
 		assertNull(aDeviceData.getDate());
 		aDeviceData = generationComponent.parseDeviceInformation(
-				device2XmlBadDate, "site1", TestDeviceComponent.deviceName, device.getClientId(), device.getId());
+				device2XmlBadDate, "site1", TestConstants.deviceName, device.getClientId(), device.getId());
 		assertNull(aDeviceData.getDate());
 		aDeviceData = generationComponent.parseDeviceInformation(
-				device2XmlNoTZ, "site1", TestDeviceComponent.deviceName, device.getClientId(), device.getId());
+				device2XmlNoTZ, "site1", TestConstants.deviceName, device.getClientId(), device.getId());
 		assertNull(aDeviceData.getDate());
 	}
 

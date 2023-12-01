@@ -1,6 +1,5 @@
 package com.bigboxer23.solar_moon.dynamodb;
 
-import com.bigboxer23.solar_moon.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.data.DynamoDBLock;
 import com.bigboxer23.solar_moon.util.TableCreationUtils;
 

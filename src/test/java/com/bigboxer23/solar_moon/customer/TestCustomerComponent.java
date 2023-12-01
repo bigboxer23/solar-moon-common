@@ -1,14 +1,17 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.customer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.TestConstants;
 import com.bigboxer23.solar_moon.data.Customer;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
 /** */
 // @ActiveProfiles("test")
-public class TestCustomerComponent implements IComponentRegistry {
+public class TestCustomerComponent implements IComponentRegistry, TestConstants {
 	protected static final String CUSTOMER_EMAIL = "noreply@solarmoonanalytics.com";
 	protected static final String CUSTOMER_NAME = "mr fake customer";
 	protected static final String CUSTOMER_ACCESS_KEY = "4ab84ed3-0ce1-4615-b919-c34c7b619702";
@@ -19,7 +22,6 @@ public class TestCustomerComponent implements IComponentRegistry {
 
 	@Test
 	public void testFindCustomerByStripeId() {
-		setupTestCustomer();
 		assertNull(customerComponent.findCustomerByStripeCustomerId(null));
 		assertNull(customerComponent.findCustomerByStripeCustomerId(""));
 		assertNull(customerComponent.findCustomerByStripeCustomerId("1234"));
@@ -28,7 +30,6 @@ public class TestCustomerComponent implements IComponentRegistry {
 
 	@Test
 	public void testFindCustomerByEmail() {
-		setupTestCustomer();
 		assertNull(customerComponent.findCustomerByEmail(null));
 		assertNull(customerComponent.findCustomerByEmail(""));
 		assertNull(customerComponent.findCustomerByEmail("1234"));
@@ -37,29 +38,25 @@ public class TestCustomerComponent implements IComponentRegistry {
 
 	@Test
 	public void testFindCustomerByAccessKey() {
-		setupTestCustomer();
+		testCustomer.setAccessKey(CUSTOMER_ACCESS_KEY);
+		customerComponent.updateCustomer(testCustomer);
 		assertNull(customerComponent.findCustomerIdByAccessKey(null));
 		assertNull(customerComponent.findCustomerIdByAccessKey(""));
 		assertNull(customerComponent.findCustomerIdByAccessKey("1234"));
 		assertNotNull(customerComponent.findCustomerIdByAccessKey(CUSTOMER_ACCESS_KEY));
 	}
 
-	protected void setupTestCustomer() {
-		try {
-			customerComponent.getTable().putItem(testCustomer);
-		} catch (DynamoDbException e) {
-			testCustomer.setCustomerId(TestDeviceComponent.clientId);
-			testCustomer.setEmail(CUSTOMER_EMAIL);
-			testCustomer.setAccessKey(CUSTOMER_ACCESS_KEY);
-			testCustomer.setStripeCustomerId(CUSTOMER_STRIPE_ID);
-			Customer dbCustomer = customerComponent.getTable().getItem(testCustomer);
-			if (dbCustomer != null) {
-				customerComponent.getTable().deleteItem(dbCustomer);
-			}
-			customerComponent.getTable().putItem(testCustomer);
-			return;
-		}
-		fail();
+	@BeforeEach
+	protected void beforeEach() {
+		testCustomer.setCustomerId(CUSTOMER_ID);
+		testCustomer.setEmail(CUSTOMER_EMAIL);
+		testCustomer.setStripeCustomerId(CUSTOMER_STRIPE_ID);
+		customerComponent.addCustomer(CUSTOMER_EMAIL, CUSTOMER_ID, CUSTOMER_NAME, CUSTOMER_STRIPE_ID);
+	}
+
+	@AfterEach
+	protected void afterEach() {
+		customerComponent.deleteCustomerByCustomerId(CUSTOMER_ID);
 	}
 
 	@Test
@@ -72,54 +69,48 @@ public class TestCustomerComponent implements IComponentRegistry {
 				TestCustomerComponent.CUSTOMER_NAME,
 				TestCustomerComponent.CUSTOMER_STRIPE_ID));
 		assertNull(customerComponent.addCustomer(
-				null,
-				TestDeviceComponent.clientId,
-				TestCustomerComponent.CUSTOMER_NAME,
-				TestCustomerComponent.CUSTOMER_STRIPE_ID));
+				null, CUSTOMER_ID, TestCustomerComponent.CUSTOMER_NAME, TestCustomerComponent.CUSTOMER_STRIPE_ID));
 		assertNull(customerComponent.addCustomer("", "", "", ""));
-		customerComponent.deleteCustomerByCustomerId(TestDeviceComponent.clientId);
+		customerComponent.deleteCustomerByCustomerId(CUSTOMER_ID);
 		customerComponent.addCustomer(
 				TestCustomerComponent.CUSTOMER_EMAIL,
-				TestDeviceComponent.clientId,
+				CUSTOMER_ID,
 				TestCustomerComponent.CUSTOMER_NAME,
 				TestCustomerComponent.CUSTOMER_STRIPE_ID);
-		assertNotNull(customerComponent.findCustomerByCustomerId(TestDeviceComponent.clientId));
-		customerComponent.deleteCustomerByCustomerId(TestDeviceComponent.clientId);
+		assertNotNull(customerComponent.findCustomerByCustomerId(CUSTOMER_ID));
+		customerComponent.deleteCustomerByCustomerId(CUSTOMER_ID);
 	}
 
 	@Test
 	public void testDeleteCustomer() {
 		customerComponent.deleteCustomerByEmail(null);
 		customerComponent.deleteCustomerByEmail("");
-		customerComponent.deleteCustomerByEmail(TestCustomerComponent.CUSTOMER_EMAIL);
 		customerComponent.deleteCustomerByCustomerId(null);
 		customerComponent.deleteCustomerByCustomerId("");
-		customerComponent.deleteCustomerByCustomerId(TestDeviceComponent.clientId);
+		assertTrue(customerComponent.findCustomerByCustomerId(CUSTOMER_ID).isPresent());
+		customerComponent.deleteCustomerByEmail(TestCustomerComponent.CUSTOMER_EMAIL);
+		assertFalse(customerComponent.findCustomerByCustomerId(CUSTOMER_ID).isPresent());
+		customerComponent.deleteCustomerByCustomerId(CUSTOMER_ID);
+		assertFalse(customerComponent.findCustomerByCustomerId(CUSTOMER_ID).isPresent());
 	}
 
 	@Test
 	public void testFindCustomer() {
-		new TestCustomerComponent().setupTestCustomer();
-		assertNotNull(customerComponent.findCustomerByCustomerId(TestDeviceComponent.clientId));
-		assertNull(customerComponent.findCustomerByCustomerId("tacos"));
-		assertNull(customerComponent.findCustomerByCustomerId(""));
-		assertNull(customerComponent.findCustomerByCustomerId(null));
+		assertTrue(customerComponent.findCustomerByCustomerId(CUSTOMER_ID).isPresent());
+		assertFalse(customerComponent.findCustomerByCustomerId("tacos").isPresent());
+		assertFalse(customerComponent.findCustomerByCustomerId("").isPresent());
+		assertFalse(customerComponent.findCustomerByCustomerId(null).isPresent());
 	}
 
 	@Test
 	public void testUpdateCustomer() {
-		new TestCustomerComponent().setupTestCustomer();
-		Customer customer = customerComponent
-				.findCustomerByCustomerId(TestDeviceComponent.clientId)
-				.get();
+		Customer customer =
+				customerComponent.findCustomerByCustomerId(CUSTOMER_ID).get();
 		customerComponent.updateCustomer(null);
 		customer.setAccessKey("tacos");
 		customerComponent.updateCustomer(customer);
 		assertEquals(
 				"tacos",
-				customerComponent
-						.findCustomerByCustomerId(TestDeviceComponent.clientId)
-						.get()
-						.getAccessKey());
+				customerComponent.findCustomerByCustomerId(CUSTOMER_ID).get().getAccessKey());
 	}
 }
