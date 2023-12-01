@@ -31,10 +31,9 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 				.map(a -> deviceComponent.getDevice(a.getDeviceId(), customerId))
 				.filter(Objects::nonNull)
 				.filter(d -> {
-					if (d.isNotificationsDisabled())
-					{
+					if (d.isNotificationsDisabled()) {
 						TransactionUtil.addDeviceId(d.getId());
-						logger.warn("New notification detected, but not sending email as" + " requested.");
+						logger.warn("New notification detected, but not sending email as requested.");
 					}
 					return !d.isNotificationsDisabled();
 				})

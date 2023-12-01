@@ -11,4 +11,8 @@ public interface TimeConstants {
 	long FORTY_FIVE_MINUTES = FIFTEEN_MINUTES * 3;
 
 	long HOUR = THIRTY_MINUTES * 2;
+
+	long DAY = HOUR * 24;
+
+	long YEAR = DAY * 365;
 }
