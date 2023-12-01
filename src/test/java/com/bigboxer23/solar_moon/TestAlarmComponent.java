@@ -317,6 +317,34 @@ public class TestAlarmComponent implements IComponentRegistry {
 		assertEquals(2, alarmComponent.findNonEmailedAlarms().size());
 	}
 
+	@SneakyThrows
+	@Test
+	public void cleanupOldAlarms() {
+		Alarm alarm = new Alarm(TEST_ALARM_ID, TestDeviceComponent.clientId);
+		alarm.setStartDate(new Date().getTime());
+		alarm.setState(0);
+		Optional<Alarm> dbAlarm = alarmComponent.updateAlarm(alarm);
+		assertTrue(dbAlarm.isPresent());
+		Alarm alarm2 = new Alarm(TEST_ALARM_ID + 2, TestDeviceComponent.clientId);
+		alarm2.setStartDate(new Date().getTime());
+		alarm2.setState(1);
+		Optional<Alarm> dbAlarm2 = alarmComponent.updateAlarm(alarm2);
+		assertTrue(dbAlarm2.isPresent());
+		alarmComponent.cleanupOldAlarms();
+		assertTrue(alarmComponent.updateAlarm(alarm).isPresent());
+		assertTrue(alarmComponent.updateAlarm(alarm2).isPresent());
+		alarm.setStartDate(new Date().getTime() - TimeConstants.YEAR);
+		alarm2.setStartDate(new Date().getTime() - TimeConstants.YEAR);
+		alarmComponent.updateAlarm(alarm);
+		alarmComponent.updateAlarm(alarm2);
+		alarmComponent.cleanupOldAlarms();
+		assertFalse(alarmComponent
+				.findAlarmByAlarmId(alarm.getAlarmId(), alarm.getCustomerId())
+				.isPresent());
+		assertFalse(alarmComponent
+				.findAlarmByAlarmId(alarm2.getAlarmId(), alarm2.getCustomerId())
+				.isPresent());
+	}
 	/*@Test
 	public void sendPendingNotifications() {
 		alarmComponent.sendPendingNotifications();

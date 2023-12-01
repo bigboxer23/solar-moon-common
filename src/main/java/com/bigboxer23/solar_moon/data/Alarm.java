@@ -40,6 +40,8 @@ public class Alarm {
 
 	public static final String DEVICEID_STARTDATE_INDEX = "deviceId-startDate-index";
 
+	public static final String STATE_STARTDATE_INDEX = "state-startDate-index";
+
 	public static final String EMAILED_CUSTOMER_INDEX = "emailed-customerId-index";
 
 	private String alarmId;
@@ -90,13 +92,13 @@ public class Alarm {
 		return siteId;
 	}
 
-	@DynamoDbSecondaryPartitionKey(indexNames = STATE_CUSTOMER_INDEX)
+	@DynamoDbSecondaryPartitionKey(indexNames = {STATE_CUSTOMER_INDEX, STATE_STARTDATE_INDEX})
 	@DynamoDbSecondarySortKey(indexNames = {SITE_STATE_INDEX, DEVICE_STATE_INDEX})
 	public int getState() {
 		return state;
 	}
 
-	@DynamoDbSecondarySortKey(indexNames = DEVICEID_STARTDATE_INDEX)
+	@DynamoDbSecondarySortKey(indexNames = {DEVICEID_STARTDATE_INDEX, STATE_STARTDATE_INDEX})
 	public long getStartDate() {
 		return startDate;
 	}

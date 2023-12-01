@@ -260,6 +260,25 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 		return Optional.empty();
 	}
 
+	public void cleanupOldAlarms() {
+		long yearAgo = System.currentTimeMillis() - TimeConstants.YEAR;
+		deleteAlarmsByStateAndDate(0, yearAgo);
+		deleteAlarmsByStateAndDate(1, yearAgo);
+	}
+
+	private void deleteAlarmsByStateAndDate(int state, long deleteOlderThan) {
+		getTable()
+				.index(Alarm.STATE_STARTDATE_INDEX)
+				.query(QueryConditional.sortLessThan(
+						builder -> builder.partitionValue(state).sortValue(deleteOlderThan)))
+				.stream()
+				.flatMap(page -> page.items().stream())
+				.forEach(a -> {
+					System.out.println("here");
+					deleteAlarm(a.getAlarmId(), a.getCustomerId());
+				});
+	}
+
 	@Override
 	protected String getTableName() {
 		return "alarms";
