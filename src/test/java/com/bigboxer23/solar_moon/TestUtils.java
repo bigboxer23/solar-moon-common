@@ -15,10 +15,10 @@ import java.util.TimeZone;
 import javax.xml.xpath.XPathExpressionException;
 
 /** */
-public class TestUtils implements IComponentRegistry {
+public class TestUtils implements IComponentRegistry, TestConstants {
 
 	public static String getDeviceXML(String deviceName, Date date, float avgCurrent) {
-		return getDeviceXML(TestConstants.device2Xml, deviceName, date, avgCurrent, -1, -1, -1, -1);
+		return getDeviceXML(device2Xml, deviceName, date, avgCurrent, -1, -1, -1, -1);
 	}
 
 	public static String getDeviceXML(
@@ -30,14 +30,7 @@ public class TestUtils implements IComponentRegistry {
 			float totalEnergyConsumed,
 			float totalRealPower) {
 		return getDeviceXML(
-				TestConstants.device2Xml,
-				deviceName,
-				date,
-				avgCurrent,
-				avgVoltage,
-				powerFactor,
-				totalEnergyConsumed,
-				totalRealPower);
+				device2Xml, deviceName, date, avgCurrent, avgVoltage, powerFactor, totalEnergyConsumed, totalRealPower);
 	}
 
 	public static String getDeviceXML(String deviceXML, String deviceName, Date date, float avgCurrent) {

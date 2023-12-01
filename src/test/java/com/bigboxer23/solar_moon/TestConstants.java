@@ -430,4 +430,8 @@ public interface TestConstants {
 			+ "</device>\n"
 			+ "</devices>\n"
 			+ "</DAS>";
+
+	// GV, MN
+	double testLatitude = 44.986;
+	double testLongitude = -93.37777;
 }

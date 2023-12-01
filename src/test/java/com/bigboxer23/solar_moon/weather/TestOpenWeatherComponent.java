@@ -12,8 +12,9 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 /** */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class TestOpenWeatherComponent implements IComponentRegistry
-{
+public class TestOpenWeatherComponent implements IComponentRegistry {
+
+	private OpenWeatherComponent weatherComponent;
 
 	@Test
 	@Order(1)
