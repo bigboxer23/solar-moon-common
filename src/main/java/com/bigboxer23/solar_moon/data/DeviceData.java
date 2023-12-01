@@ -1,8 +1,8 @@
 package com.bigboxer23.solar_moon.data;
 
-import static com.bigboxer23.solar_moon.MeterConstants.*;
+import static com.bigboxer23.solar_moon.ingest.MeterConstants.*;
 
-import com.bigboxer23.solar_moon.open_search.OpenSearchConstants;
+import com.bigboxer23.solar_moon.search.OpenSearchConstants;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;

@@ -1,6 +1,8 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.device;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.DeviceUpdateData;
+import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import java.util.stream.Collectors;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;

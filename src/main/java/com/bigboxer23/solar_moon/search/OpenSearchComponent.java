@@ -1,9 +1,9 @@
-package com.bigboxer23.solar_moon.open_search;
+package com.bigboxer23.solar_moon.search;
 
-import com.bigboxer23.solar_moon.MeterConstants;
 import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.data.OpenSearchDTO;
+import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import com.bigboxer23.solar_moon.lambda.utils.PropertyUtils;
 import java.io.IOException;
 import java.util.*;

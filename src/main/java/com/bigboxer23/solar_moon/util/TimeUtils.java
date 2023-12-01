@@ -1,6 +1,5 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.util;
 
-import com.bigboxer23.solar_moon.util.TimeConstants;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;

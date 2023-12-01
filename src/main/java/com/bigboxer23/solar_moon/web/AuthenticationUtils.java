@@ -1,6 +1,6 @@
 package com.bigboxer23.solar_moon.web;
 
-import com.bigboxer23.solar_moon.CustomerComponent;
+import com.bigboxer23.solar_moon.customer.CustomerComponent;
 import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.lambda.data.LambdaRequest;
 import java.util.Base64;

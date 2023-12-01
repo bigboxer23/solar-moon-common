@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
-import com.bigboxer23.solar_moon.open_search.OpenSearchUtils;
+import com.bigboxer23.solar_moon.ingest.MeterConstants;
+import com.bigboxer23.solar_moon.search.OpenSearchUtils;
+import com.bigboxer23.solar_moon.util.TimeUtils;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -47,7 +49,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 			float totalEnergyConsumed,
 			float totalRealPower) {
 		if (deviceName != null && !deviceName.isBlank()) {
-			deviceXML = deviceXML.replace(TestDeviceComponent.deviceName, deviceName);
+			deviceXML = deviceXML.replace(TestConstants.deviceName, deviceName);
 		}
 		if (date != null) {
 			SimpleDateFormat sdf = new SimpleDateFormat(MeterConstants.DATE_PATTERN_UTC);
@@ -83,25 +85,25 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		nukeCustomerId(customerId);
 		Device testDevice = new Device();
 		testDevice.setClientId(customerId);
-		testDevice.setSite(TestDeviceComponent.SITE);
+		testDevice.setSite(TestConstants.SITE);
 		for (int ai = 0; ai < 5; ai++) {
-			addDevice(TestDeviceComponent.deviceName + ai, testDevice, false);
+			addDevice(TestConstants.deviceName + ai, testDevice, false);
 		}
-		addDevice(TestDeviceComponent.SITE, testDevice, true);
+		addDevice(TestConstants.SITE, testDevice, true);
 	}
 
 	public static void setupSite() {
-		setupSite(TestDeviceComponent.clientId);
+		setupSite(TestConstants.CUSTOMER_ID);
 	}
 
 	public static Device getDevice() {
 		return deviceComponent
-				.findDeviceByDeviceName(TestDeviceComponent.clientId, TestDeviceComponent.deviceName + 0)
+				.findDeviceByDeviceName(TestConstants.CUSTOMER_ID, TestConstants.deviceName + 0)
 				.orElse(null);
 	}
 
 	public static Device getSite() {
-		return deviceComponent.getDevicesForCustomerId(TestDeviceComponent.clientId).stream()
+		return deviceComponent.getDevicesForCustomerId(TestConstants.CUSTOMER_ID).stream()
 				.filter(Device::isVirtual)
 				.findAny()
 				.get();
@@ -113,7 +115,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 				.minusDays(2);
 		generationComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(
-						TestDeviceComponent.SITE,
+						TestConstants.SITE,
 						Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()),
 						5),
 				customerId);
@@ -121,7 +123,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 			for (int ai = 0; ai < 10; ai++) {
 				generationComponent.handleDeviceBody(
 						TestUtils.getDeviceXML(
-								TestDeviceComponent.deviceName + aj,
+								TestConstants.deviceName + aj,
 								Date.from(ldt.minusMinutes(15 * ai)
 										.atZone(ZoneId.systemDefault())
 										.toInstant()),
@@ -137,7 +139,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 	}
 
 	public static void seedOpenSearchData() throws XPathExpressionException {
-		seedOpenSearchData(TestDeviceComponent.clientId);
+		seedOpenSearchData(TestConstants.CUSTOMER_ID);
 	}
 
 	private static void addDevice(String name, Device testDevice, boolean isVirtual) {
@@ -152,12 +154,12 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 	}
 
 	public static void validateDateData(String deviceName, Date date) {
-		DeviceData data = OSComponent.getDeviceByTimePeriod(TestDeviceComponent.clientId, deviceName, date);
+		DeviceData data = OSComponent.getDeviceByTimePeriod(TestConstants.CUSTOMER_ID, deviceName, date);
 		assertNotNull(data);
 		assertEquals(date, data.getDate());
 	}
 
 	public static void validateDateData(Date date) {
-		validateDateData(TestDeviceComponent.deviceName + 0, date);
+		validateDateData(TestConstants.deviceName + 0, date);
 	}
 }

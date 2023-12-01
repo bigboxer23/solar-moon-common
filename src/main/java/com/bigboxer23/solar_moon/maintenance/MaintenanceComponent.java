@@ -1,6 +1,6 @@
 package com.bigboxer23.solar_moon.maintenance;
 
-import com.bigboxer23.solar_moon.AbstractDynamodbComponent;
+import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import java.util.Optional;
 
 /** */

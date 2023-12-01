@@ -1,6 +1,6 @@
 package com.bigboxer23.solar_moon.data;
 
-import com.bigboxer23.solar_moon.DeviceComponent;
+import com.bigboxer23.solar_moon.device.DeviceComponent;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Optional;
 import lombok.Data;

@@ -1,17 +1,17 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.device;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.dynamodb.DynamoLockUtils;
-import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
-import com.bigboxer23.solar_moon.open_search.OpenSearchUtils;
+import com.bigboxer23.solar_moon.search.OpenSearchComponent;
+import com.bigboxer23.solar_moon.search.OpenSearchUtils;
 import java.util.*;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Component to stash all the logic related to aggregating virtual site devices */
-// @Component
 public class SiteComponent {
 
 	private static final Logger logger = LoggerFactory.getLogger(SiteComponent.class);

@@ -1,6 +1,9 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.device;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Device;
+import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
+import com.bigboxer23.solar_moon.subscription.SubscriptionComponent;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -10,7 +13,6 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
-// @Component
 public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 
 	private final SubscriptionComponent subscriptionComponent;
