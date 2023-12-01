@@ -21,8 +21,6 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 
 	private static final Logger logger = LoggerFactory.getLogger(AlarmComponent.class);
 
-	private final OpenWeatherComponent openWeatherComponent;
-
 	private final DeviceComponent deviceComponent;
 
 	private final OpenSearchComponent OSComponent;
@@ -30,11 +28,9 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 	private final NotificationComponent notificationComponent;
 
 	public AlarmComponent(
-			OpenWeatherComponent openWeatherComponent,
 			DeviceComponent deviceComponent,
 			OpenSearchComponent OSComponent,
 			NotificationComponent notificationComponent) {
-		this.openWeatherComponent = openWeatherComponent;
 		this.deviceComponent = deviceComponent;
 		this.OSComponent = OSComponent;
 		this.notificationComponent = notificationComponent;

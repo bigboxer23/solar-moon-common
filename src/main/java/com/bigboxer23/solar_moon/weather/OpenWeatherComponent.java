@@ -1,4 +1,4 @@
-package com.bigboxer23.solar_moon;
+package com.bigboxer23.solar_moon.weather;
 
 import com.bigboxer23.solar_moon.data.Location;
 import com.bigboxer23.solar_moon.data.WeatherData;

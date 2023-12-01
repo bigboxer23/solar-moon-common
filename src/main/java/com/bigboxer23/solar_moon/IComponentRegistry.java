@@ -4,6 +4,7 @@ import com.bigboxer23.solar_moon.location.LocationComponent;
 import com.bigboxer23.solar_moon.maintenance.MaintenanceComponent;
 import com.bigboxer23.solar_moon.notifications.NotificationComponent;
 import com.bigboxer23.solar_moon.open_search.OpenSearchComponent;
+import com.bigboxer23.solar_moon.weather.PirateWeatherComponent;
 import com.squareup.moshi.Moshi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,12 +20,11 @@ public interface IComponentRegistry {
 
 	OpenSearchComponent OSComponent = new OpenSearchComponent();
 
-	OpenWeatherComponent weatherComponent = new OpenWeatherComponent();
+	PirateWeatherComponent weatherComponent = new PirateWeatherComponent();
 
 	NotificationComponent notificationComponent = new NotificationComponent();
 
-	AlarmComponent alarmComponent =
-			new AlarmComponent(weatherComponent, deviceComponent, OSComponent, notificationComponent);
+	AlarmComponent alarmComponent = new AlarmComponent(deviceComponent, OSComponent, notificationComponent);
 
 	SiteComponent siteComponent = new SiteComponent(OSComponent, deviceComponent);
 
