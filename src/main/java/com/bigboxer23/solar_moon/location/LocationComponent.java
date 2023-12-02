@@ -1,7 +1,6 @@
 package com.bigboxer23.solar_moon.location;
 
 import com.bigboxer23.solar_moon.data.Device;
-import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.lambda.utils.PropertyUtils;
 import java.util.Collections;
@@ -57,8 +56,7 @@ public class LocationComponent {
 			return;
 		}
 		try {
-			data.addAttribute(new DeviceAttribute(
-					"Daylight", "boolean", isDay(data.getDate(), site.getLatitude(), site.getLongitude())));
+			data.setDaylight(isDay(data.getDate(), site.getLatitude(), site.getLongitude()));
 		} catch (Exception e) {
 			logger.warn("addLocationData", e);
 		}
