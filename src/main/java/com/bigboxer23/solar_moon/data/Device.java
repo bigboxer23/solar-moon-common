@@ -101,6 +101,7 @@ public class Device {
 		setClientId(clientId);
 		setId(id);
 		setDeviceName(deviceName);
+		setName(deviceName);
 		setSite(DeviceComponent.NO_SITE);
 	}
 
