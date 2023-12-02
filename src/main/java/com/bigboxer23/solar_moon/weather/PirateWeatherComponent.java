@@ -23,7 +23,7 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 	private static final String FORCAST_URL =
 			"https://api.pirateweather.net/forecast/" + API_KEY + "/{0}%2C{1}?exclude=minutely%2Chourly%2Cdaily";
 
-	public Optional<PirateWeatherDataResponse> getForcastData(double latitude, double longitude) {
+	public Optional<PirateWeatherDataResponse> fetchForcastData(double latitude, double longitude) {
 		try (Response response =
 				OkHttpUtil.getSynchronous(MessageFormat.format(FORCAST_URL, latitude, longitude), null)) {
 			ResponseBody responseBody = response.body();
@@ -62,6 +62,31 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 			deviceData.addAttribute(new DeviceAttribute("uvIndex", "", w.getUvIndex()));
 			deviceData.addAttribute(new DeviceAttribute("precipIntensity", "", w.getPrecipIntensity()));
 		});
+	}
+
+	public void fetchNewWeather() {
+		IComponentRegistry.deviceComponent.getDevices(true).stream()
+				.filter(site -> (site.getLatitude() != -1 && site.getLongitude() != -1))
+				.forEach(site -> {
+					if (getLastUpdate(site.getLatitude(), site.getLongitude())
+							>= System.currentTimeMillis() - TimeConstants.FIFTEEN_MINUTES) {
+						logger.debug("Not getting new weather, previous data isn't old.");
+						return;
+					}
+					logger.info("fetching weather data for " + site.getLatitude() + "," + site.getLongitude());
+					fetchForcastData(site.getLatitude(), site.getLongitude())
+							.ifPresent(w -> updateWeather(site.getLatitude(), site.getLongitude(), w.getCurrently()));
+				});
+	}
+
+	public long getLastUpdate(double latitude, double longitude) {
+		return this.getTable()
+				.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(latitude + "," + longitude)))
+				.stream()
+				.findFirst()
+				.flatMap((page) -> page.items().stream().findFirst())
+				.map(StoredWeatherData::getTime)
+				.orElse(-1L);
 	}
 
 	public Optional<PirateWeatherData> getWeather(double latitude, double longitude) {
