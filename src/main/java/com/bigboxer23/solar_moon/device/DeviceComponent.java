@@ -154,6 +154,10 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 			logger.warn(device.getClientId() + ":" + device.getId() + " exists, not putting into db.");
 			return false;
 		}
+		if (findDeviceByDeviceName(device.getClientId(), device.getDeviceName()).isPresent()) {
+			logger.warn(device.getClientId() + ":" + device.getDeviceName() + " exists, cannot add a matching device");
+			return false;
+		}
 		maybeUpdateLocationData(device);
 		logAction("add", device.getId());
 		getTable().putItem(device);
@@ -166,8 +170,13 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 				&& !StringUtils.isBlank(device.getId());
 	}
 
-	public void updateDevice(Device device) {
+	public Optional<Device> updateDevice(Device device) {
 		logAction("update", device.getId());
+		Optional<Device> dbDevice = findDeviceByDeviceName(device.getClientId(), device.getDeviceName());
+		if (dbDevice.isPresent() && !dbDevice.get().getId().equals(device.getId())) {
+			logger.warn(device.getClientId() + ":" + device.getDeviceName() + " exists, cannot update matching device");
+			return Optional.empty();
+		}
 		if (device.isVirtual()) {
 			Device site = getDevice(device.getId(), device.getClientId());
 			if (!site.getName().equals(device.getName())) {
@@ -178,7 +187,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 			}
 		}
 		maybeUpdateLocationData(device);
-		getTable().updateItem(builder -> builder.item(device));
+		return Optional.ofNullable(getTable().updateItem(builder -> builder.item(device)));
 	}
 
 	public void deleteDevice(String id, String customerId) {

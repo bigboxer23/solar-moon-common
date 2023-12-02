@@ -8,6 +8,8 @@ import com.bigboxer23.solar_moon.TestUtils;
 import com.bigboxer23.solar_moon.data.Device;
 import java.util.List;
 import java.util.Optional;
+
+import com.bigboxer23.solar_moon.util.TokenGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -73,6 +75,27 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 						.filter(device -> CUSTOMER_ID.equals(device.getClientId()))
 						.toList()
 						.size());
+	}
+
+	@Test
+	public void addDevice() {
+		Device device = TestUtils.getDevice();
+		assertFalse(deviceComponent.addDevice(device));
+		assertFalse(deviceComponent.addDevice(new Device(TokenGenerator.generateNewToken(), device.getClientId(), device.getDeviceName())));
+	}
+
+	@Test
+	public void updateDevice() {
+		Device device = TestUtils.getDevice();
+		Device device2 = new Device(TokenGenerator.generateNewToken(), device.getClientId(), device.getDeviceName() + 22);
+		assertTrue(deviceComponent.addDevice(device2));
+		device.setDeviceName("temp");
+		device.setName("temp");
+		assertTrue(deviceComponent.updateDevice(device).isPresent());
+
+		device2.setDeviceName(device.getDeviceName());
+		device2.setDeviceName(device.getName());
+		assertFalse(deviceComponent.updateDevice(device2).isPresent());
 	}
 
 	@Test
