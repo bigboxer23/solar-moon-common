@@ -12,11 +12,14 @@ public class StoredWeatherData {
 
 	private String weather;
 
+	private long time;
+
 	public StoredWeatherData() {}
 
-	public StoredWeatherData(double latitude, double longitude, String weather) {
+	public StoredWeatherData(double latitude, double longitude, String weather, long time) {
 		setLatitudeLongitude(latitude + "," + longitude);
 		setWeather(weather);
+		setTime(time);
 	}
 
 	@DynamoDbPartitionKey

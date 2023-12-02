@@ -2,12 +2,15 @@ package com.bigboxer23.solar_moon.weather;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Device;
+import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.lambda.utils.PropertyUtils;
+import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.utils.http.OkHttpUtil;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.Date;
 import java.util.Optional;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
@@ -40,7 +43,25 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 	}
 
 	public void addWeatherData(DeviceData deviceData, Device site) {
-		// TODO:
+		if (site == null
+				|| deviceData == null
+				|| !deviceData.isDayLight()
+				|| (site.getLatitude() == -1 && site.getLongitude() == -1)) {
+			logger.debug("Not adding weather data");
+			return;
+		}
+		getWeather(site.getLatitude(), site.getLongitude()).ifPresent(w -> {
+			if (w.getTime() < System.currentTimeMillis() - TimeConstants.HOUR) {
+				logger.warn("Stale weather data, not stamping " + site.getLatitude() + "," + site.getLongitude());
+				return;
+			}
+			deviceData.addAttribute(new DeviceAttribute("weatherSummary", "", w.getSummary()));
+			deviceData.addAttribute(new DeviceAttribute("temperature", "", w.getTemperature()));
+			deviceData.addAttribute(new DeviceAttribute("cloudCover", "", w.getCloudCover()));
+			deviceData.addAttribute(new DeviceAttribute("visibility", "", w.getVisibility()));
+			deviceData.addAttribute(new DeviceAttribute("uvIndex", "", w.getUvIndex()));
+			deviceData.addAttribute(new DeviceAttribute("precipIntensity", "", w.getPrecipIntensity()));
+		});
 	}
 
 	public Optional<PirateWeatherData> getWeather(double latitude, double longitude) {
@@ -74,7 +95,8 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 						longitude,
 						IComponentRegistry.moshi
 								.adapter(PirateWeatherData.class)
-								.toJson(data))));
+								.toJson(data),
+						new Date().getTime())));
 	}
 
 	@Override

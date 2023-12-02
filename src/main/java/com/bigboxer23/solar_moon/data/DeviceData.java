@@ -108,6 +108,16 @@ public class DeviceData {
 				.orElse(false);
 	}
 
+	public void setDaylight(boolean isDaylight) {
+		addAttribute(new DeviceAttribute(DAYLIGHT, "boolean", isDaylight));
+	}
+
+	public boolean isDayLight() {
+		return (Boolean) Optional.ofNullable(attributes.get(DAYLIGHT))
+				.map(DeviceAttribute::getValue)
+				.orElse(false);
+	}
+
 	public String getTotalEnergyConsumedUnit() {
 		return Optional.ofNullable(attributes.get(TOTAL_ENG_CONS))
 				.map(DeviceAttribute::getUnit)
