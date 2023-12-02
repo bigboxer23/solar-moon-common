@@ -50,11 +50,12 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 			logger.debug("Not adding weather data");
 			return;
 		}
+		if (getLastUpdate(site.getLatitude(), site.getLongitude())
+				< (System.currentTimeMillis() - TimeConstants.HOUR)) {
+			logger.warn("Stale weather data, not stamping " + site.getLatitude() + "," + site.getLongitude());
+			return;
+		}
 		getWeather(site.getLatitude(), site.getLongitude()).ifPresent(w -> {
-			if (w.getTime() < System.currentTimeMillis() - TimeConstants.HOUR) {
-				logger.warn("Stale weather data, not stamping " + site.getLatitude() + "," + site.getLongitude());
-				return;
-			}
 			deviceData.addAttribute(new DeviceAttribute("weatherSummary", "", w.getSummary()));
 			deviceData.addAttribute(new DeviceAttribute("temperature", "", w.getTemperature()));
 			deviceData.addAttribute(new DeviceAttribute("cloudCover", "", w.getCloudCover()));
