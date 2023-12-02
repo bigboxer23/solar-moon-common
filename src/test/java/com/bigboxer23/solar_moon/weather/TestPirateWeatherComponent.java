@@ -12,13 +12,13 @@ import org.junit.jupiter.api.Test;
 public class TestPirateWeatherComponent implements IComponentRegistry, TestConstants {
 	@Test
 	public void getForcastData() {
-		Optional<PirateWeatherDataResponse> weather = weatherComponent.getForcastData(testLatitude, testLongitude);
+		Optional<PirateWeatherDataResponse> weather = weatherComponent.fetchForcastData(testLatitude, testLongitude);
 		assertTrue(weather.isPresent());
 	}
 
 	@Test
 	public void testCRU() {
-		Optional<PirateWeatherDataResponse> weather = weatherComponent.getForcastData(testLatitude, testLongitude);
+		Optional<PirateWeatherDataResponse> weather = weatherComponent.fetchForcastData(testLatitude, testLongitude);
 		weather.ifPresent(w -> {
 			weatherComponent.updateWeather(testLatitude, testLongitude, w.getCurrently());
 			Optional<PirateWeatherData> data = weatherComponent.getWeather(testLatitude, testLongitude);
@@ -26,4 +26,9 @@ public class TestPirateWeatherComponent implements IComponentRegistry, TestConst
 			assertEquals(w.getCurrently().getTime(), data.get().getTime());
 		});
 	}
+
+	/*@Test
+	public void fetchNewWeather() {
+		weatherComponent.fetchNewWeather();
+	}*/
 }
