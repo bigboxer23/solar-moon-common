@@ -60,6 +60,7 @@ public class SiteComponent {
 						siteDevice.setTotalRealPower(Math.max(0, siteDevice.getTotalRealPower()) + totalRealPower);
 					}
 					IComponentRegistry.locationComponent.addLocationData(siteDevice, site);
+					IComponentRegistry.weatherComponent.addWeatherData(siteDevice, site);
 					logger.info("adding virtual device " + device.getSite() + " : " + device.getDate());
 					openSearch.logData(siteDevice.getDate(), Collections.singletonList(siteDevice));
 					OpenSearchUtils.waitForIndexing();
