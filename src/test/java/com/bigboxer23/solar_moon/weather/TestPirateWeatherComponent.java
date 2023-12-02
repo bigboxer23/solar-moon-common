@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon.weather;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
@@ -13,5 +14,16 @@ public class TestPirateWeatherComponent implements IComponentRegistry, TestConst
 	public void getForcastData() {
 		Optional<PirateWeatherDataResponse> weather = weatherComponent.getForcastData(testLatitude, testLongitude);
 		assertTrue(weather.isPresent());
+	}
+
+	@Test
+	public void testCRU() {
+		Optional<PirateWeatherDataResponse> weather = weatherComponent.getForcastData(testLatitude, testLongitude);
+		weather.ifPresent(w -> {
+			weatherComponent.updateWeather(testLatitude, testLongitude, w.getCurrently());
+			Optional<PirateWeatherData> data = weatherComponent.getWeather(testLatitude, testLongitude);
+			assertTrue(data.isPresent());
+			assertEquals(w.getCurrently().getTime(), data.get().getTime());
+		});
 	}
 }
