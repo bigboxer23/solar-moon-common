@@ -74,9 +74,17 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 						logger.debug("Not getting new weather, previous data isn't old.");
 						return;
 					}
-					logger.info("fetching weather data for " + site.getLatitude() + "," + site.getLongitude());
-					fetchForcastData(site.getLatitude(), site.getLongitude())
-							.ifPresent(w -> updateWeather(site.getLatitude(), site.getLongitude(), w.getCurrently()));
+					try {
+						if (IComponentRegistry.locationComponent.isDay(
+								new Date(), site.getLatitude(), site.getLongitude())) {
+							logger.info("fetching weather data for " + site.getLatitude() + "," + site.getLongitude());
+							fetchForcastData(site.getLatitude(), site.getLongitude())
+									.ifPresent(w ->
+											updateWeather(site.getLatitude(), site.getLongitude(), w.getCurrently()));
+						}
+					} catch (Exception e) {
+						logger.error("fetchNewWeather", e);
+					}
 				});
 	}
 
