@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon.data;
 
+import com.bigboxer23.solar_moon.util.TimeConstants;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
@@ -24,6 +25,7 @@ public class Alarm {
 		setCustomerId(customerId);
 		setDeviceId(deviceId);
 		setSiteId(siteId);
+		setExpiration((System.currentTimeMillis() + TimeConstants.YEAR) / 1000);
 	}
 
 	public static final String CUSTOMER_INDEX = "customer-index";
@@ -63,6 +65,8 @@ public class Alarm {
 	private int state;
 
 	private long emailed = 0;
+
+	private long expiration;
 
 	@DynamoDbSecondaryPartitionKey(indexNames = EMAILED_CUSTOMER_INDEX)
 	public long getEmailed() {
