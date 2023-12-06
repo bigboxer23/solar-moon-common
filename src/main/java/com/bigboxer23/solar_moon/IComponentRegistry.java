@@ -8,6 +8,7 @@ import com.bigboxer23.solar_moon.device.SiteComponent;
 import com.bigboxer23.solar_moon.ingest.GenerationMeterComponent;
 import com.bigboxer23.solar_moon.location.LocationComponent;
 import com.bigboxer23.solar_moon.maintenance.MaintenanceComponent;
+import com.bigboxer23.solar_moon.mapping.MappingComponent;
 import com.bigboxer23.solar_moon.notifications.NotificationComponent;
 import com.bigboxer23.solar_moon.search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.subscription.SubscriptionComponent;
@@ -43,6 +44,8 @@ public interface IComponentRegistry {
 	DeviceUpdateComponent deviceUpdateComponent = new DeviceUpdateComponent();
 
 	LocationComponent locationComponent = new LocationComponent();
+
+	MappingComponent mappingComponent = new MappingComponent();
 
 	Logger logger = LoggerFactory.getLogger(IComponentRegistry.class);
 }
