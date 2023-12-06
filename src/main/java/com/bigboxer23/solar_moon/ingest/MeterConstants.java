@@ -36,5 +36,5 @@ public interface MeterConstants {
 
 	String SITE = "site";
 
-	String CUSTOMER_ID = "customer-id";
+	String CUSTOMER_ID_ATTRIBUTE = "customer-id";
 }

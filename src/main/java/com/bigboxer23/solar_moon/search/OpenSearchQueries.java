@@ -43,7 +43,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 
 	public static Query getCustomerIdQuery(String customerId) {
 		return QueryBuilders.match()
-				.field(getKeywordField(CUSTOMER_ID))
+				.field(getKeywordField(CUSTOMER_ID_ATTRIBUTE))
 				.query(builder -> builder.stringValue(customerId))
 				.build()
 				._toQuery();
