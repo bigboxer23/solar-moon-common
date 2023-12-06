@@ -29,6 +29,7 @@ public class MappingComponent extends AbstractDynamodbComponent<AttributeMap> im
 	}
 
 	private Optional<AttributeMap> getMapping(String customerId, String mappingName) {
+		logger.debug("getting mappings");
 		return getTable()
 				.query(QueryConditional.keyEqualTo(
 						builder -> builder.partitionValue(customerId).sortValue(mappingName)))
@@ -50,6 +51,7 @@ public class MappingComponent extends AbstractDynamodbComponent<AttributeMap> im
 			logger.warn("Mapping name already used " + mappingName);
 			return Optional.empty();
 		}
+		logger.info("adding mapping " + attribute + " " + mappingName);
 		return Optional.ofNullable(
 				getTable().updateItem(builder -> builder.item(new AttributeMap(customerId, attribute, mappingName))));
 	}
@@ -61,6 +63,7 @@ public class MappingComponent extends AbstractDynamodbComponent<AttributeMap> im
 	}
 
 	public void deleteMapping(String customerId, String mappingName) {
+		logger.info("deleting mapping " + mappingName);
 		getTable()
 				.deleteItem(b -> b.key(Key.builder()
 						.partitionValue(customerId)
