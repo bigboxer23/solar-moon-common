@@ -24,7 +24,8 @@ public class AuthenticationUtils {
 			logger.warn("Invalid auth, returning unauthorized: " + parts[0]);
 			return null;
 		}
-		String customerId = Optional.ofNullable(customerComponent.findCustomerIdByAccessKey(parts[1]))
+		String customerId = customerComponent
+				.findCustomerIdByAccessKey(parts[1])
 				.map(Customer::getCustomerId)
 				.orElse(null);
 		if (customerId != null) {

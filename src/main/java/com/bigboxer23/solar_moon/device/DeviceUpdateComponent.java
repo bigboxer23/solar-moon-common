@@ -15,7 +15,7 @@ public class DeviceUpdateComponent extends AbstractDynamodbComponent<DeviceUpdat
 		update(deviceId, System.currentTimeMillis());
 	}
 
-	//Only for tests
+	// Only for tests
 	public void update(String deviceId, long time) {
 		if (StringUtils.isBlank(deviceId)) {
 			logger.warn("invalid device id, not updating");

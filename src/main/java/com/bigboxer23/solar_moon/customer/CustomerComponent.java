@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon.customer;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
@@ -19,23 +20,23 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 		return Customer.class;
 	}
 
-	public Customer addCustomer(String email, String customerId, String name, String stripeCustomerId) {
+	public Optional<Customer> addCustomer(String email, String customerId, String name, String stripeCustomerId) {
 		if (StringUtils.isEmpty(email)
 				|| StringUtils.isEmpty(customerId)
 				|| StringUtils.isEmpty(name)
 				|| StringUtils.isEmpty(stripeCustomerId)) {
 			logger.warn("email, name strip id, or customer id is null/empty, cannot add.");
-			return null;
+			return Optional.empty();
 		}
 		if (findCustomerByCustomerId(customerId).isPresent()) {
 			logger.debug(customerId + ":" + email + " exists, not putting into db");
-			return null;
+			return Optional.empty();
 		}
 		Customer customer = new Customer(customerId, email, TokenGenerator.generateNewToken(), name);
 		customer.setStripeCustomerId(stripeCustomerId);
 		logger.info("Adding customer " + email);
 		getTable().putItem(customer);
-		return customer;
+		return Optional.of(customer);
 	}
 
 	public void updateCustomer(Customer customer) {
@@ -61,27 +62,26 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 		getTable().updateItem(builder -> builder.item(customer));
 	}
 
-	public Customer findCustomerByEmail(String email) {
+	public Optional<Customer> findCustomerByEmail(String email) {
 		return !StringUtils.isBlank(email)
 				? this.getTable()
 						.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(email)))
 						.stream()
 						.findFirst()
 						.flatMap((page) -> page.items().stream().findFirst())
-						.orElse(null)
-				: null;
+				: Optional.empty();
 	}
 
 	public void deleteCustomerByEmail(String email) {
-		Optional.ofNullable(email).filter(e -> !e.isBlank()).ifPresent(e -> {
-			logAction(email, "delete by customer email");
-			getTable().deleteItem(new Customer(null, email, null, null));
-		});
+		findCustomerByEmail(email).ifPresent(c -> deleteCustomerByCustomerId(c.getCustomerId()));
 	}
 
 	public void deleteCustomerByCustomerId(String customerId) {
 		findCustomerByCustomerId(customerId).ifPresent(c -> {
 			logAction(c.getCustomerId(), "delete by customer id");
+			IComponentRegistry.subscriptionComponent.deleteSubscription(customerId);
+			IComponentRegistry.deviceComponent.deleteDevicesByCustomerId(customerId);
+			IComponentRegistry.mappingComponent.deleteMapping(customerId);
 			getTable().deleteItem(c);
 		});
 	}
@@ -97,7 +97,7 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 						.flatMap((page) -> page.items().stream().findFirst());
 	}
 
-	public Customer findCustomerByStripeCustomerId(String stripeCustomerId) {
+	public Optional<Customer> findCustomerByStripeCustomerId(String stripeCustomerId) {
 		return stripeCustomerId != null && !stripeCustomerId.isEmpty()
 				? this.getTable()
 						.index(Customer.STRIPE_CUSTOMER_ID_INDEX)
@@ -105,21 +105,19 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 						.stream()
 						.findFirst()
 						.flatMap((page) -> page.items().stream().findFirst())
-						.orElse(null)
-				: null;
+				: Optional.empty();
 	}
 
-	public Customer findCustomerIdByAccessKey(String accessKey) {
+	public Optional<Customer> findCustomerIdByAccessKey(String accessKey) {
 		if (accessKey == null || accessKey.isEmpty()) {
-			return null;
+			return Optional.empty();
 		}
 		return getTable()
 				.index(Customer.ACCESS_KEY_INDEX)
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(accessKey)))
 				.stream()
 				.findFirst()
-				.flatMap(page -> page.items().stream().findFirst())
-				.orElse(null);
+				.flatMap(page -> page.items().stream().findFirst());
 	}
 
 	private void logAction(String action, String customerId) {
