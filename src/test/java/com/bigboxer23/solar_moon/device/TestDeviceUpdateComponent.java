@@ -11,6 +11,7 @@ import com.bigboxer23.solar_moon.data.DeviceUpdateData;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.StreamSupport;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,10 +24,13 @@ public class TestDeviceUpdateComponent implements IComponentRegistry, TestConsta
 
 	@BeforeEach
 	public void before() {
-		int[] ai = {0};
 		ids.forEach(id -> {
-			ai[0]++;
-			deviceUpdateComponent.update(id, 10L * ai[0]);
+			try {
+				Thread.sleep(20);
+			} catch (InterruptedException theE) {
+
+			}
+			deviceUpdateComponent.update(id);
 		});
 	}
 
