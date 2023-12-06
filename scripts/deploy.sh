@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-version=1.6.9
+version=1.6.10
 mvn package shade:shade -DskipTests
 cd target
 rm -rf java
