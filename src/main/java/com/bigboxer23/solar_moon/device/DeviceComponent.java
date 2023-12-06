@@ -201,6 +201,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		}
 		getTable().deleteItem(device);
 		IComponentRegistry.deviceUpdateComponent.delete(device.getId());
+		IComponentRegistry.alarmComponent.deleteAlarmByDeviceId(device.getClientId(), device.getId());
 	}
 
 	public void deleteDevicesByCustomerId(String customerId) {
