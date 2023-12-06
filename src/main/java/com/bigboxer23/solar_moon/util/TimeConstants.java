@@ -14,5 +14,7 @@ public interface TimeConstants {
 
 	long DAY = HOUR * 24;
 
+	long THIRTY_DAYS = DAY * 30;
+
 	long YEAR = DAY * 365;
 }
