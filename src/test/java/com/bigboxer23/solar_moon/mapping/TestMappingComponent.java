@@ -26,8 +26,10 @@ public class TestMappingComponent implements IComponentRegistry, TestConstants, 
 		assertTrue(map.isPresent());
 
 		// Test dup add
-		mappingComponent.addMapping(CUSTOMER_ID, AVG_CURRENT, TEST_MAPPING);
+		map = mappingComponent.addMapping(CUSTOMER_ID, AVG_CURRENT, TEST_MAPPING);
+		assertFalse(map.isPresent());
 		assertEquals(1, mappingComponent.getMappings(CUSTOMER_ID).size());
+		assertEquals(AVG_VOLT, mappingComponent.getMappings(CUSTOMER_ID).get(0).getAttribute());
 
 		// Test add'n good add
 		mappingComponent.addMapping(CUSTOMER_ID, AVG_VOLT, TEST_MAPPING + 1);
