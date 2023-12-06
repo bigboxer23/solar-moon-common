@@ -197,6 +197,10 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 		return Optional.ofNullable(getTable().updateItem(builder -> builder.item(alarm)));
 	}
 
+	public void deleteAlarmByDeviceId(String customerId, String deviceId) {
+		findAlarmsByDevice(customerId, deviceId).forEach(a -> deleteAlarm(a.getAlarmId(), a.getCustomerId()));
+	}
+
 	public void deleteAlarm(String alarmId, String customerId) {
 		logger.warn("Deleting alarm: " + alarmId);
 		getTable().deleteItem(new Alarm(alarmId, customerId));
