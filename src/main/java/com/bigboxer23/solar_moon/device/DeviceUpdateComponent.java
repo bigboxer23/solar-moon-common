@@ -11,6 +11,11 @@ import software.amazon.awssdk.utils.StringUtils;
 /** */
 public class DeviceUpdateComponent extends AbstractDynamodbComponent<DeviceUpdateData> {
 
+	public void update(String deviceId) {
+		update(deviceId, System.currentTimeMillis());
+	}
+
+	//Only for tests
 	public void update(String deviceId, long time) {
 		if (StringUtils.isBlank(deviceId)) {
 			logger.warn("invalid device id, not updating");

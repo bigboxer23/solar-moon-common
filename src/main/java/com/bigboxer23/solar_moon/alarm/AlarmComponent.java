@@ -61,7 +61,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 	}
 
 	public void resolveActiveAlarms(DeviceData device) {
-		IComponentRegistry.deviceUpdateComponent.update(device.getDeviceId(), System.currentTimeMillis());
+		IComponentRegistry.deviceUpdateComponent.update(device.getDeviceId());
 		getMostRecentAlarm(device.getDeviceId())
 				.filter(alarm -> alarm.getState() == 1)
 				.ifPresent(alarm -> {
