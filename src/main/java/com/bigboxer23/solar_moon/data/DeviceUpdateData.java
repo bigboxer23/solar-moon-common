@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon.data;
 
+import com.bigboxer23.solar_moon.util.TimeConstants;
 import lombok.Data;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
@@ -17,11 +18,14 @@ public class DeviceUpdateData {
 
 	private String identity = INDENTITY;
 
+	private long expiration;
+
 	public DeviceUpdateData() {}
 
 	public DeviceUpdateData(String id, long time) {
 		setDeviceId(id);
 		setLastUpdate(time);
+		setExpiration((System.currentTimeMillis() + TimeConstants.THIRTY_DAYS) / 1000);
 	}
 
 	@DynamoDbPartitionKey
