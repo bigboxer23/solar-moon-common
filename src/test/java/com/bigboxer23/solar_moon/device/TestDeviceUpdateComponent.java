@@ -11,7 +11,6 @@ import com.bigboxer23.solar_moon.data.DeviceUpdateData;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.StreamSupport;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;

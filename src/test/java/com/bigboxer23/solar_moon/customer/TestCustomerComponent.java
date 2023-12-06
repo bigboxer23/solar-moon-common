@@ -22,28 +22,31 @@ public class TestCustomerComponent implements IComponentRegistry, TestConstants 
 
 	@Test
 	public void testFindCustomerByStripeId() {
-		assertNull(customerComponent.findCustomerByStripeCustomerId(null));
-		assertNull(customerComponent.findCustomerByStripeCustomerId(""));
-		assertNull(customerComponent.findCustomerByStripeCustomerId("1234"));
-		assertNotNull(customerComponent.findCustomerByStripeCustomerId(CUSTOMER_STRIPE_ID));
+		assertFalse(customerComponent.findCustomerByStripeCustomerId(null).isPresent());
+		assertFalse(customerComponent.findCustomerByStripeCustomerId("").isPresent());
+		assertFalse(customerComponent.findCustomerByStripeCustomerId("1234").isPresent());
+		assertTrue(customerComponent
+				.findCustomerByStripeCustomerId(CUSTOMER_STRIPE_ID)
+				.isPresent());
 	}
 
 	@Test
 	public void testFindCustomerByEmail() {
-		assertNull(customerComponent.findCustomerByEmail(null));
-		assertNull(customerComponent.findCustomerByEmail(""));
-		assertNull(customerComponent.findCustomerByEmail("1234"));
-		assertNotNull(customerComponent.findCustomerByEmail(CUSTOMER_EMAIL));
+		assertFalse(customerComponent.findCustomerByEmail(null).isPresent());
+		assertFalse(customerComponent.findCustomerByEmail("").isPresent());
+		assertFalse(customerComponent.findCustomerByEmail("1234").isPresent());
+		assertTrue(customerComponent.findCustomerByEmail(CUSTOMER_EMAIL).isPresent());
 	}
 
 	@Test
 	public void testFindCustomerByAccessKey() {
 		testCustomer.setAccessKey(CUSTOMER_ACCESS_KEY);
 		customerComponent.updateCustomer(testCustomer);
-		assertNull(customerComponent.findCustomerIdByAccessKey(null));
-		assertNull(customerComponent.findCustomerIdByAccessKey(""));
-		assertNull(customerComponent.findCustomerIdByAccessKey("1234"));
-		assertNotNull(customerComponent.findCustomerIdByAccessKey(CUSTOMER_ACCESS_KEY));
+		assertFalse(customerComponent.findCustomerIdByAccessKey(null).isPresent());
+		assertFalse(customerComponent.findCustomerIdByAccessKey("").isPresent());
+		assertFalse(customerComponent.findCustomerIdByAccessKey("1234").isPresent());
+		assertTrue(
+				customerComponent.findCustomerIdByAccessKey(CUSTOMER_ACCESS_KEY).isPresent());
 	}
 
 	@BeforeEach
@@ -61,15 +64,23 @@ public class TestCustomerComponent implements IComponentRegistry, TestConstants 
 
 	@Test
 	public void testAddCustomer() {
-		assertNull(customerComponent.addCustomer(
-				null, null, TestCustomerComponent.CUSTOMER_NAME, TestCustomerComponent.CUSTOMER_STRIPE_ID));
-		assertNull(customerComponent.addCustomer(
-				TestCustomerComponent.CUSTOMER_EMAIL,
-				null,
-				TestCustomerComponent.CUSTOMER_NAME,
-				TestCustomerComponent.CUSTOMER_STRIPE_ID));
-		assertNull(customerComponent.addCustomer(
-				null, CUSTOMER_ID, TestCustomerComponent.CUSTOMER_NAME, TestCustomerComponent.CUSTOMER_STRIPE_ID));
+		assertFalse(customerComponent
+				.addCustomer(null, null, TestCustomerComponent.CUSTOMER_NAME, TestCustomerComponent.CUSTOMER_STRIPE_ID)
+				.isPresent());
+		assertFalse(customerComponent
+				.addCustomer(
+						TestCustomerComponent.CUSTOMER_EMAIL,
+						null,
+						TestCustomerComponent.CUSTOMER_NAME,
+						TestCustomerComponent.CUSTOMER_STRIPE_ID)
+				.isPresent());
+		assertFalse(customerComponent
+				.addCustomer(
+						null,
+						CUSTOMER_ID,
+						TestCustomerComponent.CUSTOMER_NAME,
+						TestCustomerComponent.CUSTOMER_STRIPE_ID)
+				.isPresent());
 		assertNull(customerComponent.addCustomer("", "", "", ""));
 		customerComponent.deleteCustomerByCustomerId(CUSTOMER_ID);
 		customerComponent.addCustomer(
@@ -77,7 +88,7 @@ public class TestCustomerComponent implements IComponentRegistry, TestConstants 
 				CUSTOMER_ID,
 				TestCustomerComponent.CUSTOMER_NAME,
 				TestCustomerComponent.CUSTOMER_STRIPE_ID);
-		assertNotNull(customerComponent.findCustomerByCustomerId(CUSTOMER_ID));
+		assertTrue(customerComponent.findCustomerByCustomerId(CUSTOMER_ID).isPresent());
 		customerComponent.deleteCustomerByCustomerId(CUSTOMER_ID);
 	}
 
