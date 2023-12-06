@@ -28,6 +28,15 @@ public class MappingComponent extends AbstractDynamodbComponent<AttributeMap> im
 				.toList();
 	}
 
+	private Optional<AttributeMap> getMapping(String customerId, String mappingName) {
+		return getTable()
+				.query(QueryConditional.keyEqualTo(
+						builder -> builder.partitionValue(customerId).sortValue(mappingName)))
+				.items()
+				.stream()
+				.findFirst();
+	}
+
 	public Optional<AttributeMap> addMapping(String customerId, String attribute, String mappingName) {
 		if (StringUtils.isBlank(customerId) || StringUtils.isBlank(attribute) || StringUtils.isBlank(mappingName)) {
 			logger.warn("invalid mapping, not adding");
@@ -35,6 +44,10 @@ public class MappingComponent extends AbstractDynamodbComponent<AttributeMap> im
 		}
 		if (!attributes.contains(attribute)) {
 			logger.warn("unsupported mapping, not adding " + attribute);
+			return Optional.empty();
+		}
+		if (getMapping(customerId, mappingName).isPresent()) {
+			logger.warn("Mapping name already used " + mappingName);
 			return Optional.empty();
 		}
 		return Optional.ofNullable(
