@@ -142,10 +142,10 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	public boolean addDevice(Device device) {
-		if (subscriptionComponent.getSubscriptionPacks(device.getClientId()) * 10
+		if (subscriptionComponent.getSubscriptionPacks(device.getClientId()) * 20
 				<= getDevicesForCustomerId(device.getClientId()).size()) {
 			logger.warn("Cannot add new device, not enough devices in license: "
-					+ (subscriptionComponent.getSubscriptionPacks(device.getClientId()) * 10)
+					+ (subscriptionComponent.getSubscriptionPacks(device.getClientId()) * 20)
 					+ ":"
 					+ getDevicesForCustomerId(device.getClientId()).size());
 			return false;

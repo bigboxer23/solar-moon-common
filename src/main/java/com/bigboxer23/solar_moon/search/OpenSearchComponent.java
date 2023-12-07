@@ -37,13 +37,11 @@ public class OpenSearchComponent implements OpenSearchConstants {
 
 	private OpenSearchClient client;
 
-	private String openSearchUrl;
+	private final String openSearchUrl;
 
-	private String user;
+	private final String user;
 
-	private String pass;
-
-	private boolean isTest = false;
+	private final String pass;
 
 	public OpenSearchComponent() {
 		openSearchUrl = PropertyUtils.getProperty("opensearch.url");
@@ -52,17 +50,18 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	}
 
 	public void logData(Date fetchDate, List<DeviceData> deviceData) {
-		if (isTest) {
-			logger.info("not running, test is active.");
-			return;
-		}
 		logger.debug("sending to opensearch component");
 		BulkRequest.Builder bulkRequest = new BulkRequest.Builder().index(INDEX_NAME);
 		deviceData.forEach(device -> {
-			device.addAttribute(new DeviceAttribute(TIMESTAMP, null, fetchDate));
+			device.addAttribute(
+					new DeviceAttribute(TIMESTAMP, null, device.getDate() == null ? fetchDate : device.getDate()));
 			bulkRequest.operations(new BulkOperation.Builder()
 					.index(new IndexOperation.Builder<OpenSearchDTO>()
-							.id(device.getName() + ":" + System.currentTimeMillis())
+							.id(device.getDeviceId()
+									+ ":"
+									+ (device.getDate() != null
+											? device.getDate().getTime()
+											: System.currentTimeMillis()))
 							.document(new OpenSearchDTO(device))
 							.build())
 					.build());
