@@ -30,6 +30,24 @@ public class DeviceData {
 		setAverageCurrent(doubleToFloat(openSearchMap.get(AVG_CURRENT)));
 		setTotalEnergyConsumed(doubleToFloat(openSearchMap.get(TOTAL_ENG_CONS)));
 		setDate(new Date((Long) openSearchMap.get(OpenSearchConstants.TIMESTAMP)));
+		if (openSearchMap.get(VIRTUAL) != null && (Boolean) openSearchMap.get(VIRTUAL)) {
+			setIsVirtual();
+		}
+		if (openSearchMap.containsKey(DAYLIGHT)) {
+			setDaylight((Boolean) openSearchMap.get(DAYLIGHT));
+		}
+		addIfExists("weatherSummary", openSearchMap);
+		addIfExists("temperature", openSearchMap);
+		addIfExists("cloudCover", openSearchMap);
+		addIfExists("visibility", openSearchMap);
+		addIfExists("uvIndex", openSearchMap);
+		addIfExists("precipIntensity", openSearchMap);
+	}
+
+	private void addIfExists(String attributeName, Map<String, Object> openSearchMap) {
+		if (openSearchMap.containsKey(attributeName)) {
+			addAttribute(new DeviceAttribute(attributeName, "", openSearchMap.get(attributeName)));
+		}
 	}
 
 	public boolean isValid() {
@@ -60,8 +78,8 @@ public class DeviceData {
 		attributes = new HashMap<>();
 		attributes.put(SITE, new DeviceAttribute(SITE, "", site));
 		attributes.put(DEVICE_NAME, new DeviceAttribute(DEVICE_NAME, "", name));
-		attributes.put(CUSTOMER_ID_ATTRIBUTE, new DeviceAttribute(CUSTOMER_ID_ATTRIBUTE, "", customerId));
-		attributes.put(DEVICE_ID, new DeviceAttribute(DEVICE_ID, "", deviceId));
+		setCustomerId(customerId);
+		setDeviceId(deviceId);
 	}
 
 	public void addAttribute(DeviceAttribute attr) {
@@ -136,8 +154,16 @@ public class DeviceData {
 		return (String) attributes.get(CUSTOMER_ID_ATTRIBUTE).getValue();
 	}
 
+	public void setCustomerId(String customerId) {
+		attributes.put(CUSTOMER_ID_ATTRIBUTE, new DeviceAttribute(CUSTOMER_ID_ATTRIBUTE, "", customerId));
+	}
+
 	public String getDeviceId() {
 		return (String) attributes.get(DEVICE_ID).getValue();
+	}
+
+	public void setDeviceId(String deviceId) {
+		attributes.put(DEVICE_ID, new DeviceAttribute(DEVICE_ID, "", deviceId));
 	}
 
 	public float getAverageVoltage() {
