@@ -167,14 +167,18 @@ public class GenerationMeterComponent implements MeterConstants {
 			for (int i = 0; i < nodes.getLength(); i++) {
 				String attributeName =
 						nodes.item(i).getAttributes().getNamedItem("name").getNodeValue();
-				if (fields.containsKey(attributeName)) {
+				Map<String, String> mappingFields = new HashMap<>(fields);
+				IComponentRegistry.mappingComponent
+						.getMappings(customerId)
+						.forEach(a -> mappingFields.put(a.getMappingName(), a.getAttribute()));
+				if (mappingFields.containsKey(attributeName)) {
 					try {
 						float value = Float.parseFloat(nodes.item(i)
 								.getAttributes()
 								.getNamedItem("value")
 								.getNodeValue());
 						deviceData.addAttribute(new DeviceAttribute(
-								fields.get(attributeName),
+								mappingFields.get(attributeName),
 								nodes.item(i)
 										.getAttributes()
 										.getNamedItem("units")
@@ -255,9 +259,6 @@ public class GenerationMeterComponent implements MeterConstants {
 	/**
 	 * Calculate the difference of power consumed since the last run. Add a new field with the
 	 * difference
-	 *
-	 * @param serverName
-	 * @param attr
 	 */
 	private void calculateTotalEnergyConsumed(DeviceData deviceData) {
 		if (deviceData.getName() == null) {
@@ -273,9 +274,5 @@ public class GenerationMeterComponent implements MeterConstants {
 		if (previousTotalEnergyConsumed != null) {
 			deviceData.setEnergyConsumed(totalEnergyConsumption - previousTotalEnergyConsumed);
 		}
-	}
-
-	private RequestBuilderCallback getAuthCallback(String user, String pass) {
-		return builder -> builder.addHeader("Authorization", Credentials.basic(user, pass));
 	}
 }
