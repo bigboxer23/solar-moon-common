@@ -146,6 +146,10 @@ public class DeviceData {
 		return (String) attributes.get(DEVICE_NAME).getValue();
 	}
 
+	public void setName(String name) {
+		attributes.put(DEVICE_NAME, new DeviceAttribute(DEVICE_NAME, "", name));
+	}
+
 	public String getSite() {
 		return (String) attributes.get(SITE).getValue();
 	}

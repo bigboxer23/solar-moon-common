@@ -1,12 +1,12 @@
 package com.bigboxer23.solar_moon;
 
 import static com.bigboxer23.solar_moon.ingest.MeterConstants.*;
-import static com.bigboxer23.solar_moon.ingest.MeterConstants.TOTAL_PF;
 import static com.bigboxer23.solar_moon.search.OpenSearchConstants.DATA_SEARCH_TYPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.bigboxer23.solar_moon.data.Device;
+import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import com.bigboxer23.solar_moon.search.OpenSearchUtils;
@@ -20,6 +20,7 @@ import java.time.ZoneId;
 import java.util.*;
 import javax.xml.xpath.XPathExpressionException;
 import org.opensearch.client.opensearch.core.SearchResponse;
+import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 public class TestUtils implements IComponentRegistry, TestConstants {
@@ -168,23 +169,48 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		validateDateData(TestConstants.deviceName + 0, date);
 	}
 
-	public static void cloneUser(String customerId, String srcCustomerId) {
-		Map<String, String> deviceIds = new HashMap<>();
-		deviceComponent.getDevicesForCustomerId(srcCustomerId).forEach(d -> {
-			deviceIds.put(d.getId(), TokenGenerator.generateNewToken());
-			d.setClientId(customerId);
-			d.setId(deviceIds.get(d.getId()));
-			deviceComponent.addDevice(d);
-		});
+	private static void updateDeviceForClone(Device device, String customerId, String deviceName) {
+		device.setClientId(customerId);
+		device.setId(TokenGenerator.generateNewToken());
+		device.setAddress(null);
+		device.setDeviceKey(null);
+		device.setNotificationsDisabled(true);
+		device.setSite(TestConstants.SITE);
+		device.setDeviceName(deviceName);
+		device.setName(deviceName);
+	}
+
+	public static void cloneUser(String customerId, String srcCustomerId, String deviceFilter, int numberOfWeeks) {
+		Map<String, Device> devices = new HashMap<>();
+		List<Device> srcDevices = deviceComponent.getDevicesForCustomerId(srcCustomerId);
+		Device site = srcDevices.stream()
+				.filter(d -> d.getName().startsWith(deviceFilter))
+				.filter(Device::isVirtual)
+				.findAny()
+				.orElse(null);
+		if (site == null) {
+			logger.warn("can't find site");
+			return;
+		}
+		devices.put(site.getId(), site);
+		updateDeviceForClone(site, customerId, TestConstants.SITE);
+		srcDevices.stream()
+				.filter(d -> d.getName().startsWith(deviceFilter))
+				.filter(d -> !d.isVirtual())
+				.forEach(d -> {
+					devices.put(d.getId(), d);
+					d.setMock(d.getName());
+					updateDeviceForClone(d, customerId, d.getName().replace(deviceFilter, TestConstants.deviceName));
+					deviceComponent.addDevice(d);
+				});
 		SearchJSON search = new SearchJSON();
 		search.setCustomerId(srcCustomerId);
 		search.setType(DATA_SEARCH_TYPE);
-		search.setSize(5000);
+		search.setSize(7500);
 		search.setOffset(0);
-		// half year
-		for (int week = 1; week < 26; week++) {
-			search.setStartDate(new Date().getTime() - TimeConstants.DAY * (7 * week));
-			search.setEndDate(new Date().getTime() - TimeConstants.DAY * (7 * (week - 1)));
+		for (int week = 1; week < numberOfWeeks; week++) {
+			search.setStartDate(new Date().getTime() - TimeConstants.DAY * (7L * week));
+			search.setEndDate(new Date().getTime() - TimeConstants.DAY * (7L * (week - 1)));
 			SearchResponse<Map> response = OSComponent.search(search);
 			List<DeviceData> datas = response.hits().hits().stream()
 					.map(h -> {
@@ -202,11 +228,18 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 							if (data.getPowerFactor() == -1) {
 								data.getAttributes().remove(TOTAL_PF);
 							}
+							data.getAttributes()
+									.put(
+											MeterConstants.SITE,
+											new DeviceAttribute(MeterConstants.SITE, "", site.getName()));
 							data.setCustomerId(customerId);
-							data.setDeviceId(deviceIds.get(data.getDeviceId()));
+							Optional<Device> srcDevice = Optional.ofNullable(devices.get(data.getDeviceId()));
+							data.setDeviceId(srcDevice.map(Device::getId).orElse(null));
+							data.setName(srcDevice.map(Device::getName).orElse(null));
 						}
 						return data;
 					})
+					.filter(d -> !StringUtils.isEmpty(d.getDeviceId()))
 					.toList();
 			if (!datas.isEmpty()) {
 				OSComponent.logData(null, datas);
