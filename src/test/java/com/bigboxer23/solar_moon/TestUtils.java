@@ -89,6 +89,9 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 
 	public static void setupSite(String customerId) {
 		nukeCustomerId(customerId);
+		if (CUSTOMER_ID.equals(customerId)) {
+			subscriptionComponent.updateSubscription(customerId, 1);
+		}
 		Device testDevice = new Device();
 		testDevice.setClientId(customerId);
 		testDevice.setSite(TestConstants.SITE);
@@ -99,17 +102,17 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 	}
 
 	public static void setupSite() {
-		setupSite(TestConstants.CUSTOMER_ID);
+		setupSite(CUSTOMER_ID);
 	}
 
 	public static Device getDevice() {
 		return deviceComponent
-				.findDeviceByDeviceName(TestConstants.CUSTOMER_ID, TestConstants.deviceName + 0)
+				.findDeviceByDeviceName(CUSTOMER_ID, TestConstants.deviceName + 0)
 				.orElse(null);
 	}
 
 	public static Device getSite() {
-		return deviceComponent.getDevicesForCustomerId(TestConstants.CUSTOMER_ID).stream()
+		return deviceComponent.getDevicesForCustomerId(CUSTOMER_ID).stream()
 				.filter(Device::isVirtual)
 				.findAny()
 				.get();
@@ -119,14 +122,9 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		LocalDateTime ldt = LocalDateTime.ofInstant(
 						TimeUtils.get15mRoundedDate().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
-		generationComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(
-						TestConstants.SITE,
-						Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()),
-						5),
-				customerId);
-		for (int aj = 0; aj < 1; aj++) {
-			for (int ai = 0; ai < 10; ai++) {
+		for (int aj = 0; aj < 5; aj++) {
+			System.out.println(TestConstants.deviceName + aj);
+			for (int ai = 0; ai < 5; ai++) {
 				generationComponent.handleDeviceBody(
 						TestUtils.getDeviceXML(
 								TestConstants.deviceName + aj,
@@ -145,7 +143,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 	}
 
 	public static void seedOpenSearchData() throws XPathExpressionException {
-		seedOpenSearchData(TestConstants.CUSTOMER_ID);
+		seedOpenSearchData(CUSTOMER_ID);
 	}
 
 	private static void addDevice(String name, Device testDevice, boolean isVirtual) {
@@ -160,7 +158,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 	}
 
 	public static void validateDateData(String deviceName, Date date) {
-		DeviceData data = OSComponent.getDeviceByTimePeriod(TestConstants.CUSTOMER_ID, deviceName, date);
+		DeviceData data = OSComponent.getDeviceByTimePeriod(CUSTOMER_ID, deviceName, date);
 		assertNotNull(data);
 		assertEquals(date, data.getDate());
 	}
