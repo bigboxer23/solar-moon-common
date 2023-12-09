@@ -194,6 +194,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		}
 		devices.put(site.getId(), site);
 		updateDeviceForClone(site, customerId, TestConstants.SITE);
+		deviceComponent.addDevice(site);
 		srcDevices.stream()
 				.filter(d -> d.getName().startsWith(deviceFilter))
 				.filter(d -> !d.isVirtual())
