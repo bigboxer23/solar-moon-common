@@ -266,6 +266,9 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		if (!StringUtils.isBlank(searchJSON.getDeviceId())) {
 			filters.add(OpenSearchQueries.getDeviceIdQuery(searchJSON.getDeviceId()));
 		}
+		if (searchJSON.isVirtual()) {
+			filters.add(OpenSearchQueries.getIsVirtual());
+		}
 		filters.addAll(Arrays.asList(
 				OpenSearchQueries.getDateRangeQuery(searchJSON.getJavaStartDate(), searchJSON.getJavaEndDate()),
 				OpenSearchQueries.getCustomerIdQuery(searchJSON.getCustomerId())));

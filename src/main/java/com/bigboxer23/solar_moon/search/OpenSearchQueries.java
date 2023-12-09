@@ -30,7 +30,15 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 	}
 
 	public static Query getNotVirtual() {
-		return QueryBuilders.exists().field("Virtual").build()._toQuery();
+		return QueryBuilders.exists().field(VIRTUAL).build()._toQuery();
+	}
+
+	public static Query getIsVirtual() {
+		return QueryBuilders.match()
+				.field(VIRTUAL)
+				.query(builder -> builder.booleanValue(true))
+				.build()
+				._toQuery();
 	}
 
 	public static Query getDeviceIdQuery(String id) {

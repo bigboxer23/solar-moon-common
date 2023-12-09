@@ -272,4 +272,23 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				OpenSearchQueries.getDeviceNameQuery(SNEDevice.getDeviceName()),
 				OpenSearchQueries.getCustomerIdQuery(CUSTOMER_ID)));
 	}
+
+	@Test
+	public void virtualDevices() throws XPathExpressionException {
+		TestUtils.seedOpenSearchData();
+		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
+				.minusDays(2);
+		SearchJSON json = new SearchJSON(
+				CUSTOMER_ID,
+				null,
+				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
+				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
+						.getTime());
+		json.setSize(500);
+		json.setType(DATA_SEARCH_TYPE);
+		json.setTimeZone(ZonedDateTime.now().getZone().getId());
+		assertEquals(30, OSComponent.search(json).hits().hits().size());
+		json.setVirtual(true);
+		assertEquals(5, OSComponent.search(json).hits().hits().size());
+	}
 }

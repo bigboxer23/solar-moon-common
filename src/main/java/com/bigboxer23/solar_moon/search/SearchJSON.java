@@ -17,6 +17,7 @@ public class SearchJSON {
 	private String site;
 	private int offset;
 	private int size;
+	private boolean virtual;
 
 	public SearchJSON() {}
 
