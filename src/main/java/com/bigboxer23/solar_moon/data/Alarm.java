@@ -68,6 +68,20 @@ public class Alarm {
 
 	private long expiration;
 
+	private String deviceName;
+
+	private String deviceSite;
+
+	@DynamoDbIgnore
+	public String getDeviceName() {
+		return deviceName;
+	}
+
+	@DynamoDbIgnore
+	public String getDeviceSite() {
+		return deviceSite;
+	}
+
 	@DynamoDbSecondaryPartitionKey(indexNames = EMAILED_CUSTOMER_INDEX)
 	public long getEmailed() {
 		return emailed;
