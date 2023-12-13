@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+import software.amazon.awssdk.utils.StringUtils;
 
 /** Class to read data from the generation meter web interface */
 // @Component
@@ -115,28 +116,52 @@ public class GenerationMeterComponent implements MeterConstants {
 	}
 
 	public boolean isUpdateEvent(String body) throws XPathExpressionException {
-		if (body == null || body.isBlank()) {
-			logger.error("no body, not doing anything.");
-			return false;
-		}
-		NodeList nodes = (NodeList) XPathFactory.newInstance()
-				.newXPath()
-				.compile(MODE_PATH)
-				.evaluate(new InputSource(new StringReader(body)), XPathConstants.NODESET);
-		boolean isUpdate =
-				nodes.getLength() > 0 && FILE_DATA.equals(nodes.item(0).getTextContent());
-		if (!isUpdate) {
-			logger.debug("event is not " + FILE_DATA + ", doing nothing.");
-		}
-		return isUpdate;
+		return getNodeListForPath(body, MODE_PATH)
+				.map(nodes ->
+						nodes.getLength() > 0 && FILE_DATA.equals(nodes.item(0).getTextContent()))
+				.orElse(false);
 	}
 
 	public String findDeviceName(String body) throws XPathExpressionException {
-		NodeList nodes = (NodeList) XPathFactory.newInstance()
+		return getNodeListForPath(body, DEVICE_NAME_PATH)
+				.map(nodes -> nodes.getLength() > 0 ? nodes.item(0).getTextContent() : null)
+				.orElse(null);
+	}
+
+	public boolean isOK(String body) {
+		return Optional.ofNullable(findError(body))
+				.map("Ok errorCode:0"::equalsIgnoreCase)
+				.orElse(false);
+	}
+
+	private Optional<NodeList> getNodeListForPath(String body, String path) throws XPathExpressionException {
+		if (StringUtils.isBlank(body)) {
+			logger.error("no body, not doing anything.");
+			return Optional.empty();
+		}
+		return Optional.ofNullable((NodeList) XPathFactory.newInstance()
 				.newXPath()
-				.compile(DEVICE_NAME_PATH)
-				.evaluate(new InputSource(new StringReader(body)), XPathConstants.NODESET);
-		return nodes.getLength() > 0 ? nodes.item(0).getTextContent() : null;
+				.compile(path)
+				.evaluate(new InputSource(new StringReader(body)), XPathConstants.NODESET));
+	}
+
+	public String findError(String body) {
+		try {
+			return getNodeListForPath(body, ERROR_PATH)
+					.map(nodes -> {
+						if (nodes.getLength() < 1) {
+							return null;
+						}
+						Node errorNode = nodes.item(0);
+						return errorNode.getAttributes().getNamedItem("text").getTextContent()
+								+ " errorCode:"
+								+ errorNode.getTextContent();
+					})
+					.orElse(null);
+		} catch (XPathExpressionException e) {
+			logger.warn("findError", e);
+		}
+		return null;
 	}
 
 	private Device findDeviceFromDeviceName(String customerId, String deviceName) {
@@ -158,42 +183,47 @@ public class GenerationMeterComponent implements MeterConstants {
 			String body, String site, String name, String customerId, String deviceId) {
 		try {
 			logger.debug("parsing device info " + site + ":" + name + "\n" + body);
-			InputSource xml = new InputSource(new StringReader(body));
-			NodeList nodes = (NodeList)
-					XPathFactory.newInstance().newXPath().compile(POINT_PATH).evaluate(xml, XPathConstants.NODESET);
 			DeviceData deviceData = new DeviceData(site, name, customerId, deviceId);
-			for (int i = 0; i < nodes.getLength(); i++) {
-				String attributeName =
-						nodes.item(i).getAttributes().getNamedItem("name").getNodeValue();
+			if (!isOK(body)) {
+				alarmComponent.faultDetected(
+						customerId, deviceData.getDeviceId(), deviceData.getSite(), findError(body));
+				return null;
+			}
+			getNodeListForPath(body, POINT_PATH).ifPresent(nodes -> {
 				Map<String, String> mappingFields = new HashMap<>(fields);
 				IComponentRegistry.mappingComponent
 						.getMappings(customerId)
 						.forEach(a -> mappingFields.put(a.getMappingName(), a.getAttribute()));
-				if (mappingFields.containsKey(attributeName)) {
-					try {
-						float value = Float.parseFloat(nodes.item(i)
-								.getAttributes()
-								.getNamedItem("value")
-								.getNodeValue());
-						deviceData.addAttribute(new DeviceAttribute(
-								mappingFields.get(attributeName),
-								nodes.item(i)
-										.getAttributes()
-										.getNamedItem("units")
-										.getNodeValue(),
-								value));
-					} catch (NumberFormatException nfe) {
-						logger.warn("bad value retrieved from xml " + attributeName + "\n" + body, nfe);
-						if (nodes.item(i).getAttributes().getNamedItem("value").getNodeValue() == null) {
-							alarmComponent.alarmConditionDetected(
-									customerId,
-									deviceData.getDeviceId(),
-									deviceData.getSite(),
-									"bad value retrieved from device " + attributeName);
+				for (int i = 0; i < nodes.getLength(); i++) {
+					String attributeName =
+							nodes.item(i).getAttributes().getNamedItem("name").getNodeValue();
+					if (mappingFields.containsKey(attributeName)) {
+						try {
+							float value = Float.parseFloat(nodes.item(i)
+									.getAttributes()
+									.getNamedItem("value")
+									.getNodeValue());
+							deviceData.addAttribute(new DeviceAttribute(
+									mappingFields.get(attributeName),
+									nodes.item(i)
+											.getAttributes()
+											.getNamedItem("units")
+											.getNodeValue(),
+									value));
+						} catch (NumberFormatException nfe) {
+							logger.warn("bad value retrieved from xml " + attributeName + "\n" + body, nfe);
+							String value = nodes.item(i)
+									.getAttributes()
+									.getNamedItem("value")
+									.getNodeValue();
+							if (StringUtils.isEmpty(value) || "NULL".equalsIgnoreCase(value)) {
+								alarmComponent.faultDetected(
+										customerId, deviceData.getDeviceId(), deviceData.getSite(), findError(body));
+							}
 						}
 					}
 				}
-			}
+			});
 			calculateTotalRealPower(deviceData);
 			calculateTotalEnergyConsumed(deviceData);
 			calculateTime(deviceData, body);
@@ -205,26 +235,25 @@ public class GenerationMeterComponent implements MeterConstants {
 	}
 
 	private void calculateTime(DeviceData deviceData, String body) throws XPathExpressionException {
-		InputSource xml = new InputSource(new StringReader(body));
-		NodeList nodes = (NodeList)
-				XPathFactory.newInstance().newXPath().compile(DATE_PATH).evaluate(xml, XPathConstants.NODESET);
-		if (nodes.getLength() > 0) {
-			Node timeNode = nodes.item(0);
-			if (timeNode.getTextContent() == null
-					|| "NULL".equals(timeNode.getTextContent())
-					|| timeNode.getTextContent().isEmpty()
-					|| timeNode.getAttributes().getNamedItem(ZONE) == null) {
-				return;
+		getNodeListForPath(body, DATE_PATH).ifPresent(nodes -> {
+			if (nodes.getLength() > 0) {
+				Node timeNode = nodes.item(0);
+				if (timeNode.getTextContent() == null
+						|| "NULL".equals(timeNode.getTextContent())
+						|| timeNode.getTextContent().isEmpty()
+						|| timeNode.getAttributes().getNamedItem(ZONE) == null) {
+					return;
+				}
+				SimpleDateFormat sdf = new SimpleDateFormat(DATE_PATTERN);
+				try {
+					deviceData.setDate(sdf.parse(timeNode.getTextContent()
+							+ " "
+							+ timeNode.getAttributes().getNamedItem(ZONE).getNodeValue()));
+				} catch (ParseException e) {
+					logger.warn("cannot parse date string: " + body, e);
+				}
 			}
-			SimpleDateFormat sdf = new SimpleDateFormat(DATE_PATTERN);
-			try {
-				deviceData.setDate(sdf.parse(timeNode.getTextContent()
-						+ " "
-						+ timeNode.getAttributes().getNamedItem(ZONE).getNodeValue()));
-			} catch (ParseException e) {
-				logger.warn("cannot parse date string: " + body, e);
-			}
-		}
+		});
 	}
 
 	private void calculateTotalRealPower(DeviceData deviceData) {

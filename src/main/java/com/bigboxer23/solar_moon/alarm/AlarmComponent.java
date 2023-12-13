@@ -19,8 +19,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
-public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
-
+public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements IAlarmConstants {
 	private static final Logger logger = LoggerFactory.getLogger(AlarmComponent.class);
 
 	private final DeviceComponent deviceComponent;
@@ -38,14 +37,6 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 		this.notificationComponent = notificationComponent;
 	}
 
-	/*public void fireAlarms(List<DeviceData> deviceData) throws IOException {
-		logger.debug("checking alarms");
-		// TODO: criteria for actually firing
-		WeatherSystemData sunriseSunset =
-				openWeatherComponent.getSunriseSunsetFromCityStateCountry("golden valley", "mn", 581);
-		logger.debug("sunrise/sunset " + sunriseSunset.getSunrise() + "," + sunriseSunset.getSunset());
-	}*/
-
 	public Optional<Alarm> getMostRecentAlarm(String deviceId) {
 		List<Alarm> alarms = getTable()
 				.index(Alarm.DEVICEID_STARTDATE_INDEX)
@@ -57,20 +48,20 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 				.findFirst()
 				.map(Page::items)
 				.orElse(Collections.emptyList());
-		return !alarms.isEmpty() ? Optional.ofNullable(alarms.get(0)) : Optional.empty();
+		return !alarms.isEmpty() ? Optional.ofNullable(alarms.getFirst()) : Optional.empty();
 	}
 
 	public void resolveActiveAlarms(DeviceData device) {
 		IComponentRegistry.deviceUpdateComponent.update(device.getDeviceId());
 		getMostRecentAlarm(device.getDeviceId())
-				.filter(alarm -> alarm.getState() == 1)
+				.filter(alarm -> alarm.getState() == ACTIVE)
 				.ifPresent(alarm -> {
 					logger.warn("Resolving alarm for "
 							+ device.getName()
 							+ " "
 							+ device.getDate().getTime());
-					alarm.setState(0);
-					alarm.setEmailed(1);
+					alarm.setState(RESOLVED);
+					alarm.setEmailed(RESOLVED_NOT_EMAILED);
 					alarm.setEndDate(new Date().getTime());
 					updateAlarm(alarm);
 				});
@@ -78,24 +69,59 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 
 	}
 
-	public Optional<Alarm> alarmConditionDetected(String customerId, String deviceId, String site, String content) {
-		logger.warn("Alarm condition detected: " + deviceId + " " + content);
-		List<Alarm> alarms = findAlarmsByDevice(customerId, deviceId);
-		Alarm alarm = alarms.stream().filter(a -> a.getState() == 1).findAny().orElseGet(() -> {
-			Alarm newAlarm = new Alarm(
-					TokenGenerator.generateNewToken(),
-					customerId,
-					deviceId,
-					deviceComponent
-							.findDeviceByDeviceName(customerId, site)
-							.map(Device::getId)
-							.orElse(null));
-			newAlarm.setStartDate(System.currentTimeMillis());
-			newAlarm.setState(1);
-			return newAlarm;
-		});
+	private Alarm getNewAlarm(String customerId, String deviceId, String site, String content) {
+		Alarm newAlarm = new Alarm(
+				TokenGenerator.generateNewToken(),
+				customerId,
+				deviceId,
+				deviceComponent
+						.findDeviceByDeviceName(customerId, site)
+						.map(Device::getId)
+						.orElse(null));
+		newAlarm.setStartDate(System.currentTimeMillis());
+		newAlarm.setState(ACTIVE);
+		newAlarm.setEmailed(NEEDS_EMAIL);
+		return newAlarm;
+	}
+
+	/**
+	 * Device is faulting. Could resolve on its own (frequently does) so log it, set it as don't
+	 * email but active
+	 *
+	 * @param customerId
+	 * @param deviceId
+	 * @param site
+	 * @param content
+	 * @return
+	 */
+	public Optional<Alarm> faultDetected(String customerId, String deviceId, String site, String content) {
+		logger.warn("fault condition detected: " + content);
+		Alarm alarm = findAlarmsByDevice(customerId, deviceId).stream()
+				.filter(a -> a.getState() == ACTIVE)
+				.findAny()
+				.orElseGet(() -> {
+					Alarm newAlarm = getNewAlarm(customerId, deviceId, site, content);
+					newAlarm.setEmailed(DONT_EMAIL);
+					newAlarm.setMessage(content); // Write alarm on first
+					return newAlarm;
+				});
 		alarm.setLastUpdate(System.currentTimeMillis());
-		alarm.setMessage(content);
+		return updateAlarm(alarm);
+	}
+
+	public Optional<Alarm> alarmConditionDetected(String customerId, String deviceId, String site, String content) {
+		logger.warn("Alarm condition detected: " + content);
+		Alarm alarm = findAlarmsByDevice(customerId, deviceId).stream()
+				.filter(a -> a.getState() == ACTIVE)
+				.findAny()
+				.orElseGet(() -> getNewAlarm(customerId, deviceId, site, content));
+		if (alarm.getEmailed() == DONT_EMAIL) {
+			alarm.setEmailed(NEEDS_EMAIL); // We're turning a "fault" into an alert, should send email now
+		}
+		alarm.setLastUpdate(System.currentTimeMillis());
+		if (StringUtils.isBlank(alarm.getMessage())) {
+			alarm.setMessage(content);
+		}
 		return updateAlarm(alarm);
 	}
 
@@ -150,7 +176,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 		return getTable()
 				.index(Alarm.EMAILED_CUSTOMER_INDEX)
 				.query(QueryConditional.keyEqualTo(
-						builder -> builder.partitionValue(0).sortValue(customerId)))
+						builder -> builder.partitionValue(NEEDS_EMAIL).sortValue(customerId)))
 				.stream()
 				.flatMap(page -> page.items().stream())
 				.toList();
@@ -159,7 +185,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 	public List<Alarm> findNonEmailedAlarms() {
 		return getTable()
 				.index(Alarm.EMAILED_CUSTOMER_INDEX)
-				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(0)))
+				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(NEEDS_EMAIL)))
 				.stream()
 				.flatMap(page -> page.items().stream())
 				.toList();
@@ -264,8 +290,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> {
 
 	public void cleanupOldAlarms() {
 		long yearAgo = System.currentTimeMillis() - TimeConstants.YEAR;
-		deleteAlarmsByStateAndDate(0, yearAgo);
-		deleteAlarmsByStateAndDate(1, yearAgo);
+		deleteAlarmsByStateAndDate(RESOLVED, yearAgo);
+		deleteAlarmsByStateAndDate(ACTIVE, yearAgo);
 	}
 
 	private void deleteAlarmsByStateAndDate(int state, long deleteOlderThan) {
