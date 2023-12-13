@@ -89,6 +89,30 @@ public interface TestConstants {
 
 	String date = "2020-08-21 17:30:00";
 
+	String deviceError =
+			"""
+			<?xml version="1.0" encoding="UTF-8" ?>
+			<DAS>
+			<mode>LOGFILEUPLOAD</mode>
+			<name>001EC6000D80 A1</name>
+			<serial>001EC6000D80</serial>
+			<devices>
+			<device>
+			<name>Generation Meter A1</name>
+			<address>14</address>
+			<type>Elkor Watts On</type>
+			<class>50</class>
+			<numpoints>59</numpoints>
+			<records>
+			<record>
+			<time zone="UTC">2023-12-07 01:00:16</time>
+			<error text="Device Failed to Respond (the modbus device may be off or disconnected)">139</error>
+			<point number="0" name="Total Energy Consumption" units="kWh" value="NULL" />
+			</record>
+			</records>
+			</device>
+			</devices>
+			</DAS>""";
 	String device2Xml = "<DAS>\n"
 			+ "<mode>LOGFILEUPLOAD</mode>\n"
 			+ "<name>xxxxC600xxxx</name>\n"
@@ -193,11 +217,13 @@ public interface TestConstants {
 			+ "</devices>\n"
 			+ "</DAS>";
 
-	String nonUpdateStatus = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
-			+ "<DAS>\n"
-			+ "<mode>STATUS</mode>\n"
-			+ "<name>001EC60007B2</name>\n"
-			+ "</DAS>";
+	String nonUpdateStatus =
+			"""
+			<?xml version="1.0" encoding="UTF-8" ?>
+			<DAS>
+			<mode>STATUS</mode>
+			<name>001EC60007B2</name>
+			</DAS>""";
 
 	String device2XmlNull = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
 			+ "<DAS>\n"

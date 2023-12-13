@@ -10,6 +10,7 @@ import com.bigboxer23.solar_moon.data.DeviceData;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import javax.xml.xpath.XPathExpressionException;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -22,6 +23,11 @@ public class TestGenerationMeterComponent implements TestConstants, IComponentRe
 	public static void before() {
 		TestUtils.setupSite();
 		device = TestUtils.getDevice();
+	}
+
+	@AfterAll
+	public static void afterAll() {
+		TestUtils.nukeCustomerId(CUSTOMER_ID);
 	}
 
 	@Test
@@ -120,5 +126,20 @@ public class TestGenerationMeterComponent implements TestConstants, IComponentRe
 		float powerFactor = .99f;
 		double rp = (avgVoltage * avgCurrent * Math.abs(powerFactor / 100) * Math.sqrt(3)) / 1000f;
 		System.out.println(rp);
+	}
+
+	@Test
+	public void findError() {
+		assertEquals(
+				"Device Failed to Respond (the modbus device may be off or disconnected)" + " errorCode:139",
+				generationComponent.findError(deviceError));
+	}
+
+	@Test
+	public void isOK() {
+		assertTrue(generationComponent.isOK(device2Xml));
+		assertFalse(generationComponent.isOK(deviceError));
+		assertFalse(generationComponent.isOK(null));
+		assertFalse(generationComponent.isOK(""));
 	}
 }

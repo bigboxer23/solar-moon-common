@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon.data;
 
+import com.bigboxer23.solar_moon.alarm.AlarmComponent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -64,7 +65,7 @@ public class Alarm {
 
 	private int state;
 
-	private long emailed = 0;
+	private long emailed = AlarmComponent.DONT_EMAIL;
 
 	private long expiration;
 
