@@ -13,4 +13,6 @@ public interface OpenSearchConstants {
 	String GBS_SEARCH_TYPE = "groupedBarGraph";
 
 	String DATA_SEARCH_TYPE = "data";
+
+	String TEC_SEARCH_TYPE = "totalEnergyConsumed";
 }

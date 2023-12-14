@@ -5,6 +5,8 @@ import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.data.OpenSearchDTO;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import com.bigboxer23.solar_moon.lambda.utils.PropertyUtils;
+import com.bigboxer23.solar_moon.util.TimeConstants;
+import com.bigboxer23.solar_moon.util.TimeUtils;
 import java.io.IOException;
 import java.util.*;
 import org.apache.http.HttpHost;
@@ -18,6 +20,7 @@ import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.FieldSort;
 import org.opensearch.client.opensearch._types.SortOptions;
 import org.opensearch.client.opensearch._types.SortOrder;
+import org.opensearch.client.opensearch._types.aggregations.Aggregate;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch._types.query_dsl.QueryBuilders;
 import org.opensearch.client.opensearch.core.*;
@@ -240,6 +243,21 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		return null;
 	}
 
+	public double getAverageEnergyConsumedPerDay(SearchJSON searchJSON) {
+		searchJSON.setType(TEC_SEARCH_TYPE);
+		searchJSON.setVirtual(true);
+		searchJSON.setBucketSize("1d");
+		Date end = TimeUtils.getStartOfDay(searchJSON.getTimeZone());
+		searchJSON.setEndDate(end.getTime() - TimeConstants.SECOND);
+		searchJSON.setStartDate(end.getTime() - TimeConstants.WEEK);
+		return ((Aggregate) search(searchJSON).aggregations().get("2"))
+				.dateHistogram().buckets().array().stream()
+						.map(bucket -> bucket.aggregations().get("1").sum().value())
+						.mapToDouble(a -> a)
+						.average()
+						.orElse(-1);
+	}
+
 	private Query getQuery(SearchJSON searchJSON) {
 		return QueryBuilders.bool()
 				.filter(getFiltersByType(searchJSON))
@@ -286,6 +304,8 @@ public class OpenSearchComponent implements OpenSearchConstants {
 			case STS_SEARCH_TYPE, GBS_SEARCH_TYPE -> OpenSearchQueries.getStackedTimeSeriesBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			case DATA_SEARCH_TYPE -> OpenSearchQueries.getDataSearch(searchJSON.getOffset(), searchJSON.getSize());
+			case TEC_SEARCH_TYPE -> OpenSearchQueries.getTotalEnergyConsumedBuilder(
+					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			default -> null;
 		};
 	}

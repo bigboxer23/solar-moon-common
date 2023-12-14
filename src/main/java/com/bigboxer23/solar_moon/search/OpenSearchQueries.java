@@ -230,4 +230,27 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 										.build())
 								.build());
 	}
+
+	public static SearchRequest.Builder getTotalEnergyConsumedBuilder(String timezone, String bucketSize) {
+		return getBaseBuilder(0)
+				.aggregations(
+						"2",
+						new Aggregation.Builder()
+								.dateHistogram(AggregationBuilders.dateHistogram()
+										.field(TIMESTAMP)
+										.fixedInterval(new Time.Builder()
+												.time(bucketSize)
+												.build())
+										.timeZone(timezone)
+										.minDocCount(1)
+										.build())
+								.aggregations(
+										"1",
+										new Aggregation.Builder()
+												.sum(new SumAggregation.Builder()
+														.field(ENG_CONS)
+														.build())
+												.build())
+								.build());
+	}
 }
