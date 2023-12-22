@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import com.bigboxer23.solar_moon.web.TransactionUtil;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
@@ -209,7 +211,8 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	public void logAction(String action, String id) {
-		logger.info(id + " device " + action);
+		TransactionUtil.addDeviceId(id);
+		logger.info("device " + action);
 	}
 
 	@Override

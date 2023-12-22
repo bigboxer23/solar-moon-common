@@ -5,6 +5,8 @@ import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import java.util.Optional;
+
+import com.bigboxer23.solar_moon.web.TransactionUtil;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
@@ -49,15 +51,15 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			logger.info("generating new access key for " + customer.getCustomerId());
 			customer.setAccessKey(TokenGenerator.generateNewToken());
 		}
-		Customer existingCustomer =
-				findCustomerByCustomerId(customer.getCustomerId()).get();
-		if (customer.isAdmin() && !existingCustomer.isAdmin()) {
-			logger.warn("Not allowing admin escalation" + customer.getCustomerId());
-			customer.setAdmin(false);
-		}
-		if (!StringUtils.isEmpty(existingCustomer.getStripeCustomerId())) {
-			customer.setStripeCustomerId(existingCustomer.getStripeCustomerId());
-		}
+		findCustomerByCustomerId(customer.getCustomerId()).ifPresent(existingCustomer -> {
+			if (customer.isAdmin() && !existingCustomer.isAdmin()) {
+				logger.warn("Not allowing admin escalation" + customer.getCustomerId());
+				customer.setAdmin(false);
+			}
+			if (!StringUtils.isEmpty(existingCustomer.getStripeCustomerId())) {
+				customer.setStripeCustomerId(existingCustomer.getStripeCustomerId());
+			}
+		});
 		// TODO:validation
 		getTable().updateItem(builder -> builder.item(customer));
 	}
@@ -82,6 +84,7 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			IComponentRegistry.subscriptionComponent.deleteSubscription(customerId);
 			IComponentRegistry.deviceComponent.deleteDevicesByCustomerId(customerId);
 			IComponentRegistry.mappingComponent.deleteMapping(customerId);
+			IComponentRegistry.OSComponent.deleteByCustomerId(customerId);
 			getTable().deleteItem(c);
 		});
 	}
@@ -121,6 +124,7 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 	}
 
 	private void logAction(String action, String customerId) {
-		logger.info(customerId + " customer " + action);
+		TransactionUtil.updateCustomerId(customerId);
+		logger.info("customer " + action);
 	}
 }
