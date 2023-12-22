@@ -167,13 +167,13 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		validateDateData(TestConstants.deviceName + 0, date);
 	}
 
-	private static void updateDeviceForClone(Device device, String customerId, String deviceName) {
+	private static void updateDeviceForClone(Device device, String customerId, String deviceName, String sitePrefix) {
 		device.setClientId(customerId);
 		device.setId(TokenGenerator.generateNewToken());
 		device.setAddress(null);
 		device.setDeviceKey(null);
 		device.setNotificationsDisabled(true);
-		device.setSite(TestConstants.SITE);
+		device.setSite(sitePrefix + " " + TestConstants.SITE);
 		device.setDeviceName(deviceName);
 		device.setName(deviceName);
 	}
@@ -191,7 +191,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 			return;
 		}
 		devices.put(site.getId(), site);
-		updateDeviceForClone(site, customerId, TestConstants.SITE);
+		updateDeviceForClone(site, customerId, deviceFilter + " " + TestConstants.SITE, deviceFilter);
 		deviceComponent.addDevice(site);
 		srcDevices.stream()
 				.filter(d -> d.getName().startsWith(deviceFilter))
@@ -199,7 +199,8 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 				.forEach(d -> {
 					devices.put(d.getId(), d);
 					d.setMock(d.getName());
-					updateDeviceForClone(d, customerId, d.getName().replace(deviceFilter, TestConstants.deviceName));
+					updateDeviceForClone(
+							d, customerId, d.getName().replace(deviceFilter, TestConstants.deviceName), deviceFilter);
 					deviceComponent.addDevice(d);
 				});
 		SearchJSON search = new SearchJSON();
@@ -243,7 +244,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 			if (!datas.isEmpty()) {
 				OSComponent.logData(null, datas);
 			}
-			System.out.println(response.hits().total().value());
+			System.out.println(deviceFilter + " " + week + ":" + datas.size());
 		}
 	}
 }
