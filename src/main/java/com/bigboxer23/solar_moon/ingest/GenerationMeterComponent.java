@@ -18,6 +18,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import javax.xml.xpath.*;
+import org.opensearch.client.ResponseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
@@ -70,7 +71,8 @@ public class GenerationMeterComponent implements MeterConstants {
 		this.siteComponent = siteComponent;
 	}
 
-	public DeviceData handleDeviceBody(String body, String customerId) throws XPathExpressionException {
+	public DeviceData handleDeviceBody(String body, String customerId)
+			throws XPathExpressionException, ResponseException {
 		if (customerId == null || customerId.isBlank()) {
 			logger.error("no customer id, not doing anything.");
 			return null;
@@ -111,6 +113,7 @@ public class GenerationMeterComponent implements MeterConstants {
 		openSearch.logData(
 				deviceData.getDate() != null ? deviceData.getDate() : new Date(),
 				Collections.singletonList(deviceData));
+
 		siteComponent.handleSite(deviceData);
 		return deviceData;
 	}

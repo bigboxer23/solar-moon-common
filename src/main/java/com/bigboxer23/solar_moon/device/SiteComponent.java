@@ -8,6 +8,7 @@ import com.bigboxer23.solar_moon.search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.search.OpenSearchUtils;
 import java.util.*;
 import java.util.function.Function;
+import org.opensearch.client.ResponseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +63,11 @@ public class SiteComponent {
 					IComponentRegistry.locationComponent.addLocationData(siteDevice, site);
 					IComponentRegistry.weatherComponent.addWeatherData(siteDevice, site);
 					logger.info("adding virtual device " + device.getSite() + " : " + device.getDate());
-					openSearch.logData(siteDevice.getDate(), Collections.singletonList(siteDevice));
+					try {
+						openSearch.logData(siteDevice.getDate(), Collections.singletonList(siteDevice));
+					} catch (ResponseException theE) {
+
+					}
 					OpenSearchUtils.waitForIndexing();
 				});
 	}

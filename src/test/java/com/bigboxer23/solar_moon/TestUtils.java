@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import javax.xml.xpath.XPathExpressionException;
+import org.opensearch.client.ResponseException;
 import org.opensearch.client.opensearch.core.SearchResponse;
 import software.amazon.awssdk.utils.StringUtils;
 
@@ -118,7 +119,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 				.get();
 	}
 
-	public static void seedOpenSearchData(String customerId) throws XPathExpressionException {
+	public static void seedOpenSearchData(String customerId) throws XPathExpressionException, ResponseException {
 		LocalDateTime ldt = LocalDateTime.ofInstant(
 						TimeUtils.get15mRoundedDate().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
@@ -142,7 +143,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		OpenSearchUtils.waitForIndexing();
 	}
 
-	public static void seedOpenSearchData() throws XPathExpressionException {
+	public static void seedOpenSearchData() throws XPathExpressionException, ResponseException {
 		seedOpenSearchData(CUSTOMER_ID);
 	}
 
@@ -178,7 +179,8 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		device.setName(deviceName);
 	}
 
-	public static void cloneUser(String customerId, String srcCustomerId, String deviceFilter, int numberOfWeeks) {
+	public static void cloneUser(String customerId, String srcCustomerId, String deviceFilter, int numberOfWeeks)
+			throws ResponseException {
 		Map<String, Device> devices = new HashMap<>();
 		List<Device> srcDevices = deviceComponent.getDevicesForCustomerId(srcCustomerId);
 		Device site = srcDevices.stream()

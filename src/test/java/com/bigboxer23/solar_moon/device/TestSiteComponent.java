@@ -15,6 +15,7 @@ import javax.xml.xpath.XPathExpressionException;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opensearch.client.ResponseException;
 
 /** */
 public class TestSiteComponent implements IComponentRegistry, TestConstants {
@@ -37,7 +38,7 @@ public class TestSiteComponent implements IComponentRegistry, TestConstants {
 	}
 
 	@Test
-	public void testHandleSite() throws XPathExpressionException {
+	public void testHandleSite() throws XPathExpressionException, ResponseException {
 		Date date = TimeUtils.get15mRoundedDate();
 		for (int ai = 0; ai < 4; ai++) {
 			generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, date, -1), CUSTOMER_ID);
@@ -50,7 +51,7 @@ public class TestSiteComponent implements IComponentRegistry, TestConstants {
 	}
 
 	@Test
-	public void testHandleSiteInterleaved() throws XPathExpressionException {
+	public void testHandleSiteInterleaved() throws XPathExpressionException, ResponseException {
 		Date date = TimeUtils.get15mRoundedDate();
 		LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 		Date past =

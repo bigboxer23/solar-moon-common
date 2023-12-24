@@ -21,6 +21,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opensearch.client.ResponseException;
 
 /** */
 public class TestAlarmComponent implements IComponentRegistry, TestConstants, IAlarmConstants {
@@ -151,7 +152,7 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 	}
 
 	@Test
-	public void checkDevice() throws XPathExpressionException {
+	public void checkDevice() throws XPathExpressionException, ResponseException {
 		// test invalid device
 		assertFalse(alarmComponent.checkDevice(null).isPresent());
 		// test device but no OpenSearch

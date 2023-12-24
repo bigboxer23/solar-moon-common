@@ -19,6 +19,7 @@ import javax.xml.xpath.XPathExpressionException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opensearch.client.ResponseException;
 import org.opensearch.client.opensearch._types.aggregations.Aggregate;
 import org.opensearch.client.opensearch._types.aggregations.DateHistogramBucket;
 import org.opensearch.client.opensearch.core.SearchResponse;
@@ -43,7 +44,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	}
 
 	@Test
-	public void testGetLastDeviceEntry() throws XPathExpressionException {
+	public void testGetLastDeviceEntry() throws XPathExpressionException, ResponseException {
 		Date date = TimeUtils.get15mRoundedDate();
 		LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 		Date prevDate =
@@ -65,7 +66,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	}
 
 	@Test
-	public void testGetDeviceByTimePeriod() throws XPathExpressionException, InterruptedException {
+	public void testGetDeviceByTimePeriod() throws XPathExpressionException, InterruptedException, ResponseException {
 		Date date = TimeUtils.get15mRoundedDate();
 		assertNull(OSComponent.getDeviceByTimePeriod(CUSTOMER_ID, deviceName + 0, date));
 
@@ -87,7 +88,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	}
 
 	@Test
-	public void testGetDeviceCountByTimePeriod() throws XPathExpressionException {
+	public void testGetDeviceCountByTimePeriod() throws XPathExpressionException, ResponseException {
 		Date date = TimeUtils.get15mRoundedDate();
 		LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 		Date prevDate =
@@ -108,7 +109,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	}
 
 	@Test
-	public void testTimeSeriesSearch() throws XPathExpressionException {
+	public void testTimeSeriesSearch() throws XPathExpressionException, ResponseException {
 		TestUtils.seedOpenSearchData();
 		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
@@ -137,7 +138,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	}
 
 	@Test
-	public void testStackedTimeSeriesSearch() throws XPathExpressionException {
+	public void testStackedTimeSeriesSearch() throws XPathExpressionException, ResponseException {
 		TestUtils.seedOpenSearchData();
 		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
@@ -195,7 +196,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	}
 
 	@Test
-	public void testMaxCurrentSearch() throws XPathExpressionException {
+	public void testMaxCurrentSearch() throws XPathExpressionException, ResponseException {
 		TestUtils.seedOpenSearchData();
 		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
@@ -221,7 +222,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	}
 
 	@Test
-	public void testAverageTotalSearch() throws XPathExpressionException {
+	public void testAverageTotalSearch() throws XPathExpressionException, ResponseException {
 		TestUtils.seedOpenSearchData();
 		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
@@ -243,7 +244,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	}
 
 	@Test
-	public void testAddingNewDeviceViaDataPush() throws XPathExpressionException {
+	public void testAddingNewDeviceViaDataPush() throws XPathExpressionException, ResponseException {
 		String deviceName = TestConstants.deviceName + "shouldNotExist";
 		assertFalse(deviceComponent.getDevicesForCustomerId(CUSTOMER_ID).stream()
 				.filter(d -> !d.isVirtual())
@@ -274,7 +275,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	}
 
 	@Test
-	public void virtualDevices() throws XPathExpressionException {
+	public void virtualDevices() throws XPathExpressionException, ResponseException {
 		TestUtils.seedOpenSearchData();
 		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
