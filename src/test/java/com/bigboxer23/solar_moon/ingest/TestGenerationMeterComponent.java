@@ -13,6 +13,7 @@ import javax.xml.xpath.XPathExpressionException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.opensearch.client.ResponseException;
 
 /** */
 public class TestGenerationMeterComponent implements TestConstants, IComponentRegistry {
@@ -82,7 +83,7 @@ public class TestGenerationMeterComponent implements TestConstants, IComponentRe
 	}
 
 	@Test
-	public void testHandleDeviceBody() throws XPathExpressionException {
+	public void testHandleDeviceBody() throws XPathExpressionException, ResponseException {
 		String deviceXML = TestUtils.getDeviceXML(TestConstants.deviceName + 0, new Date(), -1);
 		TestUtils.setupSite();
 		assertNull(generationComponent.handleDeviceBody(null, null));

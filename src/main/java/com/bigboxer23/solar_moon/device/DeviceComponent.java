@@ -4,12 +4,11 @@ import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.subscription.SubscriptionComponent;
+import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import com.bigboxer23.solar_moon.web.TransactionUtil;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;

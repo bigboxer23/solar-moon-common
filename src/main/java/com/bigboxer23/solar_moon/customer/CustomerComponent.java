@@ -4,9 +4,8 @@ import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
-import java.util.Optional;
-
 import com.bigboxer23.solar_moon.web.TransactionUtil;
+import java.util.Optional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 

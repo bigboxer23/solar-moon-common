@@ -14,6 +14,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.opensearch.client.ResponseException;
 import org.opensearch.client.RestClient;
 import org.opensearch.client.json.jackson.JacksonJsonpMapper;
 import org.opensearch.client.opensearch.OpenSearchClient;
@@ -52,7 +53,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		pass = PropertyUtils.getProperty("opensearch.pw");
 	}
 
-	public void logData(Date fetchDate, List<DeviceData> deviceData) {
+	public void logData(Date fetchDate, List<DeviceData> deviceData) throws ResponseException {
 		logger.debug("sending to opensearch component");
 		BulkRequest.Builder bulkRequest = new BulkRequest.Builder().index(INDEX_NAME);
 		deviceData.forEach(device -> {
@@ -75,8 +76,11 @@ public class OpenSearchComponent implements OpenSearchConstants {
 			if (response.errors()) {
 				response.items().forEach(item -> logger.warn("error:" + item.error()));
 			}
-		} catch (IOException theE) {
-			logger.error("logStatusEvent:", theE);
+		} catch (IOException e) {
+			logger.error("logStatusEvent", e);
+			if (e instanceof ResponseException) {
+				throw (ResponseException) e;
+			}
 		}
 	}
 
@@ -114,7 +118,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 						return null;
 					});
 		} catch (IOException e) {
-			logger.error("getTotalEnergyConsumed:", e);
+			logger.error("getTotalEnergyConsumed", e);
 			return null;
 		}
 	}
@@ -154,7 +158,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 							.query(OpenSearchQueries.getCustomerIdQuery(customerId))
 							.build());
 		} catch (IOException e) {
-			logger.error("deleteByCustomerId: " + customerId, e);
+			logger.error("deleteByCustomerId: ", e);
 		}
 	}
 
@@ -190,7 +194,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 			return OpenSearchUtils.getDeviceDataFromFields(
 					deviceName, response.hits().hits().get(0).source());
 		} catch (IOException e) {
-			logger.error("getDeviceByTimePeriod " + customerId + ":" + deviceName, e);
+			logger.error("getDeviceByTimePeriod", e);
 			return null;
 		}
 	}
@@ -209,7 +213,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 			return OpenSearchUtils.getDeviceDataFromResults(
 					getClient().search(request, Map.class).hits().hits());
 		} catch (IOException e) {
-			logger.error("getDeviceCountByTimePeriod " + customerId + ":" + site, e);
+			logger.error("getDeviceCountByTimePeriod", e);
 			return Collections.emptyList();
 		}
 	}
