@@ -18,6 +18,7 @@ public class SearchJSON {
 	private int offset;
 	private int size;
 	private boolean virtual;
+	private boolean daylight;
 
 	public SearchJSON() {}
 

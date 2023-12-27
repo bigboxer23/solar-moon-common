@@ -250,6 +250,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	public double getAverageEnergyConsumedPerDay(SearchJSON searchJSON) {
 		searchJSON.setType(TEC_SEARCH_TYPE);
 		searchJSON.setVirtual(true);
+		searchJSON.setDaylight(true);
 		searchJSON.setBucketSize("1d");
 		Date end = TimeUtils.getStartOfDay(searchJSON.getTimeZone());
 		searchJSON.setEndDate(end.getTime() - TimeConstants.SECOND);
@@ -290,6 +291,9 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		}
 		if (searchJSON.isVirtual()) {
 			filters.add(OpenSearchQueries.getIsVirtual());
+		}
+		if (searchJSON.isDaylight()) {
+			filters.add(OpenSearchQueries.getIsDaylight());
 		}
 		filters.addAll(Arrays.asList(
 				OpenSearchQueries.getDateRangeQuery(searchJSON.getJavaStartDate(), searchJSON.getJavaEndDate()),
