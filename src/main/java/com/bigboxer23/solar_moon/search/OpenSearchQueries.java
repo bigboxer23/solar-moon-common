@@ -223,20 +223,28 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 
 	public static SearchRequest.Builder getAverageTotalBuilder(String timezone, String bucketSize) {
 		return getBaseBuilder(0)
-				.aggregations(
-						"avg",
-						new Aggregation.Builder()
-								.avg(new AverageAggregation.Builder()
-										.field(TOTAL_REAL_POWER)
-										.build())
-								.build())
-				.aggregations(
-						"total",
-						new Aggregation.Builder()
-								.sum(new SumAggregation.Builder()
-										.field(ENG_CONS)
-										.build())
-								.build());
+				.aggregations("avg", getAverageAggregation())
+				.aggregations("total", getTotalAggregation());
+	}
+
+	public static SearchRequest.Builder getAverageBuilder(String timezone, String bucketSize) {
+		return getBaseBuilder(0).aggregations("avg", getAverageAggregation());
+	}
+
+	public static SearchRequest.Builder getTotalBuilder(String timezone, String bucketSize) {
+		return getBaseBuilder(0).aggregations("total", getTotalAggregation());
+	}
+
+	private static Aggregation getAverageAggregation() {
+		return new Aggregation.Builder()
+				.avg(new AverageAggregation.Builder().field(TOTAL_REAL_POWER).build())
+				.build();
+	}
+
+	private static Aggregation getTotalAggregation() {
+		return new Aggregation.Builder()
+				.sum(new SumAggregation.Builder().field(ENG_CONS).build())
+				.build();
 	}
 
 	public static SearchRequest.Builder getTotalEnergyConsumedBuilder(String timezone, String bucketSize) {

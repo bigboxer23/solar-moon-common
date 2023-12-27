@@ -272,7 +272,8 @@ public class OpenSearchComponent implements OpenSearchConstants {
 
 	private List<Query> getMustNotByType(SearchJSON searchJSON) {
 		return switch (searchJSON.getType()) {
-			case STACKED_TIME_SERIES_SEARCH_TYPE, GROUPED_BAR_SEARCH_TYPE -> Collections.singletonList(OpenSearchQueries.getNotVirtual());
+			case STACKED_TIME_SERIES_SEARCH_TYPE, GROUPED_BAR_SEARCH_TYPE -> Collections.singletonList(
+					OpenSearchQueries.getNotVirtual());
 			default -> Collections.emptyList();
 		};
 	}
@@ -306,10 +307,14 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			case AVG_TOTAL_SEARCH_TYPE -> OpenSearchQueries.getAverageTotalBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
+			case AVG_SEARCH_TYPE -> OpenSearchQueries.getAverageBuilder(
+					searchJSON.getTimeZone(), searchJSON.getBucketSize());
+			case TOTAL_SEARCH_TYPE -> OpenSearchQueries.getTotalBuilder(
+					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			case MAX_CURRENT_SEARCH_TYPE -> OpenSearchQueries.getMaxCurrentBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
-			case STACKED_TIME_SERIES_SEARCH_TYPE, GROUPED_BAR_SEARCH_TYPE -> OpenSearchQueries.getStackedTimeSeriesBuilder(
-					searchJSON.getTimeZone(), searchJSON.getBucketSize());
+			case STACKED_TIME_SERIES_SEARCH_TYPE, GROUPED_BAR_SEARCH_TYPE -> OpenSearchQueries
+					.getStackedTimeSeriesBuilder(searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			case DATA_SEARCH_TYPE -> OpenSearchQueries.getDataSearch(searchJSON.getOffset(), searchJSON.getSize());
 			case TOTAL_ENERGY_CONSUMED_SEARCH_TYPE -> OpenSearchQueries.getTotalEnergyConsumedBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
