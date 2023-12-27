@@ -5,14 +5,19 @@ public interface OpenSearchConstants {
 	String TIMESTAMP = "@timestamp";
 	String INDEX_NAME = "generation-meter";
 
-	String TS_SEARCH_TYPE = "timeseries";
-	String AT_SEARCH_TYPE = "avgTotal";
-	String MC_SEARCH_TYPE = "maxCurrent";
+	String TIME_SERIES_SEARCH_TYPE = "timeseries";
+	String AVG_TOTAL_SEARCH_TYPE = "avgTotal";
 
-	String STS_SEARCH_TYPE = "stackedTimeSeries";
-	String GBS_SEARCH_TYPE = "groupedBarGraph";
+	String AVG_SEARCH_TYPE = "avg";
+
+	String TOTAL_SEARCH_TYPE = "total";
+
+	String MAX_CURRENT_SEARCH_TYPE = "maxCurrent";
+
+	String STACKED_TIME_SERIES_SEARCH_TYPE = "stackedTimeSeries";
+	String GROUPED_BAR_SEARCH_TYPE = "groupedBarGraph";
 
 	String DATA_SEARCH_TYPE = "data";
 
-	String TEC_SEARCH_TYPE = "totalEnergyConsumed";
+	String TOTAL_ENERGY_CONSUMED_SEARCH_TYPE = "totalEnergyConsumed";
 }
