@@ -248,9 +248,8 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	}
 
 	public double getAverageEnergyConsumedPerDay(SearchJSON searchJSON) {
-		searchJSON.setType(TEC_SEARCH_TYPE);
+		searchJSON.setType(TOTAL_ENERGY_CONSUMED_SEARCH_TYPE);
 		searchJSON.setVirtual(true);
-		searchJSON.setDaylight(true);
 		searchJSON.setBucketSize("1d");
 		Date end = TimeUtils.getStartOfDay(searchJSON.getTimeZone());
 		searchJSON.setEndDate(end.getTime() - TimeConstants.SECOND);
@@ -273,7 +272,8 @@ public class OpenSearchComponent implements OpenSearchConstants {
 
 	private List<Query> getMustNotByType(SearchJSON searchJSON) {
 		return switch (searchJSON.getType()) {
-			case STS_SEARCH_TYPE, GBS_SEARCH_TYPE -> Collections.singletonList(OpenSearchQueries.getNotVirtual());
+			case STACKED_TIME_SERIES_SEARCH_TYPE, GROUPED_BAR_SEARCH_TYPE -> Collections.singletonList(
+					OpenSearchQueries.getNotVirtual());
 			default -> Collections.emptyList();
 		};
 	}
@@ -303,16 +303,20 @@ public class OpenSearchComponent implements OpenSearchConstants {
 
 	private SearchRequest.Builder getSearchRequest(SearchJSON searchJSON) {
 		return switch (searchJSON.getType()) {
-			case TS_SEARCH_TYPE -> OpenSearchQueries.getTimeSeriesBuilder(
+			case TIME_SERIES_SEARCH_TYPE -> OpenSearchQueries.getTimeSeriesBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
-			case AT_SEARCH_TYPE -> OpenSearchQueries.getAverageTotalBuilder(
+			case AVG_TOTAL_SEARCH_TYPE -> OpenSearchQueries.getAverageTotalBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
-			case MC_SEARCH_TYPE -> OpenSearchQueries.getMaxCurrentBuilder(
+			case AVG_SEARCH_TYPE -> OpenSearchQueries.getAverageBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
-			case STS_SEARCH_TYPE, GBS_SEARCH_TYPE -> OpenSearchQueries.getStackedTimeSeriesBuilder(
+			case TOTAL_SEARCH_TYPE -> OpenSearchQueries.getTotalBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
+			case MAX_CURRENT_SEARCH_TYPE -> OpenSearchQueries.getMaxCurrentBuilder(
+					searchJSON.getTimeZone(), searchJSON.getBucketSize());
+			case STACKED_TIME_SERIES_SEARCH_TYPE, GROUPED_BAR_SEARCH_TYPE -> OpenSearchQueries
+					.getStackedTimeSeriesBuilder(searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			case DATA_SEARCH_TYPE -> OpenSearchQueries.getDataSearch(searchJSON.getOffset(), searchJSON.getSize());
-			case TEC_SEARCH_TYPE -> OpenSearchQueries.getTotalEnergyConsumedBuilder(
+			case TOTAL_ENERGY_CONSUMED_SEARCH_TYPE -> OpenSearchQueries.getTotalEnergyConsumedBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			default -> null;
 		};

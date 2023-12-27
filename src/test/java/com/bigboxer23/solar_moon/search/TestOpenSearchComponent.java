@@ -119,7 +119,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
 				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
 						.getTime());
-		json.setType(TS_SEARCH_TYPE);
+		json.setType(TIME_SERIES_SEARCH_TYPE);
 		json.setTimeZone(ZonedDateTime.now().getZone().getId());
 		SearchResponse response = OSComponent.search(json);
 		assertNotNull(response.aggregations().get("2"));
@@ -148,7 +148,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
 				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
 						.getTime());
-		json.setType(STS_SEARCH_TYPE);
+		json.setType(STACKED_TIME_SERIES_SEARCH_TYPE);
 		json.setTimeZone(ZonedDateTime.now().getZone().getId());
 		SearchResponse response = OSComponent.search(json);
 		assertNotNull(response.aggregations().get("2"));
@@ -206,7 +206,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
 				Date.from(ldt.minusDays(7).atZone(ZoneId.systemDefault()).toInstant())
 						.getTime());
-		json.setType(MC_SEARCH_TYPE);
+		json.setType(MAX_CURRENT_SEARCH_TYPE);
 		json.setTimeZone(ZonedDateTime.now().getZone().getId());
 		SearchResponse response = OSComponent.search(json);
 		assertEquals(
@@ -232,7 +232,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
 				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
 						.getTime());
-		json.setType(AT_SEARCH_TYPE);
+		json.setType(AVG_TOTAL_SEARCH_TYPE);
 		json.setTimeZone(ZonedDateTime.now().getZone().getId());
 		SearchResponse response = OSComponent.search(json);
 		assertEquals(2, response.aggregations().size());
