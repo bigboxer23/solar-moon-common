@@ -1,5 +1,7 @@
 package com.bigboxer23.solar_moon;
 
+import com.bigboxer23.solar_moon.aggregated.overview.OverviewComponent;
+import com.bigboxer23.solar_moon.aggregated.sites.SitesOverviewComponent;
 import com.bigboxer23.solar_moon.alarm.AlarmComponent;
 import com.bigboxer23.solar_moon.customer.CustomerComponent;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
@@ -55,6 +57,10 @@ public interface IComponentRegistry {
 	LocationComponent locationComponent = new LocationComponent();
 
 	MappingComponent mappingComponent = new MappingComponent();
+
+	OverviewComponent overviewComponent = new OverviewComponent();
+
+	SitesOverviewComponent sitesOverviewComponent = new SitesOverviewComponent();
 
 	Logger logger = LoggerFactory.getLogger(IComponentRegistry.class);
 }

@@ -38,6 +38,11 @@ public interface MeterConstants {
 	String DAYLIGHT = "Daylight";
 
 	String SITE = "site";
+	String TEMPERATURE = "temperature";
+
+	String UV_INDEX = "uvIndex";
+
+	String WEATHER_SUMMARY = "weatherSummary";
 
 	String CUSTOMER_ID_ATTRIBUTE = "customer-id";
 }
