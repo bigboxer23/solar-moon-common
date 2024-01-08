@@ -23,16 +23,16 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 	private static final String FORCAST_URL =
 			"https://api.pirateweather.net/forecast/" + API_KEY + "/{0}%2C{1}?exclude=minutely%2Chourly%2Cdaily";
 
-	public Optional<PirateWeatherDataResponse> fetchForcastData(double latitude, double longitude) {
+	public Optional<PirateWeatherDataResponse> fetchForecastData(double latitude, double longitude) {
 		try (Response response =
 				OkHttpUtil.getSynchronous(MessageFormat.format(FORCAST_URL, latitude, longitude), null)) {
 			ResponseBody responseBody = response.body();
 			if (responseBody == null) {
-				IComponentRegistry.logger.warn("no forcast body");
+				IComponentRegistry.logger.warn("no forecast body");
 				return Optional.empty();
 			}
 			String body = responseBody.string();
-			IComponentRegistry.logger.debug("getForcastData body " + body);
+			IComponentRegistry.logger.debug("getForecastData body " + body);
 			return Optional.ofNullable(IComponentRegistry.moshi
 					.adapter(PirateWeatherDataResponse.class)
 					.fromJson(body));
@@ -78,7 +78,7 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 						if (IComponentRegistry.locationComponent.isDay(
 								new Date(), site.getLatitude(), site.getLongitude())) {
 							logger.info("fetching weather data for " + site.getLatitude() + "," + site.getLongitude());
-							fetchForcastData(site.getLatitude(), site.getLongitude())
+							fetchForecastData(site.getLatitude(), site.getLongitude())
 									.ifPresent(w ->
 											updateWeather(site.getLatitude(), site.getLongitude(), w.getCurrently()));
 						}

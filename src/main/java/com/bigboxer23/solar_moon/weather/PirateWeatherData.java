@@ -9,9 +9,9 @@ public class PirateWeatherData {
 	private String summary;
 	private long nearestStormDistance;
 	private long nearestStormBearing;
-	private long precipIntensity;
-	private long precipProbability;
-	private long precipIntensityError;
+	private double precipIntensity;
+	private double precipProbability;
+	private double precipIntensityError;
 	private String precipType;
 	private double temperature;
 	private double apparentTemperature;
