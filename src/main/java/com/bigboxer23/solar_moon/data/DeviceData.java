@@ -36,11 +36,11 @@ public class DeviceData {
 		if (openSearchMap.containsKey(DAYLIGHT)) {
 			setDaylight((Boolean) openSearchMap.get(DAYLIGHT));
 		}
-		addIfExists("weatherSummary", openSearchMap);
-		addIfExists("temperature", openSearchMap);
+		setWeather(openSearchMap.get(WEATHER_SUMMARY));
+		setTemperature(openSearchMap.get(TEMPERATURE));
 		addIfExists("cloudCover", openSearchMap);
 		addIfExists("visibility", openSearchMap);
-		addIfExists("uvIndex", openSearchMap);
+		setUVIndex(openSearchMap.get(UV_INDEX));
 		addIfExists("precipIntensity", openSearchMap);
 	}
 
@@ -134,6 +134,42 @@ public class DeviceData {
 		return (Boolean) Optional.ofNullable(attributes.get(DAYLIGHT))
 				.map(DeviceAttribute::getValue)
 				.orElse(false);
+	}
+
+	public void setTemperature(Object temperature) {
+		Optional.ofNullable(temperature)
+				.map(this::doubleToFloat)
+				.ifPresent(t -> addAttribute(new DeviceAttribute(TEMPERATURE, "", t)));
+	}
+
+	public float getTemperature() {
+		return (Float) Optional.ofNullable(attributes.get(TEMPERATURE))
+				.map(DeviceAttribute::getValue)
+				.orElse(-1f);
+	}
+
+	public void setUVIndex(Object uvIndex) {
+		Optional.ofNullable(uvIndex)
+				.map(this::doubleToFloat)
+				.ifPresent(t -> addAttribute(new DeviceAttribute(UV_INDEX, "", t)));
+	}
+
+	public float getUVIndex() {
+		return (Float) Optional.ofNullable(attributes.get(UV_INDEX))
+				.map(DeviceAttribute::getValue)
+				.orElse(-1f);
+	}
+
+	public void setWeather(Object weatherSummary) {
+		Optional.ofNullable(weatherSummary)
+				.map(s -> (String) s)
+				.ifPresent(summary -> addAttribute(new DeviceAttribute(WEATHER_SUMMARY, "", summary)));
+	}
+
+	public String getWeatherSummary() {
+		return (String) Optional.ofNullable(attributes.get(WEATHER_SUMMARY))
+				.map(DeviceAttribute::getValue)
+				.orElse("");
 	}
 
 	public String getTotalEnergyConsumedUnit() {
