@@ -9,7 +9,9 @@ import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TimeUtils;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import org.opensearch.client.opensearch.core.SearchResponse;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
@@ -56,7 +58,11 @@ public class SitesOverviewComponent implements IComponentRegistry {
 
 	private void fillAvgTotalInformation(SiteOverviewData siteData, Device site, SearchJSON search) {
 		search.setDeviceId(site.getId());
-		siteData.setAvgTotal(OSComponent.search(search));
+		search.setType(OpenSearchConstants.TOTAL_SEARCH_TYPE);
+		siteData.setTotal(OSComponent.search(search));
+		search.setType(OpenSearchConstants.AVG_SEARCH_TYPE);
+		search.setDaylight(true);
+		siteData.setAvg(OSComponent.search(search));
 	}
 
 	private void fillMaxInformation(SiteOverviewData siteData, Device site) {
@@ -82,35 +88,49 @@ public class SitesOverviewComponent implements IComponentRegistry {
 						.filter(alarm -> alarm.getStartDate() > search.getStartDate())
 						.toList());
 		fillSiteTimeSeries(siteOverview, search);
-		fillDevicesAverageTotal(siteOverview, search);
 		fillDevicesTimeSeries(siteOverview, search);
+		fillDevicesAverageTotal(siteOverview, search);
 		return siteOverview;
 	}
 
 	private void fillSiteTimeSeries(SiteOverviewData siteOverview, SearchJSON search) {
 		search.setDeviceId(null);
+		search.setDaylight(false);
 		search.setSite(siteOverview.getSite().getDisplayName());
 		search.setType(OpenSearchConstants.STACKED_TIME_SERIES_SEARCH_TYPE);
 		siteOverview.setTimeSeries(OSComponent.search(search));
 	}
 
 	private void fillDevicesAverageTotal(SiteOverviewData siteOverview, SearchJSON search) {
-		siteOverview.setDeviceAvgTotals(new HashMap<>());
-		search.setSite(null);
-		search.setType(OpenSearchConstants.AVG_TOTAL_SEARCH_TYPE);
-		siteOverview.getDevices().stream().filter(d -> !d.isVirtual()).forEach(d -> {
-			search.setDeviceId(d.getId());
-			siteOverview.getDeviceAvgTotals().put(d.getId(), OSComponent.search(search));
-		});
+		siteOverview.setDeviceAvg(new HashMap<>());
+		fillDeviceMap(siteOverview, search, true, OpenSearchConstants.AVG_SEARCH_TYPE, siteOverview.getDeviceAvg());
+		siteOverview.setDeviceTotals(new HashMap<>());
+		fillDeviceMap(
+				siteOverview, search, false, OpenSearchConstants.TOTAL_SEARCH_TYPE, siteOverview.getDeviceTotals());
 	}
 
 	private void fillDevicesTimeSeries(SiteOverviewData siteOverview, SearchJSON search) {
 		siteOverview.setDeviceTimeSeries(new HashMap<>());
+		fillDeviceMap(
+				siteOverview,
+				search,
+				false,
+				OpenSearchConstants.TIME_SERIES_SEARCH_TYPE,
+				siteOverview.getDeviceTimeSeries());
+	}
+
+	private void fillDeviceMap(
+			SiteOverviewData siteOverview,
+			SearchJSON search,
+			boolean daylight,
+			String type,
+			Map<String, SearchResponse> map) {
 		search.setSite(null);
-		search.setType(OpenSearchConstants.TIME_SERIES_SEARCH_TYPE);
+		search.setDaylight(daylight);
+		search.setType(type);
 		siteOverview.getDevices().stream().filter(d -> !d.isVirtual()).forEach(d -> {
 			search.setDeviceId(d.getId());
-			siteOverview.getDeviceTimeSeries().put(d.getId(), OSComponent.search(search));
+			map.put(d.getId(), OSComponent.search(search));
 		});
 	}
 }
