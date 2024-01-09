@@ -14,7 +14,9 @@ public class SiteOverviewData {
 
 	private SearchResponse weeklyMaxPower;
 
-	private SearchResponse avgTotal;
+	private SearchResponse avg;
+
+	private SearchResponse total;
 
 	private SiteWeatherData weather;
 
@@ -26,7 +28,9 @@ public class SiteOverviewData {
 
 	private SearchResponse timeSeries;
 
-	private Map<String, SearchResponse> deviceAvgTotals;
+	private Map<String, SearchResponse> deviceAvg;
+
+	private Map<String, SearchResponse> deviceTotals;
 
 	private Map<String, SearchResponse> deviceTimeSeries;
 }
