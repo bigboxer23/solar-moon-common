@@ -26,23 +26,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 				.findDeviceById(siteId)
 				.filter(site -> site.getClientId().equalsIgnoreCase(search.getCustomerId()))
 				.map(site -> getSiteOverviewData(site, search))
-				.map(siteOverview -> {
-					siteOverview.setDevices(deviceComponent.getDevicesBySite(
-							search.getCustomerId(), siteOverview.getSite().getDisplayName()));
-					siteOverview.setAlarms(
-							alarmComponent
-									.findAlarmsBySite(
-											search.getCustomerId(),
-											siteOverview.getSite().getId())
-									.stream()
-									.filter(alarm -> alarm.getStartDate() > search.getStartDate())
-									.toList());
-					search.setDeviceId(null);
-					search.setSite(siteOverview.getSite().getDisplayName());
-					search.setType(OpenSearchConstants.STACKED_TIME_SERIES_SEARCH_TYPE);
-					siteOverview.setTimeSeries(OSComponent.search(search));
-					return siteOverview;
-				})
+				.map(siteOverview -> fillExtendedSiteOverviewData(siteOverview, search))
 				.orElse(null);
 	}
 
@@ -85,5 +69,48 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		search.setEndDate(end.getTime());
 		search.setStartDate(end.getTime() - TimeConstants.WEEK);
 		siteData.setWeeklyMaxPower(OSComponent.search(search));
+	}
+
+	private SiteOverviewData fillExtendedSiteOverviewData(SiteOverviewData siteOverview, SearchJSON search) {
+		siteOverview.setDevices(deviceComponent.getDevicesBySite(
+				search.getCustomerId(), siteOverview.getSite().getDisplayName()));
+		siteOverview.setAlarms(
+				alarmComponent
+						.findAlarmsBySite(
+								search.getCustomerId(), siteOverview.getSite().getId())
+						.stream()
+						.filter(alarm -> alarm.getStartDate() > search.getStartDate())
+						.toList());
+		fillSiteTimeSeries(siteOverview, search);
+		fillDevicesAverageTotal(siteOverview, search);
+		fillDevicesTimeSeries(siteOverview, search);
+		return siteOverview;
+	}
+
+	private void fillSiteTimeSeries(SiteOverviewData siteOverview, SearchJSON search) {
+		search.setDeviceId(null);
+		search.setSite(siteOverview.getSite().getDisplayName());
+		search.setType(OpenSearchConstants.STACKED_TIME_SERIES_SEARCH_TYPE);
+		siteOverview.setTimeSeries(OSComponent.search(search));
+	}
+
+	private void fillDevicesAverageTotal(SiteOverviewData siteOverview, SearchJSON search) {
+		siteOverview.setDeviceAvgTotals(new HashMap<>());
+		search.setSite(null);
+		search.setType(OpenSearchConstants.AVG_TOTAL_SEARCH_TYPE);
+		siteOverview.getDevices().stream().filter(d -> !d.isVirtual()).forEach(d -> {
+			search.setDeviceId(d.getId());
+			siteOverview.getDeviceAvgTotals().put(d.getId(), OSComponent.search(search));
+		});
+	}
+
+	private void fillDevicesTimeSeries(SiteOverviewData siteOverview, SearchJSON search) {
+		siteOverview.setDeviceTimeSeries(new HashMap<>());
+		search.setSite(null);
+		search.setType(OpenSearchConstants.TIME_SERIES_SEARCH_TYPE);
+		siteOverview.getDevices().stream().filter(d -> !d.isVirtual()).forEach(d -> {
+			search.setDeviceId(d.getId());
+			siteOverview.getDeviceTimeSeries().put(d.getId(), OSComponent.search(search));
+		});
 	}
 }
