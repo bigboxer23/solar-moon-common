@@ -301,10 +301,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 						builder -> builder.partitionValue(state).sortValue(deleteOlderThan)))
 				.stream()
 				.flatMap(page -> page.items().stream())
-				.forEach(a -> {
-					System.out.println("here");
-					deleteAlarm(a.getAlarmId(), a.getCustomerId());
-				});
+				.forEach(a -> deleteAlarm(a.getAlarmId(), a.getCustomerId()));
 	}
 
 	@Override

@@ -21,15 +21,44 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		return data;
 	}
 
+	public SiteOverviewData getExtendedSiteOverviewData(String siteId, SearchJSON search) {
+		return deviceComponent
+				.findDeviceById(siteId)
+				.filter(site -> site.getClientId().equalsIgnoreCase(search.getCustomerId()))
+				.map(site -> getSiteOverviewData(site, search))
+				.map(siteOverview -> {
+					siteOverview.setDevices(deviceComponent.getDevicesBySite(
+							search.getCustomerId(), siteOverview.getSite().getDisplayName()));
+					siteOverview.setAlarms(
+							alarmComponent
+									.findAlarmsBySite(
+											search.getCustomerId(),
+											siteOverview.getSite().getId())
+									.stream()
+									.filter(alarm -> alarm.getStartDate() > search.getStartDate())
+									.toList());
+					search.setDeviceId(null);
+					search.setSite(siteOverview.getSite().getDisplayName());
+					search.setType(OpenSearchConstants.STACKED_TIME_SERIES_SEARCH_TYPE);
+					siteOverview.setTimeSeries(OSComponent.search(search));
+					return siteOverview;
+				})
+				.orElse(null);
+	}
+
+	private SiteOverviewData getSiteOverviewData(Device site, SearchJSON search) {
+		SiteOverviewData siteData = new SiteOverviewData();
+		siteData.setSite(site);
+		fillWeatherInformation(siteData, site);
+		fillAvgTotalInformation(siteData, site, search);
+		fillMaxInformation(siteData, site);
+		return siteData;
+	}
+
 	private void fillSiteInformation(SitesOverviewData data, SearchJSON search) {
 		data.setSites(new HashMap<>());
 		data.getDevices().stream().filter(Device::isVirtual).forEach(site -> {
-			SiteOverviewData siteData = new SiteOverviewData();
-			siteData.setId(site.getId());
-			data.getSites().put(siteData.getId(), siteData);
-			fillWeatherInformation(siteData, site);
-			fillAvgTotalInformation(siteData, site, search);
-			fillMaxInformation(siteData, site);
+			data.getSites().put(site.getId(), getSiteOverviewData(site, search));
 		});
 	}
 
