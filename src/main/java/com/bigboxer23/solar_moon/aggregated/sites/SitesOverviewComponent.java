@@ -94,10 +94,17 @@ public class SitesOverviewComponent implements IComponentRegistry {
 	}
 
 	private void fillSiteTimeSeries(SiteOverviewData siteOverview, SearchJSON search) {
-		search.setDeviceId(null);
 		search.setDaylight(false);
-		search.setSite(siteOverview.getSite().getDisplayName());
-		search.setType(OpenSearchConstants.STACKED_TIME_SERIES_SEARCH_TYPE);
+		search.setDeviceId(
+				siteOverview.getSite().isSubtraction() ? siteOverview.getSite().getId() : null);
+		search.setSite(
+				siteOverview.getSite().isSubtraction()
+						? null
+						: siteOverview.getSite().getDisplayName());
+		search.setType(
+				siteOverview.getSite().isSubtraction()
+						? OpenSearchConstants.TIME_SERIES_SEARCH_TYPE
+						: OpenSearchConstants.STACKED_TIME_SERIES_SEARCH_TYPE);
 		siteOverview.setTimeSeries(OSComponent.search(search));
 	}
 
