@@ -292,4 +292,9 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		json.setVirtual(true);
 		assertEquals(5, OSComponent.search(json).hits().hits().size());
 	}
+
+	@Test
+	public void isOpenSearchAvailable() {
+		assertTrue(OSComponent.isOpenSearchAvailable());
+	}
 }
