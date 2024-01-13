@@ -14,6 +14,7 @@ import com.bigboxer23.solar_moon.maintenance.MaintenanceComponent;
 import com.bigboxer23.solar_moon.mapping.MappingComponent;
 import com.bigboxer23.solar_moon.notifications.NotificationComponent;
 import com.bigboxer23.solar_moon.search.OpenSearchComponent;
+import com.bigboxer23.solar_moon.search.status.OpenSearchStatusComponent;
 import com.bigboxer23.solar_moon.subscription.SubscriptionComponent;
 import com.bigboxer23.solar_moon.weather.PirateWeatherComponent;
 import com.google.gson.Gson;
@@ -38,6 +39,8 @@ public interface IComponentRegistry {
 	DeviceComponent deviceComponent = new DeviceComponent(subscriptionComponent);
 
 	OpenSearchComponent OSComponent = new OpenSearchComponent();
+
+	OpenSearchStatusComponent OpenSearchStatusComponent = new OpenSearchStatusComponent();
 
 	PirateWeatherComponent weatherComponent = new PirateWeatherComponent();
 
