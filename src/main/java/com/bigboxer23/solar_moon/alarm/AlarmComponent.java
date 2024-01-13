@@ -139,10 +139,15 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			TransactionUtil.updateCustomerId(customerId);
 			logger.info("Starting sending notifications");
 			AlarmEmailTemplateContent alarmEmail = new AlarmEmailTemplateContent(customerId, alarms);
-			if (alarmEmail.isNotificationEnabled()) {
+			if (alarmEmail.isNotificationEnabled()
+					&& !IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes()) {
 				notificationComponent.sendNotification(alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
 			} else {
-				logger.warn("New notification detected, but not sending email as requested.");
+				if (IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes()) {
+					logger.warn("Not sending notification, opensearch failure has occurred" + " recently.");
+				} else {
+					logger.warn("New notification detected, but not sending email as" + " requested.");
+				}
 			}
 			alarms.forEach(a -> {
 				a.setEmailed(System.currentTimeMillis());
