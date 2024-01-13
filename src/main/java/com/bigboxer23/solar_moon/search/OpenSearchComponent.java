@@ -322,6 +322,20 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		};
 	}
 
+	public boolean isOpenSearchAvailable() {
+		try {
+			if (!getClient().ping().value()) {
+				logger.warn("isOpenSearchAvailable false ping");
+				return false;
+			}
+			getClient().indices().stats();
+		} catch (IOException e) {
+			logger.error("isOpenSearchAvailable", e);
+			return false;
+		}
+		return true;
+	}
+
 	private OpenSearchClient getClient() {
 		if (client == null) {
 			final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
