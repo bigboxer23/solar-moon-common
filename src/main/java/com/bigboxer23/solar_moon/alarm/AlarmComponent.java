@@ -51,15 +51,24 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		return !alarms.isEmpty() ? Optional.ofNullable(alarms.getFirst()) : Optional.empty();
 	}
 
-	public void resolveActiveAlarms(DeviceData device) {
-		IComponentRegistry.deviceUpdateComponent.update(device.getDeviceId());
-		getMostRecentAlarm(device.getDeviceId())
+	public void resolveActiveAlarms(DeviceData deviceData) {
+		if (deviceData.getDate() == null
+				|| deviceData.getDate().getTime() <= System.currentTimeMillis() - TimeConstants.HOUR) {
+			logger.warn("old data, not adding device update or resolving active alarms " + deviceData.getDate());
+			return;
+		}
+		IComponentRegistry.deviceUpdateComponent.update(deviceData.getDeviceId());
+		if (deviceData.getTotalRealPower() <= 0) {
+			logger.warn("not resolving alarm, no real power reported");
+			return;
+		}
+		getMostRecentAlarm(deviceData.getDeviceId())
 				.filter(alarm -> alarm.getState() == ACTIVE)
 				.ifPresent(alarm -> {
 					logger.warn("Resolving alarm for "
-							+ device.getName()
+							+ deviceData.getName()
 							+ " "
-							+ device.getDate().getTime());
+							+ deviceData.getDate().getTime());
 					alarm.setState(RESOLVED);
 					alarm.setEmailed(RESOLVED_NOT_EMAILED);
 					alarm.setEndDate(new Date().getTime());
@@ -273,22 +282,37 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			logger.warn("Null device, can't check.");
 			return Optional.empty();
 		}
-		DeviceData data =
-				OSComponent.getLastDeviceEntry(device.getName(), OpenSearchQueries.getDeviceIdQuery(device.getId()));
-		if (data == null) {
-			logger.debug("likely new device with no data " + device.getId());
-			return Optional.empty();
-		}
 		TransactionUtil.addDeviceId(device.getId());
 		TransactionUtil.updateCustomerId(device.getClientId());
-		if (!device.isDisabled()
-				&& data.getDate().getTime() < new Date(System.currentTimeMillis() - TimeConstants.HOUR).getTime()) {
+		DeviceData data =
+				OSComponent.getLastDeviceEntry(device.getName(), OpenSearchQueries.getDeviceIdQuery(device.getId()));
+		if (data == null || device.isDisabled()) {
+			logger.debug("likely new device with no data (or disabled) " + device.getId());
+			return Optional.empty();
+		}
+		if (data.getDate().getTime() < new Date(System.currentTimeMillis() - TimeConstants.HOUR).getTime()) {
 			return alarmConditionDetected(
 					data.getCustomerId(),
 					data.getDeviceId(),
 					data.getSite(),
 					"No data recently from device.  Last data: "
 							+ data.getDate().getTime());
+		}
+		return checkDeviceExistingData(data);
+	}
+
+	public Optional<Alarm> checkDeviceExistingData(DeviceData deviceData) {
+		if (!deviceData.isDayLight()) {
+			return Optional.empty();
+		}
+		if (deviceData.getTotalRealPower() == 0
+				&& OSComponent.isDeviceGeneratingPower(
+						deviceData.getCustomerId(), deviceData.getDeviceId(), TimeConstants.HOUR * 2)) {
+			return alarmConditionDetected(
+					deviceData.getCustomerId(),
+					deviceData.getDeviceId(),
+					deviceData.getSite(),
+					"Device not generating power");
 		}
 		return Optional.empty();
 	}
