@@ -137,6 +137,17 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 						new FieldAndFormat.Builder().field(TOTAL_REAL_POWER).build());
 	}
 
+	public static SearchRequest.Builder getWeatherSummaryFacet() {
+		return getBaseBuilder(0)
+				.aggregations(
+						"terms",
+						AggregationBuilders.terms()
+								.field(getKeywordField(MeterConstants.WEATHER_SUMMARY))
+								.size(40)
+								.build()
+								._toAggregation());
+	}
+
 	public static SearchRequest.Builder getDataSearch(int offset, int size) {
 		return getBaseBuilder(size)
 				.from(offset)

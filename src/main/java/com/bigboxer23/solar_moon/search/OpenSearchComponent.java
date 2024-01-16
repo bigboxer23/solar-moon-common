@@ -22,6 +22,7 @@ import org.opensearch.client.opensearch._types.FieldSort;
 import org.opensearch.client.opensearch._types.SortOptions;
 import org.opensearch.client.opensearch._types.SortOrder;
 import org.opensearch.client.opensearch._types.aggregations.Aggregate;
+import org.opensearch.client.opensearch._types.aggregations.StringTermsBucket;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch._types.query_dsl.QueryBuilders;
 import org.opensearch.client.opensearch.core.*;
@@ -320,6 +321,16 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			default -> null;
 		};
+	}
+
+	public List<StringTermsBucket> getWeatherFacets() throws IOException {
+		return getClient()
+						.search(OpenSearchQueries.getWeatherSummaryFacet().build(), Map.class)
+						.aggregations()
+						.get("terms")
+				.sterms()
+				.buckets()
+				.array();
 	}
 
 	public boolean isOpenSearchAvailable() {
