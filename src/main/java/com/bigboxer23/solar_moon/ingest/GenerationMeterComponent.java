@@ -8,7 +8,6 @@ import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.device.SiteComponent;
 import com.bigboxer23.solar_moon.search.OpenSearchComponent;
-import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.io.StringReader;
@@ -101,10 +100,7 @@ public class GenerationMeterComponent implements MeterConstants {
 			logger.info("device was not valid, not handling.");
 			return null;
 		}
-		if (deviceData.getDate() != null
-				&& deviceData.getDate().getTime() > System.currentTimeMillis() - TimeConstants.HOUR) {
-			alarmComponent.resolveActiveAlarms(deviceData);
-		}
+		alarmComponent.resolveActiveAlarms(deviceData);
 		Device site = deviceComponent
 				.findDeviceByDeviceName(device.getClientId(), device.getSite())
 				.orElse(null);

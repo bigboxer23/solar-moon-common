@@ -272,7 +272,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	}
 
 	private List<Query> getMustNotByType(SearchJSON searchJSON) {
-		return switch (searchJSON.getType()) {
+		return switch (Optional.ofNullable(searchJSON.getType()).orElse("")) {
 			case STACKED_TIME_SERIES_SEARCH_TYPE, GROUPED_BAR_SEARCH_TYPE -> Collections.singletonList(
 					OpenSearchQueries.getNotVirtual());
 			default -> Collections.emptyList();
@@ -325,12 +325,43 @@ public class OpenSearchComponent implements OpenSearchConstants {
 
 	public List<StringTermsBucket> getWeatherFacets() throws IOException {
 		return getClient()
-						.search(OpenSearchQueries.getWeatherSummaryFacet().build(), Map.class)
-						.aggregations()
-						.get("terms")
+				.search(OpenSearchQueries.getWeatherSummaryFacet().build(), Map.class)
+				.aggregations()
+				.get("terms")
 				.sterms()
 				.buckets()
 				.array();
+	}
+
+	public boolean isDeviceGeneratingPower(String customerId, String deviceId, long offset) {
+		try {
+			SearchJSON searchJSON =
+					new SearchJSON(customerId, null, System.currentTimeMillis(), System.currentTimeMillis() - offset);
+			searchJSON.setDeviceId(deviceId);
+			searchJSON.setDaylight(true);
+			SearchResponse response = getClient()
+					.search(
+							OpenSearchQueries.getAverageBuilder("UTC", "10m")
+									.query(getQuery(searchJSON))
+									.build(),
+							Map.class);
+			double maxRecordCount = Math.round((float) offset / TimeConstants.FIFTEEN_MINUTES);
+
+			// Power produced within the offset time, or we haven't collected at least half the
+			// number of records in the offset period (because of daylight not happening yet)
+			if (((Aggregate) response.aggregations().get("avg")).avg().value() > 0
+					|| response.hits().total().value() < (maxRecordCount / 2)) {
+				return false;
+			}
+			logger.warn("Device not generating power "
+					+ maxRecordCount
+					+ ":"
+					+ response.hits().total().value());
+			return false;
+		} catch (IOException e) {
+			logger.error("isDeviceGeneratingPower", e);
+			return true;
+		}
 	}
 
 	public boolean isOpenSearchAvailable() {
