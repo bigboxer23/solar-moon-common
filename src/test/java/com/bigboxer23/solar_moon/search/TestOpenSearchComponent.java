@@ -10,6 +10,7 @@ import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import com.bigboxer23.solar_moon.util.TimeUtils;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.opensearch.client.ResponseException;
 import org.opensearch.client.opensearch._types.aggregations.Aggregate;
 import org.opensearch.client.opensearch._types.aggregations.DateHistogramBucket;
+import org.opensearch.client.opensearch._types.aggregations.StringTermsBucket;
 import org.opensearch.client.opensearch.core.SearchResponse;
 import org.opensearch.client.opensearch.core.search.Hit;
 
@@ -41,6 +43,13 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	@AfterAll
 	public static void afterAll() {
 		TestUtils.nukeCustomerId(CUSTOMER_ID);
+	}
+
+	@Test
+	public void getWeatherFacets() throws IOException {
+		List<StringTermsBucket> terms = OSComponent.getWeatherFacets();
+		assertFalse(terms.isEmpty());
+		terms.forEach(term -> System.out.println(term.key() + ":" + term.docCount()));
 	}
 
 	@Test
