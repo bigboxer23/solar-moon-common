@@ -254,7 +254,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		searchJSON.setBucketSize("1d");
 		Date end = TimeUtils.getStartOfDay(searchJSON.getTimeZone());
 		searchJSON.setEndDate(end.getTime() - TimeConstants.SECOND);
-		searchJSON.setStartDate(end.getTime() - TimeConstants.THIRTY_DAYS);
+		searchJSON.setStartDate(end.getTime() - TimeConstants.NINETY_DAYS);
 		return ((Aggregate) search(searchJSON).aggregations().get("2"))
 				.dateHistogram().buckets().array().stream()
 						.map(bucket -> bucket.aggregations().get("1").sum().value())

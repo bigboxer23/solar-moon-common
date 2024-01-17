@@ -20,5 +20,7 @@ public interface TimeConstants {
 
 	long THIRTY_DAYS = DAY * 30;
 
+	long NINETY_DAYS = DAY * 90;
+
 	long YEAR = DAY * 365;
 }
