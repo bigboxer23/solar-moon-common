@@ -5,7 +5,7 @@ import org.opensearch.client.opensearch.core.SearchResponse;
 
 /** */
 @Data
-public class SiteOverviewData {
+public class OverviewSiteData {
 	private SearchResponse totalAvg;
 
 	private SearchResponse total;
@@ -13,6 +13,8 @@ public class SiteOverviewData {
 	private SearchResponse avg;
 
 	private SearchResponse timeSeries;
+
+	private SearchResponse timeSeriesMax;
 
 	private SearchResponse dailyEnergyConsumedTotal;
 

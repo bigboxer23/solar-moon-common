@@ -10,5 +10,5 @@ import lombok.Data;
 public class SitesOverviewData {
 	private List<Device> devices;
 
-	private Map<String, SiteOverviewData> sites;
+	private Map<String, SitesSiteData> sites;
 }

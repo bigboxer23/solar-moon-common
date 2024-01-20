@@ -9,7 +9,7 @@ import org.opensearch.client.opensearch.core.SearchResponse;
 
 /** */
 @Data
-public class SiteOverviewData {
+public class SitesSiteData {
 	private Device site;
 
 	private SearchResponse weeklyMaxPower;
@@ -20,7 +20,7 @@ public class SiteOverviewData {
 
 	private SiteWeatherData weather;
 
-	private String localTime;
+	private String localTime; // TODO:
 
 	private List<Device> devices;
 

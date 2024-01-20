@@ -23,6 +23,21 @@ public class SearchJSON {
 
 	public SearchJSON() {}
 
+	public SearchJSON(SearchJSON search) {
+		setCustomerId(search.getCustomerId());
+		setDeviceName(search.getDeviceName());
+		setEndDate(search.getEndDate());
+		setStartDate(search.getStartDate());
+		setDeviceId(search.getDeviceId());
+		setTimeZone(search.getTimeZone());
+		setBucketSize(search.getBucketSize());
+		setVirtual(search.isVirtual());
+		setNoVirtual(search.isNoVirtual());
+		setDaylight(search.isDaylight());
+		setSite(search.getSite());
+		setType(search.getType());
+	}
+
 	public SearchJSON(String customerId, String deviceName, long endDate, long startDate) {
 		setCustomerId(customerId);
 		setDeviceName(deviceName);

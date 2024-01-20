@@ -23,7 +23,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		return data;
 	}
 
-	public SiteOverviewData getExtendedSiteOverviewData(String siteId, SearchJSON search) {
+	public SitesSiteData getExtendedSiteOverviewData(String siteId, SearchJSON search) {
 		return deviceComponent
 				.findDeviceById(siteId)
 				.filter(site -> site.getClientId().equalsIgnoreCase(search.getCustomerId()))
@@ -32,8 +32,8 @@ public class SitesOverviewComponent implements IComponentRegistry {
 				.orElse(null);
 	}
 
-	private SiteOverviewData getSiteOverviewData(Device site, SearchJSON search) {
-		SiteOverviewData siteData = new SiteOverviewData();
+	private SitesSiteData getSiteOverviewData(Device site, SearchJSON search) {
+		SitesSiteData siteData = new SitesSiteData();
 		siteData.setSite(site);
 		fillWeatherInformation(siteData, site);
 		fillAvgTotalInformation(siteData, site, search);
@@ -48,7 +48,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		});
 	}
 
-	private void fillWeatherInformation(SiteOverviewData siteData, Device site) {
+	private void fillWeatherInformation(SitesSiteData siteData, Device site) {
 		Optional.ofNullable(OSComponent.getLastDeviceEntry(
 						site.getName(), OpenSearchQueries.getDeviceIdQuery(site.getId())))
 				.filter(deviceData -> !StringUtils.isEmpty(deviceData.getWeatherSummary())) // No weather stamped for
@@ -56,7 +56,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 				.ifPresent(deviceData -> siteData.setWeather(new SiteWeatherData(deviceData)));
 	}
 
-	private void fillAvgTotalInformation(SiteOverviewData siteData, Device site, SearchJSON search) {
+	private void fillAvgTotalInformation(SitesSiteData siteData, Device site, SearchJSON search) {
 		search.setDeviceId(site.getId());
 		search.setType(OpenSearchConstants.TOTAL_SEARCH_TYPE);
 		siteData.setTotal(OSComponent.search(search));
@@ -65,7 +65,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		siteData.setAvg(OSComponent.search(search));
 	}
 
-	private void fillMaxInformation(SiteOverviewData siteData, Device site) {
+	private void fillMaxInformation(SitesSiteData siteData, Device site) {
 		SearchJSON search = new SearchJSON();
 		search.setCustomerId(site.getClientId());
 		search.setType(OpenSearchConstants.MAX_CURRENT_SEARCH_TYPE);
@@ -77,7 +77,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		siteData.setWeeklyMaxPower(OSComponent.search(search));
 	}
 
-	private SiteOverviewData fillExtendedSiteOverviewData(SiteOverviewData siteOverview, SearchJSON search) {
+	private SitesSiteData fillExtendedSiteOverviewData(SitesSiteData siteOverview, SearchJSON search) {
 		siteOverview.setDevices(deviceComponent.getDevicesBySite(
 				search.getCustomerId(), siteOverview.getSite().getDisplayName()));
 		siteOverview.setAlarms(
@@ -93,7 +93,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		return siteOverview;
 	}
 
-	private void fillSiteTimeSeries(SiteOverviewData siteOverview, SearchJSON search) {
+	private void fillSiteTimeSeries(SitesSiteData siteOverview, SearchJSON search) {
 		search.setDaylight(false);
 		search.setDeviceId(
 				siteOverview.getSite().isSubtraction() ? siteOverview.getSite().getId() : null);
@@ -108,7 +108,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		siteOverview.setTimeSeries(OSComponent.search(search));
 	}
 
-	private void fillDevicesAverageTotal(SiteOverviewData siteOverview, SearchJSON search) {
+	private void fillDevicesAverageTotal(SitesSiteData siteOverview, SearchJSON search) {
 		siteOverview.setDeviceAvg(new HashMap<>());
 		fillDeviceMap(siteOverview, search, true, OpenSearchConstants.AVG_SEARCH_TYPE, siteOverview.getDeviceAvg());
 		siteOverview.setDeviceTotals(new HashMap<>());
@@ -116,7 +116,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 				siteOverview, search, false, OpenSearchConstants.TOTAL_SEARCH_TYPE, siteOverview.getDeviceTotals());
 	}
 
-	private void fillDevicesTimeSeries(SiteOverviewData siteOverview, SearchJSON search) {
+	private void fillDevicesTimeSeries(SitesSiteData siteOverview, SearchJSON search) {
 		siteOverview.setDeviceTimeSeries(new HashMap<>());
 		fillDeviceMap(
 				siteOverview,
@@ -127,7 +127,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 	}
 
 	private void fillDeviceMap(
-			SiteOverviewData siteOverview,
+			SitesSiteData siteOverview,
 			SearchJSON search,
 			boolean daylight,
 			String type,

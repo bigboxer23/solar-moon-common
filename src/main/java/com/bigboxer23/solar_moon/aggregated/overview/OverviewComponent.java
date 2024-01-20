@@ -13,11 +13,10 @@ import software.amazon.awssdk.utils.StringUtils;
 /** */
 public class OverviewComponent implements IComponentRegistry {
 	public OverviewData getOverviewData(SearchJSON search) {
-		OverviewData data = new OverviewData();
-		data.setAlarms(alarmComponent.getAlarms(search.getCustomerId()));
-		data.setDevices(deviceComponent.getDevicesForCustomerId(search.getCustomerId()));
 		search.setVirtual(true);
-		data.setOverall(getData(null, search));
+		OverviewData data = new OverviewData(
+				deviceComponent.getDevicesForCustomerId(search.getCustomerId()),
+				alarmComponent.getAlarms(search.getCustomerId()));
 		fillSiteInfo(data, search);
 		fillInOverallInfo(data, search);
 		return data;
@@ -37,27 +36,29 @@ public class OverviewComponent implements IComponentRegistry {
 		if (searchJson == null || StringUtils.isBlank(searchJson.getTimeZone())) {
 			return;
 		}
-		Date start = TimeUtils.getStartOfDay(searchJson.getTimeZone());
-		searchJson.setDeviceName(null);
-		searchJson.setEndDate(start.getTime() + TimeConstants.DAY);
-		searchJson.setStartDate(start.getTime());
-		searchJson.setType(OpenSearchConstants.AVG_TOTAL_SEARCH_TYPE);
+		SearchJSON search = new SearchJSON(searchJson);
+		data.setOverall(getData(null, search));
+		Date start = TimeUtils.getStartOfDay(search.getTimeZone());
+		search.setEndDate(start.getTime() + TimeConstants.DAY);
+		search.setStartDate(start.getTime());
+		search.setType(OpenSearchConstants.AVG_TOTAL_SEARCH_TYPE);
 		// This is necessary because the period can shift to wk/mo/yr, and always need to get daily
 		// for overview as well.
-		data.getOverall().setDailyEnergyConsumedTotal(OSComponent.search(searchJson));
-		data.getOverall().setDailyEnergyConsumedAverage(OSComponent.getAverageEnergyConsumedPerDay(searchJson));
+		data.getOverall().setDailyEnergyConsumedTotal(OSComponent.search(search));
+		data.getOverall().setDailyEnergyConsumedAverage(OSComponent.getAverageEnergyConsumedPerDay(search));
 	}
 
-	private SiteOverviewData getData(String site, SearchJSON searchJson) {
-		SiteOverviewData data = new SiteOverviewData();
-		searchJson.setDeviceName(site);
-		searchJson.setType(OpenSearchConstants.TOTAL_SEARCH_TYPE);
-		data.setTotal(OSComponent.search(searchJson));
-		searchJson.setType(OpenSearchConstants.TIME_SERIES_SEARCH_TYPE);
-		data.setTimeSeries(OSComponent.search(searchJson));
-		searchJson.setDaylight(true);
-		searchJson.setType(OpenSearchConstants.AVG_SEARCH_TYPE);
-		data.setAvg(OSComponent.search(searchJson));
+	private OverviewSiteData getData(String site, SearchJSON searchJson) {
+		OverviewSiteData data = new OverviewSiteData();
+		SearchJSON search = new SearchJSON(searchJson);
+		search.setDeviceName(site);
+		search.setType(OpenSearchConstants.TOTAL_SEARCH_TYPE);
+		data.setTotal(OSComponent.search(search));
+		search.setType(OpenSearchConstants.TIME_SERIES_SEARCH_TYPE);
+		data.setTimeSeries(OSComponent.search(search));
+		search.setDaylight(true);
+		search.setType(OpenSearchConstants.AVG_SEARCH_TYPE);
+		data.setAvg(OSComponent.search(search));
 		return data;
 	}
 }
