@@ -3,6 +3,10 @@ package com.bigboxer23.solar_moon.location;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.lambda.utils.PropertyUtils;
+import com.bigboxer23.solar_moon.util.TimezoneMapper;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -71,5 +75,25 @@ public class LocationComponent {
 		}
 		return sunrise.get().compareTo(Moment.from(dateToCheck.toInstant())) <= 0
 				&& sunset.get().compareTo(Moment.from(dateToCheck.toInstant())) > 0;
+	}
+
+	public Optional<LocalDateTime> getLocalTimeString(double latitude, double longitude) {
+		if (latitude == -1 && longitude == -1) {
+			return Optional.empty();
+		}
+		if (latitude > 90 || latitude < -90) {
+			logger.error("latitude is not valid " + latitude);
+			return Optional.empty();
+		}
+		if (longitude > 180 || longitude < -180) {
+			logger.error("longitude is not valid " + latitude);
+			return Optional.empty();
+		}
+		String TZString = TimezoneMapper.latLngToTimezoneString(latitude, longitude);
+		if (TZString.equalsIgnoreCase("unknown")) {
+			logger.error("unknown timezone: " + latitude + "," + longitude);
+			return Optional.empty();
+		}
+		return Optional.of(LocalDateTime.ofInstant(Instant.now(), ZoneId.of(TZString)));
 	}
 }

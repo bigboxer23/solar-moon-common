@@ -20,6 +20,17 @@ public class TestLocationComponent implements IComponentRegistry, TestConstants 
 	}
 
 	@Test
+	public void getLocalTimeString() {
+		assertTrue(locationComponent
+				.getLocalTimeString(testLatitude, testLongitude)
+				.isPresent());
+		assertTrue(locationComponent.getLocalTimeString(89, 2).isPresent());
+		assertFalse(locationComponent.getLocalTimeString(-1, -1).isPresent());
+		assertFalse(locationComponent.getLocalTimeString(1111111, 2).isPresent());
+		assertFalse(locationComponent.getLocalTimeString(2, 181).isPresent());
+	}
+
+	@Test
 	public void isDay() throws Exception {
 		LocalDateTime time = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS).withHour(1);
 		assertFalse(locationComponent.isDay(

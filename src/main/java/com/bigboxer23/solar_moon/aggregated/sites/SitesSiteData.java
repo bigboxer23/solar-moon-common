@@ -20,7 +20,7 @@ public class SitesSiteData {
 
 	private SiteWeatherData weather;
 
-	private String localTime; // TODO:
+	private String localTime;
 
 	private List<Device> devices;
 

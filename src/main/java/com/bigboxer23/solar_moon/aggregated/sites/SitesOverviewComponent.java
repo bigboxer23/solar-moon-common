@@ -7,6 +7,7 @@ import com.bigboxer23.solar_moon.search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.search.SearchJSON;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TimeUtils;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,6 +36,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 	private SitesSiteData getSiteOverviewData(Device site, SearchJSON search) {
 		SitesSiteData siteData = new SitesSiteData();
 		siteData.setSite(site);
+		fillTimeInformation(siteData, site);
 		fillWeatherInformation(siteData, site);
 		fillAvgTotalInformation(siteData, site, search);
 		fillMaxInformation(siteData, site);
@@ -54,6 +56,13 @@ public class SitesOverviewComponent implements IComponentRegistry {
 				.filter(deviceData -> !StringUtils.isEmpty(deviceData.getWeatherSummary())) // No weather stamped for
 				// some reason
 				.ifPresent(deviceData -> siteData.setWeather(new SiteWeatherData(deviceData)));
+	}
+
+	public void fillTimeInformation(SitesSiteData siteData, Device site) {
+		locationComponent
+				.getLocalTimeString(site.getLatitude(), site.getLongitude())
+				.map(time -> time.format(DateTimeFormatter.ofPattern("h:mm a")))
+				.ifPresent(siteData::setLocalTime);
 	}
 
 	private void fillAvgTotalInformation(SitesSiteData siteData, Device site, SearchJSON search) {
