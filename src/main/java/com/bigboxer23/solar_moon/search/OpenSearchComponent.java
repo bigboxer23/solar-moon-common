@@ -305,6 +305,8 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		return switch (searchJSON.getType()) {
 			case TIME_SERIES_SEARCH_TYPE -> OpenSearchQueries.getTimeSeriesBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
+			case TIME_SERIES_MAX_SEARCH_TYPE -> OpenSearchQueries.getTimeSeriesMaxBuilder(
+					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			case AVG_TOTAL_SEARCH_TYPE -> OpenSearchQueries.getAverageTotalBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			case AVG_SEARCH_TYPE -> OpenSearchQueries.getAverageBuilder(

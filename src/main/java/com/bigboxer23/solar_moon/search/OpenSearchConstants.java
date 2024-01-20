@@ -6,6 +6,8 @@ public interface OpenSearchConstants {
 	String INDEX_NAME = "generation-meter";
 
 	String TIME_SERIES_SEARCH_TYPE = "timeseries";
+
+	String TIME_SERIES_MAX_SEARCH_TYPE = "timeSeriesMax";
 	String AVG_TOTAL_SEARCH_TYPE = "avgTotal";
 
 	String AVG_SEARCH_TYPE = "avg";
