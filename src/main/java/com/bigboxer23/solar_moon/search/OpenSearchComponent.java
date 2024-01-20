@@ -272,11 +272,10 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	}
 
 	private List<Query> getMustNotByType(SearchJSON searchJSON) {
-		return switch (Optional.ofNullable(searchJSON.getType()).orElse("")) {
-			case STACKED_TIME_SERIES_SEARCH_TYPE, GROUPED_BAR_SEARCH_TYPE -> Collections.singletonList(
-					OpenSearchQueries.getNotVirtual());
-			default -> Collections.emptyList();
-		};
+		if (searchJSON.isNoVirtual()) {
+			return Collections.singletonList(OpenSearchQueries.getNotVirtual());
+		}
+		return Collections.emptyList();
 	}
 
 	private List<Query> getFiltersByType(SearchJSON searchJSON) {
