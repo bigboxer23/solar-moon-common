@@ -29,7 +29,9 @@ public class OverviewComponent implements IComponentRegistry {
 		}
 		data.setSitesOverviewData(new HashMap<>());
 		data.getDevices().stream().filter(Device::isVirtual).forEach(site -> data.getSitesOverviewData()
-				.put(site.getDisplayName(), getData(site.getDisplayName(), searchJson)));
+				.put(
+						site.getDisplayName(),
+						getData(site.getDisplayName(), searchJson, OpenSearchConstants.TIME_SERIES_SEARCH_TYPE)));
 	}
 
 	private void fillInOverallInfo(OverviewData data, SearchJSON searchJson) {
@@ -37,7 +39,8 @@ public class OverviewComponent implements IComponentRegistry {
 			return;
 		}
 		SearchJSON search = new SearchJSON(searchJson);
-		data.setOverall(getData(null, search));
+		data.setOverall(getData(null, search, OpenSearchConstants.STACKED_TIME_SERIES_SEARCH_TYPE));
+
 		Date start = TimeUtils.getStartOfDay(search.getTimeZone());
 		search.setEndDate(start.getTime() + TimeConstants.DAY);
 		search.setStartDate(start.getTime());
@@ -48,13 +51,13 @@ public class OverviewComponent implements IComponentRegistry {
 		data.getOverall().setDailyEnergyConsumedAverage(OSComponent.getAverageEnergyConsumedPerDay(search));
 	}
 
-	private OverviewSiteData getData(String site, SearchJSON searchJson) {
+	private OverviewSiteData getData(String site, SearchJSON searchJson, String timeSeriesType) {
 		OverviewSiteData data = new OverviewSiteData();
 		SearchJSON search = new SearchJSON(searchJson);
 		search.setDeviceName(site);
 		search.setType(OpenSearchConstants.TOTAL_SEARCH_TYPE);
 		data.setTotal(OSComponent.search(search));
-		search.setType(OpenSearchConstants.TIME_SERIES_SEARCH_TYPE);
+		search.setType(timeSeriesType);
 		data.setTimeSeries(OSComponent.search(search));
 		search.setDaylight(true);
 		search.setType(OpenSearchConstants.AVG_SEARCH_TYPE);
