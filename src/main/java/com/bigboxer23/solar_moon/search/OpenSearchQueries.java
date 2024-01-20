@@ -217,6 +217,29 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 								.build());
 	}
 
+	public static SearchRequest.Builder getTimeSeriesMaxBuilder(String timezone, String bucketSize) {
+		return getBaseBuilder(0)
+				.aggregations(
+						"2",
+						new Aggregation.Builder()
+								.dateHistogram(AggregationBuilders.dateHistogram()
+										.field(TIMESTAMP)
+										.fixedInterval(new Time.Builder()
+												.time(bucketSize)
+												.build())
+										.timeZone(timezone)
+										.minDocCount(1)
+										.build())
+								.aggregations(
+										"1",
+										new Aggregation.Builder()
+												.max(new MaxAggregation.Builder()
+														.field(TOTAL_REAL_POWER)
+														.build())
+												.build())
+								.build());
+	}
+
 	public static SearchRequest.Builder getMaxCurrentBuilder(String timezone, String bucketSize) {
 		return getBaseBuilder(1)
 				.aggregations(

@@ -9,11 +9,16 @@ import lombok.Data;
 /** */
 @Data
 public class OverviewData {
+	public OverviewData(List<Device> devices, List<Alarm> alarms) {
+		setDevices(devices);
+		setAlarms(alarms);
+	}
+
 	private List<Device> devices;
 
 	private List<Alarm> alarms;
 
-	private SiteOverviewData overall;
+	private OverviewSiteData overall;
 
-	private Map<String, SiteOverviewData> sitesOverviewData;
+	private Map<String, OverviewSiteData> sitesOverviewData;
 }
