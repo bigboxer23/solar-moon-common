@@ -77,6 +77,16 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 	}
 
 	@Test
+	public void getSites() {
+		assertEquals(
+				1,
+				deviceComponent.getSites().stream()
+						.filter(device -> CUSTOMER_ID.equals(device.getClientId()))
+						.toList()
+						.size());
+	}
+
+	@Test
 	public void addDevice() {
 		Device device = TestUtils.getDevice();
 		assertFalse(deviceComponent.addDevice(device));

@@ -154,6 +154,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		testDevice.setVirtual(isVirtual);
 		if (isVirtual) {
 			testDevice.setDeviceName(null);
+			testDevice.setIsSite("1");
 		}
 		deviceComponent.addDevice(testDevice);
 	}
