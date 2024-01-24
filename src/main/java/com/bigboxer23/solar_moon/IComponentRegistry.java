@@ -6,9 +6,9 @@ import com.bigboxer23.solar_moon.alarm.AlarmComponent;
 import com.bigboxer23.solar_moon.customer.CustomerComponent;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.device.DeviceUpdateComponent;
-import com.bigboxer23.solar_moon.device.SiteComponent;
+import com.bigboxer23.solar_moon.device.VirtualDeviceComponent;
 import com.bigboxer23.solar_moon.gson.SearchResponseAdapter;
-import com.bigboxer23.solar_moon.ingest.GenerationMeterComponent;
+import com.bigboxer23.solar_moon.ingest.IngestComponent;
 import com.bigboxer23.solar_moon.location.LocationComponent;
 import com.bigboxer23.solar_moon.maintenance.MaintenanceComponent;
 import com.bigboxer23.solar_moon.mapping.MappingComponent;
@@ -48,10 +48,9 @@ public interface IComponentRegistry {
 
 	AlarmComponent alarmComponent = new AlarmComponent(deviceComponent, OSComponent, notificationComponent);
 
-	SiteComponent siteComponent = new SiteComponent(OSComponent, deviceComponent);
+	VirtualDeviceComponent virtualDeviceComponent = new VirtualDeviceComponent();
 
-	GenerationMeterComponent generationComponent =
-			new GenerationMeterComponent(OSComponent, alarmComponent, deviceComponent, siteComponent);
+	IngestComponent generationComponent = new IngestComponent();
 
 	MaintenanceComponent maintenanceComponent = new MaintenanceComponent();
 

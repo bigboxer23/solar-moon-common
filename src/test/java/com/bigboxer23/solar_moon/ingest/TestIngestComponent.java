@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.opensearch.client.ResponseException;
 
 /** */
-public class TestGenerationMeterComponent implements TestConstants, IComponentRegistry {
+public class TestIngestComponent implements TestConstants, IComponentRegistry {
 
 	private static Device device;
 

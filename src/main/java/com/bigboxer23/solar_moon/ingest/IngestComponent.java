@@ -1,13 +1,9 @@
 package com.bigboxer23.solar_moon.ingest;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
-import com.bigboxer23.solar_moon.alarm.AlarmComponent;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
-import com.bigboxer23.solar_moon.device.DeviceComponent;
-import com.bigboxer23.solar_moon.device.SiteComponent;
-import com.bigboxer23.solar_moon.search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.io.StringReader;
@@ -27,7 +23,7 @@ import software.amazon.awssdk.utils.StringUtils;
 
 /** Class to read data from the generation meter web interface */
 // @Component
-public class GenerationMeterComponent implements MeterConstants {
+public class IngestComponent implements MeterConstants {
 
 	private static final Map<String, String> fields = new HashMap<>();
 
@@ -49,26 +45,7 @@ public class GenerationMeterComponent implements MeterConstants {
 		fields.put("Total System Power Factor", TOTAL_PF);
 	}
 
-	private static final Logger logger = LoggerFactory.getLogger(GenerationMeterComponent.class);
-
-	private final OpenSearchComponent openSearch;
-
-	private final AlarmComponent alarmComponent;
-
-	private final DeviceComponent deviceComponent;
-
-	private final SiteComponent siteComponent;
-
-	public GenerationMeterComponent(
-			OpenSearchComponent openSearch,
-			AlarmComponent alarmComponent,
-			DeviceComponent deviceComponent,
-			SiteComponent siteComponent) {
-		this.openSearch = openSearch;
-		this.alarmComponent = alarmComponent;
-		this.deviceComponent = deviceComponent;
-		this.siteComponent = siteComponent;
-	}
+	private static final Logger logger = LoggerFactory.getLogger(IngestComponent.class);
 
 	public DeviceData handleDeviceBody(String body, String customerId)
 			throws XPathExpressionException, ResponseException {
@@ -88,7 +65,7 @@ public class GenerationMeterComponent implements MeterConstants {
 			String deviceName = findDeviceName(body);
 			logger.warn("New device found, " + deviceName);
 			device = new Device(TokenGenerator.generateNewToken(), customerId, deviceName);
-			deviceComponent.addDevice(device);
+			IComponentRegistry.deviceComponent.addDevice(device);
 		}
 		TransactionUtil.addDeviceId(device.getId());
 		DeviceData deviceData = Optional.of(device)
@@ -100,17 +77,20 @@ public class GenerationMeterComponent implements MeterConstants {
 			logger.info("device was not valid, not handling.");
 			return null;
 		}
-		alarmComponent.resolveActiveAlarms(deviceData);
-		Device site = deviceComponent
+		IComponentRegistry.alarmComponent.resolveActiveAlarms(deviceData);
+		Device site = IComponentRegistry.deviceComponent
 				.findDeviceByDeviceName(device.getClientId(), device.getSite())
 				.orElse(null);
+		if ("1".equalsIgnoreCase(device.getIsSite())) {
+			deviceData.setIsSite();
+		}
 		IComponentRegistry.locationComponent.addLocationData(deviceData, site);
 		IComponentRegistry.weatherComponent.addWeatherData(deviceData, site);
-		openSearch.logData(
+		IComponentRegistry.OSComponent.logData(
 				deviceData.getDate() != null ? deviceData.getDate() : new Date(),
 				Collections.singletonList(deviceData));
 
-		siteComponent.handleSite(deviceData);
+		IComponentRegistry.virtualDeviceComponent.handleVirtualDevice(deviceData);
 		return deviceData;
 	}
 
@@ -169,7 +149,7 @@ public class GenerationMeterComponent implements MeterConstants {
 			return null;
 		}
 		logger.debug("finding device from device name/customer id " + deviceName + " " + customerId);
-		return deviceComponent.getDevicesForCustomerId(customerId).stream()
+		return IComponentRegistry.deviceComponent.getDevicesForCustomerId(customerId).stream()
 				.filter(server -> deviceName.equals(server.getDeviceName()))
 				.findAny()
 				.orElseGet(() -> {
@@ -184,7 +164,7 @@ public class GenerationMeterComponent implements MeterConstants {
 			logger.debug("parsing device info " + site + ":" + name + "\n" + body);
 			DeviceData deviceData = new DeviceData(site, name, customerId, deviceId);
 			if (!isOK(body)) {
-				alarmComponent.faultDetected(
+				IComponentRegistry.alarmComponent.faultDetected(
 						customerId, deviceData.getDeviceId(), deviceData.getSite(), findError(body));
 				return null;
 			}
@@ -216,7 +196,7 @@ public class GenerationMeterComponent implements MeterConstants {
 									.getNamedItem("value")
 									.getNodeValue();
 							if (StringUtils.isEmpty(value) || "NULL".equalsIgnoreCase(value)) {
-								alarmComponent.faultDetected(
+								IComponentRegistry.alarmComponent.faultDetected(
 										customerId, deviceData.getDeviceId(), deviceData.getSite(), findError(body));
 							}
 						}
@@ -296,7 +276,7 @@ public class GenerationMeterComponent implements MeterConstants {
 		if (totalEnergyConsumption < 0) {
 			return;
 		}
-		Float previousTotalEnergyConsumed = openSearch.getTotalEnergyConsumed(deviceData.getName());
+		Float previousTotalEnergyConsumed = IComponentRegistry.OSComponent.getTotalEnergyConsumed(deviceData.getName());
 		if (previousTotalEnergyConsumed != null) {
 			deviceData.setEnergyConsumed(totalEnergyConsumption - previousTotalEnergyConsumed);
 		}

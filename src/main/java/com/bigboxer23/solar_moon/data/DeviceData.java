@@ -33,6 +33,9 @@ public class DeviceData {
 		if (openSearchMap.get(VIRTUAL) != null && (Boolean) openSearchMap.get(VIRTUAL)) {
 			setIsVirtual();
 		}
+		if (openSearchMap.get(IS_SITE) != null && (Boolean) openSearchMap.get(IS_SITE)) {
+			setIsSite();
+		}
 		if (openSearchMap.containsKey(DAYLIGHT)) {
 			setDaylight((Boolean) openSearchMap.get(DAYLIGHT));
 		}
@@ -122,6 +125,16 @@ public class DeviceData {
 
 	public boolean isVirtual() {
 		return (Boolean) Optional.ofNullable(attributes.get(VIRTUAL))
+				.map(DeviceAttribute::getValue)
+				.orElse(false);
+	}
+
+	public void setIsSite() {
+		addAttribute(new DeviceAttribute(IS_SITE, "", true));
+	}
+
+	public boolean isSite() {
+		return (Boolean) Optional.ofNullable(attributes.get(IS_SITE))
 				.map(DeviceAttribute::getValue)
 				.orElse(false);
 	}

@@ -25,6 +25,8 @@ public class Device {
 
 	public static final String VIRTUAL_INDEX = "virtual-index";
 
+	public static final String IS_SITE_INDEX = "isSite-index";
+
 	@Schema(description = "(internal) id of the device")
 	private String id;
 
@@ -65,6 +67,9 @@ public class Device {
 
 	@Schema(description = "String representation of virtual for dynamodb index", example = "true|false")
 	private String virtualIndex;
+
+	@Schema(description = "", example = " | 1")
+	private String isSite;
 
 	@Schema(
 			description = "Should this device be considered active for the purpose of alerting?",
@@ -145,6 +150,11 @@ public class Device {
 	@DynamoDbSecondaryPartitionKey(indexNames = VIRTUAL_INDEX)
 	public String getVirtualIndex() {
 		return virtualIndex;
+	}
+
+	@DynamoDbSecondaryPartitionKey(indexNames = IS_SITE_INDEX)
+	public String getIsSite() {
+		return isSite;
 	}
 
 	public void setVirtual(boolean isVirtual) {

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.opensearch.client.ResponseException;
 
 /** */
-public class TestSiteComponent implements IComponentRegistry, TestConstants {
+public class TestVirtualDeviceComponent implements IComponentRegistry, TestConstants {
 
 	@BeforeEach
 	public void setup() {

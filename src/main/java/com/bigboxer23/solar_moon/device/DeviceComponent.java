@@ -86,6 +86,16 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 				.collect(Collectors.toList());
 	}
 
+	public List<Device> getSites() {
+		logger.info("Fetching site devices");
+		return getTable()
+				.index(Device.IS_SITE_INDEX)
+				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue("1")))
+				.stream()
+				.flatMap(page -> page.items().stream())
+				.collect(Collectors.toList());
+	}
+
 	public List<Device> getDevicesForCustomerId(String customerId) {
 		if (StringUtils.isBlank(customerId)) {
 			return Collections.emptyList();

@@ -41,6 +41,18 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				._toQuery();
 	}
 
+	public static Query getNotIsSite() {
+		return QueryBuilders.exists().field(IS_SITE).build()._toQuery();
+	}
+
+	public static Query getIsSite() {
+		return QueryBuilders.match()
+				.field(IS_SITE)
+				.query(builder -> builder.booleanValue(true))
+				.build()
+				._toQuery();
+	}
+
 	public static Query getIsDaylight() {
 		return QueryBuilders.match()
 				.field(DAYLIGHT)

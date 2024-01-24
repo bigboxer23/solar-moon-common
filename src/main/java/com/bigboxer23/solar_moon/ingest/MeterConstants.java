@@ -35,6 +35,8 @@ public interface MeterConstants {
 
 	String VIRTUAL = "Virtual";
 
+	String IS_SITE = "isSite";
+
 	String DAYLIGHT = "Daylight";
 
 	String SITE = "site";
