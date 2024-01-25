@@ -250,7 +250,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 
 	public double getAverageEnergyConsumedPerDay(SearchJSON searchJSON) {
 		searchJSON.setType(TOTAL_ENERGY_CONSUMED_SEARCH_TYPE);
-		searchJSON.setVirtual(true);
+		searchJSON.setIsSite(true);
 		searchJSON.setBucketSize("1d");
 		Date end = TimeUtils.getStartOfDay(searchJSON.getTimeZone());
 		searchJSON.setEndDate(end.getTime() - TimeConstants.SECOND);
@@ -272,10 +272,14 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	}
 
 	private List<Query> getMustNotByType(SearchJSON searchJSON) {
+		List<Query> filters = new ArrayList<>();
 		if (searchJSON.isNoVirtual()) {
-			return Collections.singletonList(OpenSearchQueries.getNotVirtual());
+			filters.add(OpenSearchQueries.getNotVirtual());
 		}
-		return Collections.emptyList();
+		if (searchJSON.isNoIsSite()) {
+			filters.add(OpenSearchQueries.getNotIsSite());
+		}
+		return filters;
 	}
 
 	private List<Query> getFiltersByType(SearchJSON searchJSON) {
@@ -291,6 +295,9 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		}
 		if (searchJSON.isVirtual()) {
 			filters.add(OpenSearchQueries.getIsVirtual());
+		}
+		if (searchJSON.getIsSite()) {
+			filters.add(OpenSearchQueries.getIsSite());
 		}
 		if (searchJSON.isDaylight()) {
 			filters.add(OpenSearchQueries.getIsDaylight());

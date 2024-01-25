@@ -66,7 +66,7 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 	}
 
 	public void fetchNewWeather() {
-		IComponentRegistry.deviceComponent.getDevices(true).stream()
+		IComponentRegistry.deviceComponent.getSites().stream()
 				.filter(site -> (site.getLatitude() != -1 && site.getLongitude() != -1))
 				.forEach(site -> {
 					if (getLastUpdate(site.getLatitude(), site.getLongitude())

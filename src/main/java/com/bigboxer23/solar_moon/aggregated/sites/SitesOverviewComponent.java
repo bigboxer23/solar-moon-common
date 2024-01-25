@@ -45,9 +45,8 @@ public class SitesOverviewComponent implements IComponentRegistry {
 
 	private void fillSiteInformation(SitesOverviewData data, SearchJSON search) {
 		data.setSites(new HashMap<>());
-		data.getDevices().stream().filter(Device::isVirtual).forEach(site -> {
-			data.getSites().put(site.getId(), getSiteOverviewData(site, search));
-		});
+		data.getDevices().stream().filter(Device::isDeviceSite).forEach(site -> data.getSites()
+				.put(site.getId(), getSiteOverviewData(site, search)));
 	}
 
 	private void fillWeatherInformation(SitesSiteData siteData, Device site) {
@@ -144,7 +143,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		search.setSite(null);
 		search.setDaylight(daylight);
 		search.setType(type);
-		siteOverview.getDevices().stream().filter(d -> !d.isVirtual()).forEach(d -> {
+		siteOverview.getDevices().stream().filter(d -> !d.isDeviceSite()).forEach(d -> {
 			search.setDeviceId(d.getId());
 			map.put(d.getId(), OSComponent.search(search));
 		});

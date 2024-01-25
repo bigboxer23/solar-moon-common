@@ -13,7 +13,7 @@ import software.amazon.awssdk.utils.StringUtils;
 /** */
 public class OverviewComponent implements IComponentRegistry {
 	public OverviewData getOverviewData(SearchJSON search) {
-		search.setVirtual(true);
+		search.setIsSite(true);
 		OverviewData data = new OverviewData(
 				deviceComponent.getDevicesForCustomerId(search.getCustomerId()),
 				alarmComponent.getAlarms(search.getCustomerId()));
@@ -28,7 +28,7 @@ public class OverviewComponent implements IComponentRegistry {
 			return;
 		}
 		data.setSitesOverviewData(new HashMap<>());
-		data.getDevices().stream().filter(Device::isVirtual).forEach(site -> data.getSitesOverviewData()
+		data.getDevices().stream().filter(Device::isDeviceSite).forEach(site -> data.getSitesOverviewData()
 				.put(
 						site.getDisplayName(),
 						getData(site.getDisplayName(), searchJson, OpenSearchConstants.TIME_SERIES_SEARCH_TYPE)));

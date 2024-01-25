@@ -256,7 +256,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	public void testAddingNewDeviceViaDataPush() throws XPathExpressionException, ResponseException {
 		String deviceName = TestConstants.deviceName + "shouldNotExist";
 		assertFalse(deviceComponent.getDevicesForCustomerId(CUSTOMER_ID).stream()
-				.filter(d -> !d.isVirtual())
+				.filter(d -> !d.isDeviceSite())
 				.anyMatch(device -> device.getDeviceName().equalsIgnoreCase(deviceName)));
 		LocalDateTime ldt = LocalDateTime.ofInstant(
 						TimeUtils.get15mRoundedDate().toInstant(), ZoneId.systemDefault())
@@ -271,7 +271,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
 		Device SNEDevice = deviceComponent.getDevicesForCustomerId(CUSTOMER_ID).stream()
-				.filter(d -> !d.isVirtual())
+				.filter(d -> !d.isDeviceSite())
 				.filter(device -> device.getDeviceName().equalsIgnoreCase(deviceName))
 				.findAny()
 				.orElse(null);
@@ -299,6 +299,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		json.setTimeZone(ZonedDateTime.now().getZone().getId());
 		assertEquals(30, OSComponent.search(json).hits().hits().size());
 		json.setVirtual(true);
+		json.setIsSite(true);
 		assertEquals(5, OSComponent.search(json).hits().hits().size());
 	}
 
