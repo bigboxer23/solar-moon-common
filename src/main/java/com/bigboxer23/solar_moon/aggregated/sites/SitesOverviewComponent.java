@@ -65,12 +65,15 @@ public class SitesOverviewComponent implements IComponentRegistry {
 	}
 
 	private void fillAvgTotalInformation(SitesSiteData siteData, Device site, SearchJSON search) {
-		search.setDeviceId(site.getId());
-		search.setType(OpenSearchConstants.TOTAL_SEARCH_TYPE);
-		siteData.setTotal(OSComponent.search(search));
-		search.setType(OpenSearchConstants.AVG_SEARCH_TYPE);
-		search.setDaylight(true);
-		siteData.setAvg(OSComponent.search(search));
+		SearchJSON searchJSON = new SearchJSON(search);
+		searchJSON.setDeviceId(site.getId());
+		searchJSON.setType(OpenSearchConstants.TOTAL_SEARCH_TYPE);
+		siteData.setTotal(OSComponent.search(searchJSON));
+
+		searchJSON = new SearchJSON(search);
+		searchJSON.setType(OpenSearchConstants.AVG_SEARCH_TYPE);
+		searchJSON.setDaylight(true);
+		siteData.setAvg(OSComponent.search(searchJSON));
 	}
 
 	private void fillMaxInformation(SitesSiteData siteData, Device site) {
@@ -102,18 +105,19 @@ public class SitesOverviewComponent implements IComponentRegistry {
 	}
 
 	private void fillSiteTimeSeries(SitesSiteData siteOverview, SearchJSON search) {
-		search.setDaylight(false);
-		search.setDeviceId(
+		SearchJSON searchJson = new SearchJSON(search);
+		searchJson.setDaylight(false);
+		searchJson.setDeviceId(
 				siteOverview.getSite().isSubtraction() ? siteOverview.getSite().getId() : null);
-		search.setSite(
+		searchJson.setSite(
 				siteOverview.getSite().isSubtraction()
 						? null
 						: siteOverview.getSite().getDisplayName());
-		search.setType(
+		searchJson.setType(
 				siteOverview.getSite().isSubtraction()
 						? OpenSearchConstants.TIME_SERIES_SEARCH_TYPE
 						: OpenSearchConstants.STACKED_TIME_SERIES_SEARCH_TYPE);
-		siteOverview.setTimeSeries(OSComponent.search(search));
+		siteOverview.setTimeSeries(OSComponent.search(searchJson));
 	}
 
 	private void fillDevicesAverageTotal(SitesSiteData siteOverview, SearchJSON search) {
@@ -140,12 +144,13 @@ public class SitesOverviewComponent implements IComponentRegistry {
 			boolean daylight,
 			String type,
 			Map<String, SearchResponse> map) {
-		search.setSite(null);
-		search.setDaylight(daylight);
-		search.setType(type);
+		SearchJSON searchJson = new SearchJSON(search);
+		searchJson.setSite(null);
+		searchJson.setDaylight(daylight);
+		searchJson.setType(type);
 		siteOverview.getDevices().stream().filter(d -> !d.isDeviceSite()).forEach(d -> {
-			search.setDeviceId(d.getId());
-			map.put(d.getId(), OSComponent.search(search));
+			searchJson.setDeviceId(d.getId());
+			map.put(d.getId(), OSComponent.search(searchJson));
 		});
 	}
 }
