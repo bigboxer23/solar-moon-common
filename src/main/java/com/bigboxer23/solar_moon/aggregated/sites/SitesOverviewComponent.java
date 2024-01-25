@@ -70,7 +70,6 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		searchJSON.setType(OpenSearchConstants.TOTAL_SEARCH_TYPE);
 		siteData.setTotal(OSComponent.search(searchJSON));
 
-		searchJSON = new SearchJSON(search);
 		searchJSON.setType(OpenSearchConstants.AVG_SEARCH_TYPE);
 		searchJSON.setDaylight(true);
 		siteData.setAvg(OSComponent.search(searchJSON));
