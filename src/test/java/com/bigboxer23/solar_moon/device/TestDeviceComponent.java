@@ -112,7 +112,7 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 	@Test
 	public void testSiteDelete() {
 		Device testSite = deviceComponent.getDevicesBySite(TestConstants.CUSTOMER_ID, TestConstants.SITE).stream()
-				.filter(Device::isVirtual)
+				.filter(Device::isDeviceSite)
 				.findFirst()
 				.orElse(null);
 		assertNotNull(testSite);
@@ -131,7 +131,7 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 	@Test
 	public void testSiteUpdate() {
 		Device testSite = deviceComponent.getDevicesBySite(TestConstants.CUSTOMER_ID, TestConstants.SITE).stream()
-				.filter(Device::isVirtual)
+				.filter(Device::isDeviceSite)
 				.findFirst()
 				.orElse(null);
 		assertNotNull(testSite);

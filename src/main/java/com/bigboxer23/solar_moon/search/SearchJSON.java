@@ -18,7 +18,9 @@ public class SearchJSON {
 	private int offset;
 	private int size;
 	private boolean virtual;
+	private boolean isSite;
 	private boolean noVirtual;
+	private boolean noIsSite;
 	private boolean daylight;
 
 	public SearchJSON() {}
@@ -36,6 +38,8 @@ public class SearchJSON {
 		setDaylight(search.isDaylight());
 		setSite(search.getSite());
 		setType(search.getType());
+		setIsSite(search.getIsSite());
+		setNoIsSite(search.isNoIsSite());
 	}
 
 	public SearchJSON(String customerId, String deviceName, long endDate, long startDate) {
@@ -43,6 +47,14 @@ public class SearchJSON {
 		setDeviceName(deviceName);
 		setEndDate(endDate);
 		setStartDate(startDate);
+	}
+
+	public void setIsSite(boolean isSite) {
+		this.isSite = isSite;
+	}
+
+	public boolean getIsSite() {
+		return isSite;
 	}
 
 	public Date getJavaStartDate() {

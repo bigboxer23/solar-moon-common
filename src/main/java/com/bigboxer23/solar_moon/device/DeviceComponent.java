@@ -136,7 +136,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	private void maybeUpdateLocationData(Device device) {
-		if (device.isVirtual()
+		if (device.isDeviceSite()
 				&& device.getLongitude() == -1
 				&& device.getLatitude() == -1
 				&& !StringUtils.isBlank(device.getCity())
@@ -188,7 +188,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 			logger.warn(device.getClientId() + ":" + device.getDeviceName() + " exists, cannot update matching device");
 			return Optional.empty();
 		}
-		if (device.isVirtual()) {
+		if (device.isDeviceSite()) {
 			Device site = getDevice(device.getId(), device.getClientId());
 			if (!site.getName().equals(device.getName())) {
 				getDevicesBySite(site.getClientId(), site.getName()).forEach(childDevice -> {
@@ -204,7 +204,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	public void deleteDevice(String id, String customerId) {
 		logAction("delete", id);
 		Device device = getDevice(id, customerId);
-		if (device.isVirtual()) {
+		if (device.isDeviceSite()) {
 			getDevicesBySite(customerId, device.getName()).forEach(childDevice -> {
 				childDevice.setSite(NO_SITE);
 				updateDevice(childDevice);

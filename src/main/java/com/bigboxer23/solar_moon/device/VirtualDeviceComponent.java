@@ -42,7 +42,7 @@ public class VirtualDeviceComponent {
 					DeviceData virtualDevice =
 							new DeviceData(site.getSite(), site.getName(), site.getClientId(), site.getId());
 					virtualDevice.setIsVirtual();
-					if ("1".equalsIgnoreCase(site.getIsSite())) {
+					if (site.isDeviceSite()) {
 						virtualDevice.setIsSite();
 					}
 					virtualDevice.setDate(device.getDate());

@@ -81,7 +81,7 @@ public class IngestComponent implements MeterConstants {
 		Device site = IComponentRegistry.deviceComponent
 				.findDeviceByDeviceName(device.getClientId(), device.getSite())
 				.orElse(null);
-		if ("1".equalsIgnoreCase(device.getIsSite())) {
+		if (device.isDeviceSite()) {
 			deviceData.setIsSite();
 		}
 		IComponentRegistry.locationComponent.addLocationData(deviceData, site);

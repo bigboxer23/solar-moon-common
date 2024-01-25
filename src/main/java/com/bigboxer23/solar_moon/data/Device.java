@@ -157,6 +157,10 @@ public class Device {
 		return isSite;
 	}
 
+	public boolean isDeviceSite() {
+		return "1".equalsIgnoreCase(getIsSite());
+	}
+
 	public void setVirtual(boolean isVirtual) {
 		virtual = isVirtual;
 		virtualIndex = isVirtual + "";
