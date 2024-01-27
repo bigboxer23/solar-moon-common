@@ -22,46 +22,47 @@ public class VirtualDeviceComponent {
 		logger.info("Trying to aquire lock " + device.getName());
 		DynamoLockUtils.doLockedCommand(
 				device.getSite() + "-" + device.getDate().getTime(), device.getName(), () -> {
-					Device site =
+					Device virtualDevice =
 							IComponentRegistry.deviceComponent
 									.getDevicesBySite(device.getCustomerId(), device.getSite())
 									.stream()
 									.filter(Device::isVirtual)
 									.findAny()
 									.orElse(null);
-					/*Device site = deviceComponent
-					.findDeviceByName(device.getClientId(), device.getSite())
-					.orElse(null)*/
-					// TODO:replace with this, should be more efficient than full scan
-					if (site == null) {
-						logger.warn("cannot find site " + device.getCustomerId() + ":" + device.getSite());
+					if (virtualDevice == null) {
+						logger.warn("cannot find virtualDevice " + device.getCustomerId() + ":" + device.getSite());
 						return;
 					}
 					List<DeviceData> siteDevices = IComponentRegistry.OSComponent.getDevicesForSiteByTimePeriod(
 							device.getCustomerId(), device.getSite(), device.getDate());
-					DeviceData virtualDevice =
-							new DeviceData(site.getSite(), site.getName(), site.getClientId(), site.getId());
-					virtualDevice.setIsVirtual();
-					if (site.isDeviceSite()) {
-						virtualDevice.setIsSite();
+					DeviceData virtualDeviceData = new DeviceData(
+							virtualDevice.getSite(),
+							virtualDevice.getName(),
+							virtualDevice.getClientId(),
+							virtualDevice.getId());
+					virtualDeviceData.setIsVirtual();
+					if (virtualDevice.isDeviceSite()) {
+						virtualDeviceData.setIsSite();
 					}
-					virtualDevice.setDate(device.getDate());
-					float totalEnergyConsumed = getPushedDeviceValues(siteDevices, site, DeviceData::getEnergyConsumed);
+					virtualDeviceData.setDate(device.getDate());
+					float totalEnergyConsumed =
+							getPushedDeviceValues(siteDevices, virtualDevice, DeviceData::getEnergyConsumed);
 					if (totalEnergyConsumed > -1) {
-						virtualDevice.setEnergyConsumed(
-								Math.max(0, virtualDevice.getTotalEnergyConsumed()) + totalEnergyConsumed);
+						virtualDeviceData.setEnergyConsumed(
+								Math.max(0, virtualDeviceData.getTotalEnergyConsumed()) + totalEnergyConsumed);
 					}
-					float totalRealPower = getPushedDeviceValues(siteDevices, site, DeviceData::getTotalRealPower);
+					float totalRealPower =
+							getPushedDeviceValues(siteDevices, virtualDevice, DeviceData::getTotalRealPower);
 					if (totalRealPower > -1) {
-						virtualDevice.setTotalRealPower(
-								Math.max(0, virtualDevice.getTotalRealPower()) + totalRealPower);
+						virtualDeviceData.setTotalRealPower(
+								Math.max(0, virtualDeviceData.getTotalRealPower()) + totalRealPower);
 					}
-					IComponentRegistry.locationComponent.addLocationData(virtualDevice, site);
-					IComponentRegistry.weatherComponent.addWeatherData(virtualDevice, site);
-					logger.info("adding virtual device " + device.getSite() + " : " + device.getDate());
+					IComponentRegistry.locationComponent.addLocationData(virtualDeviceData, virtualDevice);
+					IComponentRegistry.weatherComponent.addWeatherData(virtualDeviceData, virtualDevice);
+					logger.info("adding virtual device " + virtualDeviceData.getName() + " : " + device.getDate());
 					try {
 						IComponentRegistry.OSComponent.logData(
-								virtualDevice.getDate(), Collections.singletonList(virtualDevice));
+								virtualDeviceData.getDate(), Collections.singletonList(virtualDeviceData));
 						OpenSearchUtils.waitForIndexing();
 					} catch (ResponseException e) {
 						logger.error("handleVirtualDevice", e);

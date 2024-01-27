@@ -79,7 +79,7 @@ public class IngestComponent implements MeterConstants {
 		}
 		IComponentRegistry.alarmComponent.resolveActiveAlarms(deviceData);
 		Device site = IComponentRegistry.deviceComponent
-				.findDeviceByDeviceName(device.getClientId(), device.getSite())
+				.findDeviceByName(device.getClientId(), device.getSite())
 				.orElse(null);
 		if (device.isDeviceSite()) {
 			deviceData.setIsSite();
