@@ -324,4 +324,20 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		assertEquals(ACTIVE, alarm.get().getState());
 		assertEquals("Error content", alarm.get().getMessage());
 	}
+
+
+	public void migrateAlarmsFromSiteToSite() {
+		String fromSiteName = "";
+		String toSiteName = "";
+		String customerId = "";
+		Optional<Device> fromDevice = deviceComponent.findDeviceByName(customerId, fromSiteName);
+		assertTrue(fromDevice.isPresent());
+
+		Optional<Device> toDevice = deviceComponent.findDeviceByName(customerId, toSiteName);
+		assertTrue(toDevice.isPresent());
+
+		alarmComponent.findAlarmsBySite(customerId, fromDevice.get().getId()).stream()
+				.peek(alarm -> alarm.setSiteId(toDevice.get().getId()))
+				.forEach(alarmComponent::updateAlarm);
+	}
 }
