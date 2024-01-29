@@ -7,10 +7,14 @@ import java.util.Base64;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 public class AuthenticationUtils {
 	private static final Logger logger = LoggerFactory.getLogger(AuthenticationUtils.class);
+
+	private static final String sourceUserId = System.getenv("SRC_USER");
+	private static final String destinationUserId = System.getenv("DEST_USER");
 
 	public static String authenticateRequest(String authHeader, CustomerComponent customerComponent) {
 		if (authHeader == null || !authHeader.startsWith("Basic ")) {
@@ -43,8 +47,15 @@ public class AuthenticationUtils {
 	}
 
 	public static String getCustomerIdFromRequest(LambdaRequest request) {
-		return Optional.ofNullable(request.getRequestContext().getAuthorizer())
+
+		String customerId = Optional.ofNullable(request.getRequestContext().getAuthorizer())
 				.map(auth -> auth.getClaims().getUsername())
 				.orElse(null);
+		if (!StringUtils.isEmpty(sourceUserId)
+				&& !StringUtils.isEmpty(destinationUserId)
+				&& sourceUserId.equalsIgnoreCase(customerId)) {
+			return destinationUserId;
+		}
+		return customerId;
 	}
 }
