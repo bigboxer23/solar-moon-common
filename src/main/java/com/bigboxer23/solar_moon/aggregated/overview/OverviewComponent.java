@@ -16,7 +16,11 @@ public class OverviewComponent implements IComponentRegistry {
 		search.setIsSite(true);
 		OverviewData data = new OverviewData(
 				deviceComponent.getDevicesForCustomerId(search.getCustomerId()),
-				alarmComponent.getAlarms(search.getCustomerId()));
+				alarmComponent.getAlarms(search.getCustomerId()).stream()
+						.filter(alarm -> alarm.getStartDate() > search.getStartDate()
+								&& search.getEndDate() > alarm.getStartDate())
+						.toList());
+
 		fillSiteInfo(data, search);
 		fillInOverallInfo(data, search);
 		return data;
