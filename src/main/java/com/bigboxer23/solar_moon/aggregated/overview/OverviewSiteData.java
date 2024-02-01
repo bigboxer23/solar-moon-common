@@ -19,4 +19,6 @@ public class OverviewSiteData {
 	private SearchResponse dailyEnergyConsumedTotal;
 
 	private double dailyEnergyConsumedAverage;
+
+	private SearchResponse weeklyMaxPower;
 }
