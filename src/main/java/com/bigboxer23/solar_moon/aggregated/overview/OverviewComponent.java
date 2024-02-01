@@ -35,7 +35,7 @@ public class OverviewComponent implements IComponentRegistry {
 		data.getDevices().stream().filter(Device::isDeviceSite).forEach(site -> data.getSitesOverviewData()
 				.put(
 						site.getDisplayName(),
-						getData(site.getDisplayName(), searchJson, OpenSearchConstants.TIME_SERIES_SEARCH_TYPE)));
+						getData(site.getId(), searchJson, OpenSearchConstants.TIME_SERIES_SEARCH_TYPE)));
 	}
 
 	private void fillInOverallInfo(OverviewData data, SearchJSON searchJson) {
@@ -55,10 +55,10 @@ public class OverviewComponent implements IComponentRegistry {
 		data.getOverall().setDailyEnergyConsumedAverage(OSComponent.getAverageEnergyConsumedPerDay(search));
 	}
 
-	private OverviewSiteData getData(String site, SearchJSON searchJson, String timeSeriesType) {
+	private OverviewSiteData getData(String deviceId, SearchJSON searchJson, String timeSeriesType) {
 		OverviewSiteData data = new OverviewSiteData();
 		SearchJSON search = new SearchJSON(searchJson);
-		search.setDeviceName(site);
+		search.setDeviceId(deviceId);
 		search.setType(OpenSearchConstants.TOTAL_SEARCH_TYPE);
 		data.setTotal(OSComponent.search(search));
 		search.setType(timeSeriesType);
@@ -66,6 +66,9 @@ public class OverviewComponent implements IComponentRegistry {
 		search.setDaylight(true);
 		search.setType(OpenSearchConstants.AVG_SEARCH_TYPE);
 		data.setAvg(OSComponent.search(search));
+		if (!StringUtils.isEmpty(deviceId)) {
+			data.setWeeklyMaxPower(sitesOverviewComponent.getMaxInformation(deviceId, searchJson.getCustomerId()));
+		}
 		return data;
 	}
 }

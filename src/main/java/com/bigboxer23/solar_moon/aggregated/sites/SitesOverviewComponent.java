@@ -75,7 +75,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		siteData.setAvg(OSComponent.search(searchJSON));
 	}
 
-	private SearchResponse getMaxInformation(String deviceId, String customerId) {
+	public SearchResponse getMaxInformation(String deviceId, String customerId) {
 		SearchJSON search = new SearchJSON();
 		search.setCustomerId(customerId);
 		search.setType(OpenSearchConstants.MAX_CURRENT_SEARCH_TYPE);
