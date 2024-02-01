@@ -325,7 +325,6 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		assertEquals("Error content", alarm.get().getMessage());
 	}
 
-
 	public void migrateAlarmsFromSiteToSite() {
 		String fromSiteName = "";
 		String toSiteName = "";

@@ -33,4 +33,6 @@ public class SitesSiteData {
 	private Map<String, SearchResponse> deviceTotals;
 
 	private Map<String, SearchResponse> deviceTimeSeries;
+
+	private Map<String, SearchResponse> deviceWeeklyMaxPower;
 }

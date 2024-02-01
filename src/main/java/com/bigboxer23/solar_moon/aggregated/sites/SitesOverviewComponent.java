@@ -39,7 +39,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		fillTimeInformation(siteData, site);
 		fillWeatherInformation(siteData, site);
 		fillAvgTotalInformation(siteData, site, search);
-		fillMaxInformation(siteData, site);
+		siteData.setWeeklyMaxPower(getMaxInformation(site.getId(), site.getClientId()));
 		return siteData;
 	}
 
@@ -75,16 +75,16 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		siteData.setAvg(OSComponent.search(searchJSON));
 	}
 
-	private void fillMaxInformation(SitesSiteData siteData, Device site) {
+	private SearchResponse getMaxInformation(String deviceId, String customerId) {
 		SearchJSON search = new SearchJSON();
-		search.setCustomerId(site.getClientId());
+		search.setCustomerId(customerId);
 		search.setType(OpenSearchConstants.MAX_CURRENT_SEARCH_TYPE);
 		search.setBucketSize("3h");
 		Date end = TimeUtils.get15mRoundedDate();
-		search.setDeviceName(site.getSite());
+		search.setDeviceId(deviceId);
 		search.setEndDate(end.getTime());
 		search.setStartDate(end.getTime() - TimeConstants.WEEK);
-		siteData.setWeeklyMaxPower(OSComponent.search(search));
+		return OSComponent.search(search);
 	}
 
 	private SitesSiteData fillExtendedSiteOverviewData(SitesSiteData siteOverview, SearchJSON search) {
@@ -126,6 +126,10 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		siteOverview.setDeviceTotals(new HashMap<>());
 		fillDeviceMap(
 				siteOverview, search, false, OpenSearchConstants.TOTAL_SEARCH_TYPE, siteOverview.getDeviceTotals());
+		siteOverview.setDeviceWeeklyMaxPower(new HashMap<>());
+		siteOverview.getDevices().stream().filter(d -> !d.isDeviceSite()).forEach(d -> siteOverview
+				.getDeviceWeeklyMaxPower()
+				.put(d.getId(), getMaxInformation(d.getId(), d.getClientId())));
 	}
 
 	private void fillDevicesTimeSeries(SitesSiteData siteOverview, SearchJSON search) {
