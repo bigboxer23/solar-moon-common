@@ -13,11 +13,11 @@ public class MappingComponent extends AbstractDynamodbComponent<AttributeMap> im
 	private static final Set<String> attributes = new HashSet<>();
 
 	static {
-		attributes.add(TOTAL_ENG_CONS);
-		attributes.add(TOTAL_REAL_POWER);
-		attributes.add(AVG_CURRENT);
-		attributes.add(AVG_VOLT);
-		attributes.add(TOTAL_PF);
+		attributes.add(ENERGY_CONSUMED_LABEL);
+		attributes.add(REAL_POWER_LABEL);
+		attributes.add(CURRENT_LABEL);
+		attributes.add(VOLTAGE_LABEL);
+		attributes.add(POWER_FACTOR_LABEL);
 	}
 
 	public List<AttributeMap> getMappings(String customerId) {
