@@ -22,6 +22,12 @@ public interface MeterConstants {
 
 	String XML_FAILURE_RESPONSE = "FAILURE";
 
+	String ENERGY_CONSUMED_LABEL = "Energy Consumption";
+	String CURRENT_LABEL = "Current";
+	String VOLTAGE_LABEL = "Voltage";
+	String POWER_FACTOR_LABEL = "System Power Factor";
+	String REAL_POWER_LABEL = "Real Power";
+	
 	String TOTAL_ENG_CONS = "Total Energy Consumption";
 	String ENG_CONS = "Energy Consumed";
 	String TOTAL_REAL_POWER = "Total Real Power";

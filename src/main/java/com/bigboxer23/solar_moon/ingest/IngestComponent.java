@@ -33,9 +33,13 @@ public class IngestComponent implements MeterConstants {
 		fields.put(AVG_CURRENT, AVG_CURRENT);
 		fields.put(AVG_VOLT, AVG_VOLT);
 		fields.put(TOTAL_PF, TOTAL_PF);
-		fields.put("Energy Consumption", TOTAL_ENG_CONS);
-		fields.put("Real Power", TOTAL_REAL_POWER);
-		fields.put("Current", AVG_CURRENT);
+
+		fields.put(ENERGY_CONSUMED_LABEL, TOTAL_ENG_CONS);
+		fields.put(REAL_POWER_LABEL, TOTAL_REAL_POWER);
+		fields.put(CURRENT_LABEL, AVG_CURRENT);
+		fields.put(VOLTAGE_LABEL, AVG_VOLT);
+		fields.put(POWER_FACTOR_LABEL, TOTAL_PF);
+
 		fields.put("Voltage, Line to Neutral", AVG_VOLT);
 		fields.put("Power Factor", TOTAL_PF);
 		fields.put("kWh del+rec", TOTAL_ENG_CONS);
