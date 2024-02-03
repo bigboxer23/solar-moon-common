@@ -8,6 +8,7 @@ import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TimeUtils;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Optional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
@@ -33,9 +34,7 @@ public class OverviewComponent implements IComponentRegistry {
 		}
 		data.setSitesOverviewData(new HashMap<>());
 		data.getDevices().stream().filter(Device::isDeviceSite).forEach(site -> data.getSitesOverviewData()
-				.put(
-						site.getDisplayName(),
-						getData(site.getId(), searchJson, OpenSearchConstants.TIME_SERIES_SEARCH_TYPE)));
+				.put(site.getDisplayName(), getData(site, searchJson, OpenSearchConstants.TIME_SERIES_SEARCH_TYPE)));
 	}
 
 	private void fillInOverallInfo(OverviewData data, SearchJSON searchJson) {
@@ -55,10 +54,10 @@ public class OverviewComponent implements IComponentRegistry {
 		data.getOverall().setDailyEnergyConsumedAverage(OSComponent.getAverageEnergyConsumedPerDay(search));
 	}
 
-	private OverviewSiteData getData(String deviceId, SearchJSON searchJson, String timeSeriesType) {
+	private OverviewSiteData getData(Device device, SearchJSON searchJson, String timeSeriesType) {
 		OverviewSiteData data = new OverviewSiteData();
 		SearchJSON search = new SearchJSON(searchJson);
-		search.setDeviceId(deviceId);
+		search.setDeviceId(Optional.ofNullable(device).map(Device::getId).orElse(null));
 		search.setType(OpenSearchConstants.TOTAL_SEARCH_TYPE);
 		data.setTotal(OSComponent.search(search));
 		search.setType(timeSeriesType);
@@ -66,8 +65,10 @@ public class OverviewComponent implements IComponentRegistry {
 		search.setDaylight(true);
 		search.setType(OpenSearchConstants.AVG_SEARCH_TYPE);
 		data.setAvg(OSComponent.search(search));
-		if (!StringUtils.isEmpty(deviceId)) {
-			data.setWeeklyMaxPower(sitesOverviewComponent.getMaxInformation(deviceId, searchJson.getCustomerId()));
+		if (device != null) {
+			data.setWeeklyMaxPower(
+					sitesOverviewComponent.getMaxInformation(device.getId(), searchJson.getCustomerId()));
+			data.setWeather(sitesOverviewComponent.getWeatherInformation(device));
 		}
 		return data;
 	}

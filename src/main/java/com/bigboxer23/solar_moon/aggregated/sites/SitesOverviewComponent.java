@@ -37,7 +37,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		SitesSiteData siteData = new SitesSiteData();
 		siteData.setSite(site);
 		fillTimeInformation(siteData, site);
-		fillWeatherInformation(siteData, site);
+		siteData.setWeather(getWeatherInformation(site));
 		fillAvgTotalInformation(siteData, site, search);
 		siteData.setWeeklyMaxPower(getMaxInformation(site.getId(), site.getClientId()));
 		return siteData;
@@ -49,12 +49,13 @@ public class SitesOverviewComponent implements IComponentRegistry {
 				.put(site.getId(), getSiteOverviewData(site, search)));
 	}
 
-	private void fillWeatherInformation(SitesSiteData siteData, Device site) {
-		Optional.ofNullable(OSComponent.getLastDeviceEntry(
+	public SiteWeatherData getWeatherInformation(Device site) {
+		return Optional.ofNullable(OSComponent.getLastDeviceEntry(
 						site.getName(), OpenSearchQueries.getDeviceIdQuery(site.getId())))
 				.filter(deviceData -> !StringUtils.isEmpty(deviceData.getWeatherSummary())) // No weather stamped for
 				// some reason
-				.ifPresent(deviceData -> siteData.setWeather(new SiteWeatherData(deviceData)));
+				.map(SiteWeatherData::new)
+				.orElse(null);
 	}
 
 	public void fillTimeInformation(SitesSiteData siteData, Device site) {

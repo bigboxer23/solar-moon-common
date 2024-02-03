@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon.aggregated.overview;
 
+import com.bigboxer23.solar_moon.aggregated.sites.SiteWeatherData;
 import lombok.Data;
 import org.opensearch.client.opensearch.core.SearchResponse;
 
@@ -21,4 +22,6 @@ public class OverviewSiteData {
 	private double dailyEnergyConsumedAverage;
 
 	private SearchResponse weeklyMaxPower;
+
+	private SiteWeatherData weather;
 }
