@@ -160,6 +160,17 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 								._toAggregation());
 	}
 
+	public static SearchRequest.Builder geDeviceNameFacet() {
+		return getBaseBuilder(0)
+				.aggregations(
+						"terms",
+						AggregationBuilders.terms()
+								.field(getKeywordField(MeterConstants.DEVICE_NAME))
+								.size(1000)
+								.build()
+								._toAggregation());
+	}
+
 	public static SearchRequest.Builder getDataSearch(int offset, int size) {
 		return getBaseBuilder(size)
 				.from(offset)

@@ -40,6 +40,9 @@ public class OpenSearchComponent implements OpenSearchConstants {
 
 	private static final Logger logger = LoggerFactory.getLogger(OpenSearchComponent.class);
 
+	private static final int recordsPerDayPerDevice = 96;
+	private static final int maxOpenSearchPageSize = 10000;
+
 	private OpenSearchClient client;
 
 	private final String openSearchUrl;
@@ -237,6 +240,13 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		}
 	}
 
+	protected int getPageSizeDays(int deviceCount) {
+		return deviceCount == 0
+				? 0
+				: Double.valueOf((double) maxOpenSearchPageSize / (recordsPerDayPerDevice * deviceCount))
+						.intValue();
+	}
+
 	public SearchResponse search(SearchJSON searchJSON) {
 		try {
 			SearchRequest request =
@@ -334,6 +344,20 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	public List<StringTermsBucket> getWeatherFacets() throws IOException {
 		return getClient()
 				.search(OpenSearchQueries.getWeatherSummaryFacet().build(), Map.class)
+				.aggregations()
+				.get("terms")
+				.sterms()
+				.buckets()
+				.array();
+	}
+
+	public List<StringTermsBucket> getDevices(SearchJSON searchJSON) throws IOException {
+		return getClient()
+				.search(
+						OpenSearchQueries.geDeviceNameFacet()
+								.query(getQuery(searchJSON))
+								.build(),
+						Map.class)
 				.aggregations()
 				.get("terms")
 				.sterms()

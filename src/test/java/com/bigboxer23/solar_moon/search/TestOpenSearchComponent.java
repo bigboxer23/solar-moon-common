@@ -9,6 +9,7 @@ import com.bigboxer23.solar_moon.TestUtils;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
+import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TimeUtils;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -43,6 +44,43 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	@AfterAll
 	public static void afterAll() {
 		TestUtils.nukeCustomerId(CUSTOMER_ID);
+	}
+
+	@Test
+	public void getDevices() throws IOException, XPathExpressionException {
+		TestUtils.seedOpenSearchData();
+		SearchJSON search = new SearchJSON();
+		search.setEndDate(System.currentTimeMillis());
+		search.setStartDate(System.currentTimeMillis() - (7 * TimeConstants.DAY));
+		search.setType(DATA_SEARCH_TYPE);
+		search.setCustomerId(CUSTOMER_ID);
+
+		assertEquals(6, OSComponent.getDevices(search).size());
+
+		search.setSite("fake site");
+		assertEquals(0, OSComponent.getDevices(search).size());
+
+		search.setSite(SITE);
+		assertEquals(6, OSComponent.getDevices(search).size());
+
+		search.setSite(null);
+		search.setDeviceId("fake device");
+		assertEquals(0, OSComponent.getDevices(search).size());
+
+		search.setDeviceId(TestUtils.getDevice().getId());
+		assertEquals(1, OSComponent.getDevices(search).size());
+
+		search.setStartDate(System.currentTimeMillis() - TimeConstants.HOUR);
+		assertEquals(0, OSComponent.getDevices(search).size());
+	}
+
+	@Test
+	public void getPageSizeDays() {
+		assertEquals(104, OSComponent.getPageSizeDays(1));
+		assertEquals(6, OSComponent.getPageSizeDays(16));
+		assertEquals(1, OSComponent.getPageSizeDays(104));
+		assertEquals(0, OSComponent.getPageSizeDays(105));
+		assertEquals(0, OSComponent.getPageSizeDays(0));
 	}
 
 	@Test
