@@ -10,6 +10,7 @@ import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.utils.http.OkHttpUtil;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Optional;
 import okhttp3.Response;
@@ -43,15 +44,12 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 	}
 
 	public void addWeatherData(DeviceData deviceData, Device site) {
-		if (site == null
-				|| deviceData == null
-				|| !deviceData.isDayLight()
-				|| (site.getLatitude() == -1 && site.getLongitude() == -1)) {
+		if (site == null || deviceData == null || (site.getLatitude() == -1 && site.getLongitude() == -1)) {
 			logger.debug("Not adding weather data");
 			return;
 		}
 		if (getLastUpdate(site.getLatitude(), site.getLongitude())
-				< (System.currentTimeMillis() - TimeConstants.HOUR)) {
+				< (System.currentTimeMillis() - (TimeConstants.HOUR + TimeConstants.THIRTY_MINUTES))) {
 			logger.warn("Stale weather data, not stamping " + site.getLatitude() + "," + site.getLongitude());
 			return;
 		}
@@ -76,7 +74,8 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 					}
 					try {
 						if (IComponentRegistry.locationComponent.isDay(
-								new Date(), site.getLatitude(), site.getLongitude())) {
+										new Date(), site.getLatitude(), site.getLongitude())
+								|| LocalDateTime.now().getMinute() == 0) {
 							logger.info("fetching weather data for " + site.getLatitude() + "," + site.getLongitude());
 							fetchForecastData(site.getLatitude(), site.getLongitude())
 									.ifPresent(w ->
