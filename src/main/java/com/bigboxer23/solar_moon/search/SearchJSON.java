@@ -40,6 +40,8 @@ public class SearchJSON {
 		setType(search.getType());
 		setIsSite(search.getIsSite());
 		setNoIsSite(search.isNoIsSite());
+		setSize(search.getSize());
+		setOffset(search.getOffset());
 	}
 
 	public SearchJSON(String customerId, String deviceName, long endDate, long startDate) {

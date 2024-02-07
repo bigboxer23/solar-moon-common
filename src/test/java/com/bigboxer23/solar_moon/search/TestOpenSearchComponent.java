@@ -55,32 +55,23 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		search.setType(DATA_SEARCH_TYPE);
 		search.setCustomerId(CUSTOMER_ID);
 
-		assertEquals(6, OSComponent.getDevices(search).size());
+		assertEquals(6, OSComponent.getDevicesFacet(search).size());
 
 		search.setSite("fake site");
-		assertEquals(0, OSComponent.getDevices(search).size());
+		assertEquals(0, OSComponent.getDevicesFacet(search).size());
 
 		search.setSite(SITE);
-		assertEquals(6, OSComponent.getDevices(search).size());
+		assertEquals(6, OSComponent.getDevicesFacet(search).size());
 
 		search.setSite(null);
 		search.setDeviceId("fake device");
-		assertEquals(0, OSComponent.getDevices(search).size());
+		assertEquals(0, OSComponent.getDevicesFacet(search).size());
 
 		search.setDeviceId(TestUtils.getDevice().getId());
-		assertEquals(1, OSComponent.getDevices(search).size());
+		assertEquals(1, OSComponent.getDevicesFacet(search).size());
 
 		search.setStartDate(System.currentTimeMillis() - TimeConstants.HOUR);
-		assertEquals(0, OSComponent.getDevices(search).size());
-	}
-
-	@Test
-	public void getPageSizeDays() {
-		assertEquals(104, OSComponent.getPageSizeDays(1));
-		assertEquals(6, OSComponent.getPageSizeDays(16));
-		assertEquals(1, OSComponent.getPageSizeDays(104));
-		assertEquals(0, OSComponent.getPageSizeDays(105));
-		assertEquals(0, OSComponent.getPageSizeDays(0));
+		assertEquals(0, OSComponent.getDevicesFacet(search).size());
 	}
 
 	@Test
