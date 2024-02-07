@@ -74,7 +74,6 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		assertEquals(0, OSComponent.getDevicesFacet(search).size());
 	}
 
-
 	@Test
 	public void getWeatherFacets() throws IOException {
 		List<StringTermsBucket> terms = OSComponent.getWeatherFacets();
