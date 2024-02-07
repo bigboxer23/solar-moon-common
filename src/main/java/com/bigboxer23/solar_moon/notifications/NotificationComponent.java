@@ -38,7 +38,7 @@ public class NotificationComponent {
 		}
 		getRecipients(recipient).forEach(r -> {
 			try (SesClient client = SesClient.builder()
-					.region(Region.US_WEST_2)
+					.region(Region.of(PropertyUtils.getProperty("aws.region")))
 					.credentialsProvider(DefaultCredentialsProvider.create())
 					.build(); ) {
 				logger.info("Sending email to " + recipient);
