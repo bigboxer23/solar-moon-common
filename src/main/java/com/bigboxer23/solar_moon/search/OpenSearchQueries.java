@@ -16,8 +16,6 @@ import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch._types.query_dsl.QueryBuilders;
 import org.opensearch.client.opensearch.core.DeleteByQueryRequest;
 import org.opensearch.client.opensearch.core.SearchRequest;
-import org.opensearch.client.opensearch.core.search.SourceConfig;
-import org.opensearch.client.opensearch.core.search.SourceFilter;
 
 /** */
 public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
@@ -172,15 +170,31 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 	}
 
 	public static SearchRequest.Builder getDataSearch(int offset, int size) {
-		return getBaseBuilder(size)
+		SearchRequest.Builder search = getBaseBuilder(size)
 				.from(offset)
-				.source(new SourceConfig.Builder()
-						.filter(new SourceFilter.Builder().excludes("a").build())
+				.docvalueFields(new FieldAndFormat.Builder()
+						.field(getKeywordField(SITE))
 						.build())
+				.docvalueFields(new FieldAndFormat.Builder()
+						.field(getKeywordField(DEVICE_NAME))
+						.build())
+				.docvalueFields(new FieldAndFormat.Builder().field(ENG_CONS).build())
+				.docvalueFields(
+						new FieldAndFormat.Builder().field(TOTAL_ENG_CONS).build())
 				.sort(builder -> builder.field(new FieldSort.Builder()
 						.field(TIMESTAMP)
 						.order(SortOrder.Desc)
 						.build()));
+		// If size == 500, it's for the report.  If it's 10000, it's extracting the report (which
+		// does not include weather)
+		if (size == 500) {
+			search.docvalueFields(new FieldAndFormat.Builder()
+							.field(getKeywordField(WEATHER_SUMMARY))
+							.build())
+					.docvalueFields(
+							new FieldAndFormat.Builder().field(TEMPERATURE).build());
+		}
+		return search;
 	}
 
 	public static SearchRequest.Builder getStackedTimeSeriesBuilder(String timezone, String bucketSize) {
