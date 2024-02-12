@@ -81,7 +81,7 @@ public class TestCustomerComponent implements IComponentRegistry, TestConstants 
 						TestCustomerComponent.CUSTOMER_NAME,
 						TestCustomerComponent.CUSTOMER_STRIPE_ID)
 				.isPresent());
-		assertNull(customerComponent.addCustomer("", "", "", ""));
+		assertTrue(customerComponent.addCustomer("", "", "", "").isEmpty());
 		customerComponent.deleteCustomerByCustomerId(CUSTOMER_ID);
 		customerComponent.addCustomer(
 				TestCustomerComponent.CUSTOMER_EMAIL,

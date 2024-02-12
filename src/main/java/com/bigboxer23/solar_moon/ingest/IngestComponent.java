@@ -74,7 +74,12 @@ public class IngestComponent implements MeterConstants {
 		TransactionUtil.addDeviceId(device.getId());
 		DeviceData deviceData = Optional.of(device)
 				.map(server -> parseDeviceInformation(
-						body, server.getSiteId(), server.getSite(), server.getDisplayName(), customerId, server.getId()))
+						body,
+						server.getSiteId(),
+						server.getSite(),
+						server.getDisplayName(),
+						customerId,
+						server.getId()))
 				.filter(DeviceData::isValid)
 				.orElse(null);
 		if (deviceData == null) {
@@ -83,7 +88,7 @@ public class IngestComponent implements MeterConstants {
 		}
 		IComponentRegistry.alarmComponent.resolveActiveAlarms(deviceData);
 		Device site = IComponentRegistry.deviceComponent
-				.findDeviceByName(device.getClientId(), device.getSiteId())
+				.findDeviceById(device.getSiteId())
 				.orElse(null);
 		if (device.isDeviceSite()) {
 			deviceData.setIsSite();

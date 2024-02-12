@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon.subscription;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Subscription;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
@@ -7,6 +8,8 @@ import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 public class SubscriptionComponent extends AbstractDynamodbComponent<Subscription> {
+
+	public static final int DEVICES_PER_SUBSCRIPTION = 20;
 
 	@Override
 	protected String getTableName() {
@@ -42,5 +45,12 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 	public void deleteSubscription(String customerId) {
 		logger.warn("Deleting subscription: " + customerId);
 		getTable().deleteItem(new Subscription(customerId, -1));
+	}
+
+	public boolean canAddAnotherDevice(String customerId) {
+		return getSubscriptionPacks(customerId) * DEVICES_PER_SUBSCRIPTION
+				> IComponentRegistry.deviceComponent
+						.getDevicesForCustomerId(customerId)
+						.size();
 	}
 }

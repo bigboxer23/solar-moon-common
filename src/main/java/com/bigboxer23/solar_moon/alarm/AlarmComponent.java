@@ -22,6 +22,8 @@ import software.amazon.awssdk.utils.StringUtils;
 public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements IAlarmConstants {
 	private static final Logger logger = LoggerFactory.getLogger(AlarmComponent.class);
 
+	protected static final long QUICK_CHECK_THRESHOLD = TimeConstants.FORTY_FIVE_MINUTES;
+
 	private final DeviceComponent deviceComponent;
 
 	private final OpenSearchComponent OSComponent;
@@ -253,7 +255,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		logger.info("Checking for non-responsive devices");
 		List<Alarm> alarms = new ArrayList<>();
 		IComponentRegistry.deviceUpdateComponent
-				.queryByTimeRange(System.currentTimeMillis() - TimeConstants.FORTY_FIVE_MINUTES)
+				.queryByTimeRange(System.currentTimeMillis() - QUICK_CHECK_THRESHOLD)
 				.forEach(d -> deviceComponent
 						.findDeviceById(d.getDeviceId())
 						.filter(d2 -> !d2.isDisabled())

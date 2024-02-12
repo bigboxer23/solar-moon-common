@@ -20,7 +20,7 @@ public class DeviceData {
 	public DeviceData(Map<String, Object> openSearchMap) {
 		this(
 				(String) openSearchMap.get(SITE_ID),
-				(String) openSearchMap.get(SITE),//TODO: remove eventually
+				(String) openSearchMap.get(SITE), // TODO: remove eventually
 				(String) openSearchMap.get(DEVICE_NAME),
 				(String) openSearchMap.get(CUSTOMER_ID_ATTRIBUTE),
 				(String) openSearchMap.get(DEVICE_ID));

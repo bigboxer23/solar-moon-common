@@ -166,27 +166,27 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		}
 	}
 
-	public boolean addDevice(Device device) {
-		if (subscriptionComponent.getSubscriptionPacks(device.getClientId()) * 20
-				<= getDevicesForCustomerId(device.getClientId()).size()) {
+	public Device addDevice(Device device) {
+		if (!subscriptionComponent.canAddAnotherDevice(device.getClientId())) {
 			logger.warn("Cannot add new device, not enough devices in license: "
-					+ (subscriptionComponent.getSubscriptionPacks(device.getClientId()) * 20)
+					+ (subscriptionComponent.getSubscriptionPacks(device.getClientId())
+							* SubscriptionComponent.DEVICES_PER_SUBSCRIPTION)
 					+ ":"
 					+ getDevicesForCustomerId(device.getClientId()).size());
-			return false;
+			return null;
 		}
 		if (getDevice(device.getId(), device.getClientId()) != null) {
 			logger.warn(device.getClientId() + ":" + device.getId() + " exists, not putting into db.");
-			return false;
+			return null;
 		}
 		if (findDeviceByDeviceName(device.getClientId(), device.getDeviceName()).isPresent()) {
 			logger.warn(device.getClientId() + ":" + device.getDeviceName() + " exists, cannot add a matching device");
-			return false;
+			return null;
 		}
 		maybeUpdateLocationData(device);
 		logAction("add", device.getId());
 		getTable().putItem(device);
-		return true;
+		return device;
 	}
 
 	public boolean isValidUpdate(Device device) {

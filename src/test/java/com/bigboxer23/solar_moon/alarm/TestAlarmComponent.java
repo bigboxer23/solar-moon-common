@@ -81,9 +81,9 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		alarmComponent.updateAlarm(alarm);
 		alarm = new Alarm(TokenGenerator.generateNewToken(), device.getClientId(), device.getId(), SITE + 1);
 		alarmComponent.updateAlarm(alarm);
-		List<Alarm> alarms = alarmComponent.findAlarmsBySite(CUSTOMER_ID, SITE);
+		List<Alarm> alarms = alarmComponent.findAlarmsBySite(CUSTOMER_ID, device.getSiteId());
 		assertEquals(1, alarms.size());
-		assertEquals(SITE, alarms.getFirst().getSiteId());
+		assertEquals(device.getSiteId(), alarms.getFirst().getSiteId());
 	}
 
 	@Test
@@ -111,7 +111,10 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 						.filterAlarms(device.getClientId(), null, device.getId())
 						.size());
 		assertEquals(
-				2, alarmComponent.filterAlarms(device.getClientId(), SITE, null).size());
+				2,
+				alarmComponent
+						.filterAlarms(device.getClientId(), TestUtils.getSite().getSiteId(), null)
+						.size());
 	}
 
 	@Test
@@ -236,7 +239,8 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		Device device = TestUtils.getDevice();
 		assertEquals(0, alarmComponent.getAlarms(CUSTOMER_ID).size());
 		assertEquals(0, alarmComponent.quickCheckDevices().size());
-		deviceUpdateComponent.update(device.getId(), System.currentTimeMillis() - TimeConstants.THIRTY_MINUTES + 2000);
+		deviceUpdateComponent.update(
+				device.getId(), System.currentTimeMillis() - AlarmComponent.QUICK_CHECK_THRESHOLD + 2000);
 		assertEquals(0, alarmComponent.quickCheckDevices().size());
 		Thread.sleep(2000);
 		assertEquals(1, alarmComponent.quickCheckDevices().size());

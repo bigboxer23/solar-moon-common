@@ -2,7 +2,6 @@ package com.bigboxer23.solar_moon.device;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.TestConstants;
-import org.junit.jupiter.api.Test;
 
 /** */
 public class SiteIdUpgrader implements IComponentRegistry, TestConstants {
