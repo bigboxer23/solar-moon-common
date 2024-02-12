@@ -46,6 +46,9 @@ public interface MeterConstants {
 	String DAYLIGHT = "Daylight";
 
 	String SITE = "site";
+
+	String SITE_ID = "siteId";
+
 	String TEMPERATURE = "temperature";
 
 	String UV_INDEX = "uvIndex";

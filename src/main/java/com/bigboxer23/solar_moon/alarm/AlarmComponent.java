@@ -78,15 +78,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 
 	}
 
-	private Alarm getNewAlarm(String customerId, String deviceId, String site, String content) {
-		Alarm newAlarm = new Alarm(
-				TokenGenerator.generateNewToken(),
-				customerId,
-				deviceId,
-				deviceComponent
-						.findDeviceByDeviceName(customerId, site)
-						.map(Device::getId)
-						.orElse(null));
+	private Alarm getNewAlarm(String customerId, String deviceId, String siteId, String content) {
+		Alarm newAlarm = new Alarm(TokenGenerator.generateNewToken(), customerId, deviceId, siteId);
 		newAlarm.setStartDate(System.currentTimeMillis());
 		newAlarm.setState(ACTIVE);
 		newAlarm.setEmailed(NEEDS_EMAIL);
@@ -103,13 +96,13 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	 * @param content
 	 * @return
 	 */
-	public Optional<Alarm> faultDetected(String customerId, String deviceId, String site, String content) {
+	public Optional<Alarm> faultDetected(String customerId, String deviceId, String siteId, String content) {
 		logger.warn("fault condition detected: " + content);
 		Alarm alarm = findAlarmsByDevice(customerId, deviceId).stream()
 				.filter(a -> a.getState() == ACTIVE)
 				.findAny()
 				.orElseGet(() -> {
-					Alarm newAlarm = getNewAlarm(customerId, deviceId, site, content);
+					Alarm newAlarm = getNewAlarm(customerId, deviceId, siteId, content);
 					newAlarm.setEmailed(DONT_EMAIL);
 					newAlarm.setMessage(content); // Write alarm on first
 					return newAlarm;
@@ -118,12 +111,12 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		return updateAlarm(alarm);
 	}
 
-	public Optional<Alarm> alarmConditionDetected(String customerId, String deviceId, String site, String content) {
+	public Optional<Alarm> alarmConditionDetected(String customerId, String deviceId, String siteId, String content) {
 		logger.warn("Alarm condition detected: " + content);
 		Alarm alarm = findAlarmsByDevice(customerId, deviceId).stream()
 				.filter(a -> a.getState() == ACTIVE)
 				.findAny()
-				.orElseGet(() -> getNewAlarm(customerId, deviceId, site, content));
+				.orElseGet(() -> getNewAlarm(customerId, deviceId, siteId, content));
 		if (alarm.getEmailed() == DONT_EMAIL) {
 			alarm.setEmailed(NEEDS_EMAIL); // We're turning a "fault" into an alert, should send email now
 		}
@@ -270,7 +263,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 							return alarmConditionDetected(
 									d2.getClientId(),
 									d2.getId(),
-									d2.getSite(),
+									d2.getSiteId(),
 									"No data recently from device. " + " Last data: " + d.getLastUpdate());
 						})
 						.ifPresent(alarms::add));
@@ -294,7 +287,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			return alarmConditionDetected(
 					data.getCustomerId(),
 					data.getDeviceId(),
-					data.getSite(),
+					data.getSiteId(),
 					"No data recently from device.  Last data: "
 							+ data.getDate().getTime());
 		}
@@ -311,7 +304,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			return alarmConditionDetected(
 					deviceData.getCustomerId(),
 					deviceData.getDeviceId(),
-					deviceData.getSite(),
+					deviceData.getSiteId(),
 					"Device not generating power");
 		}
 		return Optional.empty();

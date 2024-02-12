@@ -96,10 +96,10 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		Device testDevice = new Device();
 		testDevice.setClientId(customerId);
 		testDevice.setSite(TestConstants.SITE);
+		addDevice(TestConstants.SITE, testDevice, true, null);
 		for (int ai = 0; ai < 5; ai++) {
-			addDevice(TestConstants.deviceName + ai, testDevice, false);
+			addDevice(TestConstants.deviceName + ai, testDevice, false, testDevice.getSiteId());
 		}
-		addDevice(TestConstants.SITE, testDevice, true);
 	}
 
 	public static void setupSite() {
@@ -114,7 +114,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 
 	public static Device getSite() {
 		return deviceComponent.getDevicesForCustomerId(CUSTOMER_ID).stream()
-				.filter(Device::isVirtual)
+				.filter(Device::isDeviceSite)
 				.findAny()
 				.get();
 	}
@@ -147,15 +147,18 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		seedOpenSearchData(CUSTOMER_ID);
 	}
 
-	private static void addDevice(String name, Device testDevice, boolean isVirtual) {
+	private static void addDevice(String name, Device testDevice, boolean isVirtual, String siteId) {
 		testDevice.setId(TokenGenerator.generateNewToken());
 		testDevice.setName("pretty" + name);
 		testDevice.setDeviceName(name);
 		testDevice.setVirtual(isVirtual);
+		testDevice.setIsSite(null);
 		if (isVirtual) {
 			testDevice.setDeviceName(null);
 			testDevice.setIsSite("1");
+			siteId = testDevice.getId();
 		}
+		testDevice.setSiteId(siteId);
 		deviceComponent.addDevice(testDevice);
 	}
 

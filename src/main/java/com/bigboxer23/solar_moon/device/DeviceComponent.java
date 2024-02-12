@@ -22,7 +22,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		this.subscriptionComponent = subscriptionComponent;
 	}
 
-	public static final String NO_SITE = "No Site";
+	public static final String NO_SITE = "No Site"; // TODO:set as site id instead of name (or also as name)
 
 	public Optional<Device> findDeviceByDeviceName(String customerId, String deviceName) {
 		if (StringUtils.isBlank(deviceName) || StringUtils.isBlank(customerId)) {
@@ -63,6 +63,20 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 				.orElse(null);
 	}
 
+	public List<Device> getDevicesBySiteId(String customerId, String siteId) {
+		if (customerId == null || siteId == null || siteId.isBlank() || customerId.isBlank()) {
+			return Collections.emptyList();
+		}
+		return getTable()
+				.index(Device.SITEID_INDEX)
+				.query(QueryConditional.keyEqualTo(
+						builder -> builder.partitionValue(siteId).sortValue(customerId)))
+				.stream()
+				.flatMap(page -> page.items().stream())
+				.collect(Collectors.toList());
+	}
+
+	@Deprecated
 	public List<Device> getDevicesBySite(String customerId, String site) {
 		if (customerId == null || site == null || site.isBlank() || customerId.isBlank()) {
 			return Collections.emptyList();
@@ -191,7 +205,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		if (device.isDeviceSite()) {
 			Device site = getDevice(device.getId(), device.getClientId());
 			if (!site.getName().equals(device.getName())) {
-				getDevicesBySite(site.getClientId(), site.getName()).forEach(childDevice -> {
+				getDevicesBySiteId(site.getClientId(), site.getSiteId()).forEach(childDevice -> {
 					childDevice.setSite(device.getName());
 					updateDevice(childDevice);
 				});
@@ -205,8 +219,9 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		logAction("delete", id);
 		Device device = getDevice(id, customerId);
 		if (device.isDeviceSite()) {
-			getDevicesBySite(customerId, device.getName()).forEach(childDevice -> {
+			getDevicesBySiteId(customerId, device.getId()).forEach(childDevice -> {
 				childDevice.setSite(NO_SITE);
+				childDevice.setSiteId(NO_SITE);
 				updateDevice(childDevice);
 			});
 		}

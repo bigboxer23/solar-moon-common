@@ -54,15 +54,16 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 	}
 
 	private void singleDevice() {
-		TransactionUtil.addDeviceId(devices.get(0).getId());
-		setDeviceId(devices.get(0).getId());
+		TransactionUtil.addDeviceId(devices.getFirst().getId());
+		setDeviceId(devices.getFirst().getId());
 		setSubject("Potential issue with your solar energy device "
-				+ devices.get(0).getDisplayName());
-		setLink("/alarms?device=" + URLEncoder.encode(devices.get(0).getDisplayName(), StandardCharsets.UTF_8));
-		StringBuilder builder = new StringBuilder(
-				"There may be an issue with your device, <b>" + devices.get(0).getDisplayName() + "</b>");
-		if (!StringUtils.isEmpty(devices.get(0).getSite())) {
-			builder.append(" within site ").append(devices.get(0).getSite());
+				+ devices.getFirst().getDisplayName());
+		setLink("/alarms?device=" + URLEncoder.encode(devices.getFirst().getDisplayName(), StandardCharsets.UTF_8));
+		StringBuilder builder = new StringBuilder("There may be an issue with your device, <b>"
+				+ devices.getFirst().getDisplayName()
+				+ "</b>");
+		if (!StringUtils.isEmpty(devices.getFirst().getSiteId())) {
+			builder.append(" within site ").append(devices.getFirst().getSiteId());
 		}
 		builder.append(". <br/><br/>Our monitoring system has indicated that your device has stopped"
 				+ " responding or is not generating power as expected. Please click the link"
@@ -77,8 +78,8 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 		StringBuilder builder = new StringBuilder("There may be an issue with some of your devices:<br/>");
 		devices.forEach(d -> {
 			builder.append("<br/><b>").append(d.getDisplayName()).append("</b>");
-			if (!StringUtils.isEmpty(d.getSite())) {
-				builder.append(" within site ").append(d.getSite());
+			if (!StringUtils.isEmpty(d.getSiteId())) {
+				builder.append(" within site ").append(d.getSiteId());
 			}
 		});
 		builder.append("<br/><br/>Our monitoring system has indicated that your devices have stopped"

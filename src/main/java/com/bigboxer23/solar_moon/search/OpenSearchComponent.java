@@ -200,13 +200,13 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		}
 	}
 
-	public List<DeviceData> getDevicesForSiteByTimePeriod(String customerId, String site, Date date) {
+	public List<DeviceData> getDevicesForSiteByTimePeriod(String customerId, String siteId, Date date) {
 		try {
 			SearchRequest request = OpenSearchQueries.getSearchRequestBuilder()
 					.query(QueryBuilders.bool()
 							.filter(
 									OpenSearchQueries.getCustomerIdQuery(customerId),
-									OpenSearchQueries.getSiteQuery(site),
+									OpenSearchQueries.getSiteIdQuery(siteId),
 									OpenSearchQueries.getDateRangeQuery(date))
 							.build()
 							._toQuery())
@@ -219,20 +219,20 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		}
 	}
 
-	public int getSiteDevicesCountByTimePeriod(String customerId, String site, Date date) {
+	public int getSiteDevicesCountByTimePeriod(String customerId, String siteId, Date date) {
 		try {
 			SearchRequest request = OpenSearchQueries.getSearchRequestBuilder()
 					.query(QueryBuilders.bool()
 							.filter(
 									OpenSearchQueries.getCustomerIdQuery(customerId),
-									OpenSearchQueries.getSiteQuery(site),
+									OpenSearchQueries.getSiteIdQuery(siteId),
 									OpenSearchQueries.getDateRangeQuery(date))
 							.build()
 							._toQuery())
 					.build();
 			return getClient().search(request, Map.class).hits().hits().size();
 		} catch (IOException e) {
-			logger.error("getDeviceCountByTimePeriod " + customerId + ":" + site, e);
+			logger.error("getDeviceCountByTimePeriod " + customerId + ":" + siteId, e);
 			return -1;
 		}
 	}

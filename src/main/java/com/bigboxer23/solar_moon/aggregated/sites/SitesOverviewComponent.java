@@ -89,8 +89,8 @@ public class SitesOverviewComponent implements IComponentRegistry {
 	}
 
 	private SitesSiteData fillExtendedSiteOverviewData(SitesSiteData siteOverview, SearchJSON search) {
-		siteOverview.setDevices(deviceComponent.getDevicesBySite(
-				search.getCustomerId(), siteOverview.getSite().getDisplayName()));
+		siteOverview.setDevices(deviceComponent.getDevicesBySiteId(
+				search.getCustomerId(), siteOverview.getSite().getSiteId()));
 		siteOverview.setAlarms(
 				alarmComponent
 						.findAlarmsBySite(

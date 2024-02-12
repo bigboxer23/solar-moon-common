@@ -15,6 +15,7 @@ public class SearchJSON {
 	private String bucketSize = "30m";
 	private String type;
 	private String site;
+	private String siteId;
 	private int offset;
 	private int size;
 	private boolean virtual;
@@ -42,6 +43,7 @@ public class SearchJSON {
 		setNoIsSite(search.isNoIsSite());
 		setSize(search.getSize());
 		setOffset(search.getOffset());
+		setSiteId(search.getSiteId());
 	}
 
 	public SearchJSON(String customerId, String deviceName, long endDate, long startDate) {
