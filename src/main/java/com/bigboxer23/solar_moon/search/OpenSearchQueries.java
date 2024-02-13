@@ -6,16 +6,14 @@ import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
 import org.opensearch.client.json.JsonData;
-import org.opensearch.client.opensearch._types.FieldSort;
-import org.opensearch.client.opensearch._types.SortOptions;
-import org.opensearch.client.opensearch._types.SortOrder;
-import org.opensearch.client.opensearch._types.Time;
+import org.opensearch.client.opensearch._types.*;
 import org.opensearch.client.opensearch._types.aggregations.*;
 import org.opensearch.client.opensearch._types.query_dsl.FieldAndFormat;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch._types.query_dsl.QueryBuilders;
 import org.opensearch.client.opensearch.core.DeleteByQueryRequest;
 import org.opensearch.client.opensearch.core.SearchRequest;
+import org.opensearch.client.opensearch.core.UpdateByQueryRequest;
 
 /** */
 public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
@@ -122,8 +120,22 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				._toQuery();
 	}
 
+	public static Script getUpdateScript(String field, Object value) {
+		return new Script.Builder()
+				.inline(new InlineScript.Builder()
+						.lang("painless")
+						.source("ctx._source['" + field + "'] =" + " params.newValue")
+						.params("newValue", JsonData.of(value))
+						.build())
+				.build();
+	}
+
 	public static SearchRequest.Builder getSearchRequestBuilder() {
 		return new SearchRequest.Builder().index(Collections.singletonList(INDEX_NAME));
+	}
+
+	public static UpdateByQueryRequest.Builder getUpdateByQueryRequestBuilder() {
+		return new UpdateByQueryRequest.Builder().index(Collections.singletonList(INDEX_NAME));
 	}
 
 	public static DeleteByQueryRequest.Builder getDeleteRequestBuilder() {

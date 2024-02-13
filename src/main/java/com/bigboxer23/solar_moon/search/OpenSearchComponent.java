@@ -18,9 +18,7 @@ import org.opensearch.client.ResponseException;
 import org.opensearch.client.RestClient;
 import org.opensearch.client.json.jackson.JacksonJsonpMapper;
 import org.opensearch.client.opensearch.OpenSearchClient;
-import org.opensearch.client.opensearch._types.FieldSort;
-import org.opensearch.client.opensearch._types.SortOptions;
-import org.opensearch.client.opensearch._types.SortOrder;
+import org.opensearch.client.opensearch._types.*;
 import org.opensearch.client.opensearch._types.aggregations.Aggregate;
 import org.opensearch.client.opensearch._types.aggregations.StringTermsBucket;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
@@ -242,6 +240,19 @@ public class OpenSearchComponent implements OpenSearchConstants {
 			SearchRequest request =
 					getSearchRequest(searchJSON).query(getQuery(searchJSON)).build();
 			return getClient().search(request, Map.class);
+		} catch (IOException e) {
+			logger.error("search " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
+		}
+		return null;
+	}
+
+	public UpdateByQueryResponse updateByQuery(SearchJSON searchJSON, String field, Object value) {
+		try {
+			UpdateByQueryRequest request = OpenSearchQueries.getUpdateByQueryRequestBuilder()
+					.query(getQuery(searchJSON))
+					.script(OpenSearchQueries.getUpdateScript(field, value))
+					.build();
+			return getClient().updateByQuery(request);
 		} catch (IOException e) {
 			logger.error("search " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
 		}
