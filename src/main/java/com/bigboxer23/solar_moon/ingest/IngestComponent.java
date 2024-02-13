@@ -74,7 +74,12 @@ public class IngestComponent implements MeterConstants {
 		TransactionUtil.addDeviceId(device.getId());
 		DeviceData deviceData = Optional.of(device)
 				.map(server -> parseDeviceInformation(
-						body, server.getSite(), server.getDisplayName(), customerId, server.getId()))
+						body,
+						server.getSiteId(),
+						server.getSite(),
+						server.getDisplayName(),
+						customerId,
+						server.getId()))
 				.filter(DeviceData::isValid)
 				.orElse(null);
 		if (deviceData == null) {
@@ -83,7 +88,7 @@ public class IngestComponent implements MeterConstants {
 		}
 		IComponentRegistry.alarmComponent.resolveActiveAlarms(deviceData);
 		Device site = IComponentRegistry.deviceComponent
-				.findDeviceByName(device.getClientId(), device.getSite())
+				.findDeviceById(device.getSiteId())
 				.orElse(null);
 		if (device.isDeviceSite()) {
 			deviceData.setIsSite();
@@ -163,13 +168,13 @@ public class IngestComponent implements MeterConstants {
 	}
 
 	protected DeviceData parseDeviceInformation(
-			String body, String site, String name, String customerId, String deviceId) {
+			String body, String siteId, String site, String name, String customerId, String deviceId) {
 		try {
-			logger.debug("parsing device info " + site + ":" + name + "\n" + body);
-			DeviceData deviceData = new DeviceData(site, name, customerId, deviceId);
+			logger.debug("parsing device info " + siteId + ":" + name + "\n" + body);
+			DeviceData deviceData = new DeviceData(siteId, site, name, customerId, deviceId);
 			if (!isOK(body)) {
 				IComponentRegistry.alarmComponent.faultDetected(
-						customerId, deviceData.getDeviceId(), deviceData.getSite(), findError(body));
+						customerId, deviceData.getDeviceId(), deviceData.getSiteId(), findError(body));
 				return null;
 			}
 			getNodeListForPath(body, POINT_PATH).ifPresent(nodes -> {
@@ -201,7 +206,7 @@ public class IngestComponent implements MeterConstants {
 									.getNodeValue();
 							if (StringUtils.isEmpty(value) || "NULL".equalsIgnoreCase(value)) {
 								IComponentRegistry.alarmComponent.faultDetected(
-										customerId, deviceData.getDeviceId(), deviceData.getSite(), findError(body));
+										customerId, deviceData.getDeviceId(), deviceData.getSiteId(), findError(body));
 							}
 						}
 					}

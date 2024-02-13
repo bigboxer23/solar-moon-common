@@ -83,6 +83,14 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				._toQuery();
 	}
 
+	public static Query getSiteIdQuery(String siteId) {
+		return QueryBuilders.match()
+				.field(getKeywordField(SITE_ID))
+				.query(builder -> builder.stringValue(siteId))
+				.build()
+				._toQuery();
+	}
+
 	public static Query getDateRangeQuery(Date date) {
 		LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 		return QueryBuilders.range()

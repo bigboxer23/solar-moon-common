@@ -23,6 +23,8 @@ public class Device {
 
 	public static final String SITE_INDEX = "site-customerId-index";
 
+	public static final String SITEID_INDEX = "siteId-customerId-index";
+
 	public static final String VIRTUAL_INDEX = "virtual-index";
 
 	public static final String IS_SITE_INDEX = "isSite-index";
@@ -43,6 +45,8 @@ public class Device {
 
 	@Schema(description = "virtual site device's name associated with the device")
 	private String site;
+
+	private String siteId;
 
 	@Schema(description = "username to access device")
 	private String user;
@@ -108,6 +112,7 @@ public class Device {
 		setDeviceName(deviceName);
 		setName(deviceName);
 		setSite(DeviceComponent.NO_SITE);
+		setSiteId(DeviceComponent.NO_SITE);
 	}
 
 	public boolean isPushedDevice() {
@@ -131,7 +136,7 @@ public class Device {
 	}
 
 	@DynamoDbSecondaryPartitionKey(indexNames = CLIENT_INDEX)
-	@DynamoDbSecondarySortKey(indexNames = {NAME_INDEX, DEVICE_NAME_INDEX, SITE_INDEX})
+	@DynamoDbSecondarySortKey(indexNames = {NAME_INDEX, DEVICE_NAME_INDEX, SITE_INDEX, SITEID_INDEX})
 	@DynamoDbSortKey
 	public String getClientId() {
 		return clientId;
@@ -145,6 +150,11 @@ public class Device {
 	@DynamoDbSecondaryPartitionKey(indexNames = SITE_INDEX)
 	public String getSite() {
 		return site;
+	}
+
+	@DynamoDbSecondaryPartitionKey(indexNames = SITEID_INDEX)
+	public String getSiteId() {
+		return siteId;
 	}
 
 	@DynamoDbSecondaryPartitionKey(indexNames = VIRTUAL_INDEX)

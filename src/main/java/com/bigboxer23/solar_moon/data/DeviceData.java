@@ -19,7 +19,8 @@ public class DeviceData {
 
 	public DeviceData(Map<String, Object> openSearchMap) {
 		this(
-				(String) openSearchMap.get(SITE),
+				(String) openSearchMap.get(SITE_ID),
+				(String) openSearchMap.get(SITE), // TODO: remove eventually
 				(String) openSearchMap.get(DEVICE_NAME),
 				(String) openSearchMap.get(CUSTOMER_ID_ATTRIBUTE),
 				(String) openSearchMap.get(DEVICE_ID));
@@ -77,8 +78,9 @@ public class DeviceData {
 				.orElse(null);
 	}
 
-	public DeviceData(String site, String name, String customerId, String deviceId) {
+	public DeviceData(String siteId, String site, String name, String customerId, String deviceId) {
 		attributes = new HashMap<>();
+		attributes.put(SITE_ID, new DeviceAttribute(SITE_ID, "", siteId));
 		attributes.put(SITE, new DeviceAttribute(SITE, "", site));
 		attributes.put(DEVICE_NAME, new DeviceAttribute(DEVICE_NAME, "", name));
 		setCustomerId(customerId);
@@ -201,6 +203,10 @@ public class DeviceData {
 
 	public String getSite() {
 		return (String) attributes.get(SITE).getValue();
+	}
+
+	public String getSiteId() {
+		return (String) attributes.get(SITE_ID).getValue();
 	}
 
 	public String getCustomerId() {

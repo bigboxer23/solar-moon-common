@@ -56,9 +56,13 @@ public class TestIngestComponent implements TestConstants, IComponentRegistry {
 
 	@Test
 	public void testCalculatedTotalRealPower() {
-		Device device = TestUtils.getDevice();
 		DeviceData aDeviceData2 = generationComponent.parseDeviceInformation(
-				device2Xml, "site1", TestConstants.deviceName, device.getClientId(), device.getId());
+				device2Xml,
+				device.getSiteId(),
+				device.getSite(),
+				TestConstants.deviceName,
+				device.getClientId(),
+				device.getId());
 		assertEquals(2.134055f, aDeviceData2.getTotalRealPower());
 		aDeviceData2.setPowerFactor(-aDeviceData2.getPowerFactor());
 		assertEquals(2.134055f, aDeviceData2.getTotalRealPower());
@@ -66,15 +70,25 @@ public class TestIngestComponent implements TestConstants, IComponentRegistry {
 
 	@Test
 	public void testParseDeviceInformation() {
-		DeviceData aDeviceData = generationComponent.parseDeviceInformation(
-				device2XmlNull, "site1", TestConstants.deviceName, device.getClientId(), device.getId());
-		assertNotNull(aDeviceData);
-		assertFalse(aDeviceData.isValid());
-		aDeviceData = generationComponent.parseDeviceInformation(
-				device2Xml, "site1", TestConstants.deviceName, device.getClientId(), device.getId());
-		assertNotNull(aDeviceData);
-		assertTrue(aDeviceData.isValid());
+		DeviceData deviceData = generationComponent.parseDeviceInformation(
+				device2XmlNull,
+				device.getSiteId(),
+				device.getSite(),
+				TestConstants.deviceName,
+				device.getClientId(),
+				device.getId());
+		assertNull(deviceData);
+		deviceData = generationComponent.parseDeviceInformation(
+				device2Xml,
+				device.getSiteId(),
+				device.getSite(),
+				TestConstants.deviceName,
+				device.getClientId(),
+				device.getId());
+		assertNotNull(deviceData);
+		assertTrue(deviceData.isValid());
 		assertNull(generationComponent.parseDeviceInformation(
+				TestConstants.deviceName,
 				TestConstants.deviceName,
 				TestConstants.deviceName,
 				TestConstants.deviceName,
@@ -104,20 +118,40 @@ public class TestIngestComponent implements TestConstants, IComponentRegistry {
 
 	@Test
 	public void testDateRead() {
-		DeviceData aDeviceData = generationComponent.parseDeviceInformation(
-				device2Xml, "site1", TestConstants.deviceName, device.getClientId(), device.getId());
-		assertNotNull(aDeviceData.getDate());
+		DeviceData deviceData = generationComponent.parseDeviceInformation(
+				device2Xml,
+				device.getSiteId(),
+				device.getSite(),
+				TestConstants.deviceName,
+				device.getClientId(),
+				device.getId());
+		assertNotNull(deviceData.getDate());
 		SimpleDateFormat sdf = new SimpleDateFormat(MeterConstants.DATE_PATTERN);
-		assertEquals(sdf.format(aDeviceData.getDate()), "2020-08-21 12:30:00 CDT");
-		aDeviceData = generationComponent.parseDeviceInformation(
-				device2XmlNoDate, "site1", TestConstants.deviceName, device.getClientId(), device.getId());
-		assertNull(aDeviceData.getDate());
-		aDeviceData = generationComponent.parseDeviceInformation(
-				device2XmlBadDate, "site1", TestConstants.deviceName, device.getClientId(), device.getId());
-		assertNull(aDeviceData.getDate());
-		aDeviceData = generationComponent.parseDeviceInformation(
-				device2XmlNoTZ, "site1", TestConstants.deviceName, device.getClientId(), device.getId());
-		assertNull(aDeviceData.getDate());
+		assertEquals(sdf.format(deviceData.getDate()), "2020-08-21 12:30:00 CDT");
+		deviceData = generationComponent.parseDeviceInformation(
+				device2XmlNoDate,
+				device.getSiteId(),
+				device.getSite(),
+				TestConstants.deviceName,
+				device.getClientId(),
+				device.getId());
+		assertNull(deviceData);
+		deviceData = generationComponent.parseDeviceInformation(
+				device2XmlBadDate,
+				device.getSiteId(),
+				device.getSite(),
+				TestConstants.deviceName,
+				device.getClientId(),
+				device.getId());
+		assertNull(deviceData);
+		deviceData = generationComponent.parseDeviceInformation(
+				device2XmlNoTZ,
+				device.getSiteId(),
+				device.getSite(),
+				TestConstants.deviceName,
+				device.getClientId(),
+				device.getId());
+		assertNull(deviceData);
 	}
 
 	@Test

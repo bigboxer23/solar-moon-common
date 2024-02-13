@@ -30,6 +30,7 @@ import org.opensearch.client.opensearch.core.search.Hit;
 
 /** */
 public class TestOpenSearchComponent implements IComponentRegistry, TestConstants {
+
 	@BeforeEach
 	public void setup() {
 		TestUtils.setupSite();
@@ -101,7 +102,8 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		data = OSComponent.getDeviceEntryWithinLast15Min(CUSTOMER_ID, deviceName + 0);
 		assertNull(data);
 		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, date, -1), CUSTOMER_ID);
-		data = OSComponent.getDeviceEntryWithinLast15Min(CUSTOMER_ID, deviceName + 0);
+		data = OSComponent.getDeviceEntryWithinLast15Min(
+				CUSTOMER_ID, TestUtils.getDevice().getDisplayName());
 		assertNotNull(data);
 		assertTrue(data.isValid());
 		assertNotNull(data.getCustomerId());
@@ -119,13 +121,17 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		Date future =
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
 
-		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, past, -1), CUSTOMER_ID);
-		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, future, -1), CUSTOMER_ID);
+		generationComponent.handleDeviceBody(
+				TestUtils.getDeviceXML(TestUtils.getDevice().getDeviceName(), past, -1), CUSTOMER_ID);
+		generationComponent.handleDeviceBody(
+				TestUtils.getDeviceXML(TestUtils.getDevice().getDeviceName(), future, -1), CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
-		assertNull(OSComponent.getDeviceByTimePeriod(CUSTOMER_ID, deviceName + 0, date));
+		assertNull(OSComponent.getDeviceByTimePeriod(
+				CUSTOMER_ID, TestUtils.getDevice().getDeviceName(), date));
 		TestUtils.validateDateData(future);
 		TestUtils.validateDateData(past);
-		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, date, -1), CUSTOMER_ID);
+		generationComponent.handleDeviceBody(
+				TestUtils.getDeviceXML(TestUtils.getDevice().getDeviceName(), date, -1), CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
 		TestUtils.validateDateData(date);
 	}
@@ -138,17 +144,40 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				Date.from(ldt.minusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
 		Date nextDate =
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
-		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, date, -1), CUSTOMER_ID);
-		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, prevDate, -1), CUSTOMER_ID);
-		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, nextDate, -1), CUSTOMER_ID);
-		assertEquals(1, OSComponent.getSiteDevicesCountByTimePeriod(CUSTOMER_ID, SITE, date));
-		assertEquals(1, OSComponent.getSiteDevicesCountByTimePeriod(CUSTOMER_ID, SITE, prevDate));
-		assertEquals(1, OSComponent.getSiteDevicesCountByTimePeriod(CUSTOMER_ID, SITE, nextDate));
-
-		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, nextDate, -1), CUSTOMER_ID);
-		assertEquals(1, OSComponent.getSiteDevicesCountByTimePeriod(CUSTOMER_ID, SITE, date));
-		assertEquals(1, OSComponent.getSiteDevicesCountByTimePeriod(CUSTOMER_ID, SITE, prevDate));
-		assertEquals(2, OSComponent.getSiteDevicesCountByTimePeriod(CUSTOMER_ID, SITE, nextDate));
+		generationComponent.handleDeviceBody(
+				TestUtils.getDeviceXML(TestUtils.getDevice().getDeviceName(), date, -1), CUSTOMER_ID);
+		generationComponent.handleDeviceBody(
+				TestUtils.getDeviceXML(TestUtils.getDevice().getDeviceName(), prevDate, -1), CUSTOMER_ID);
+		generationComponent.handleDeviceBody(
+				TestUtils.getDeviceXML(TestUtils.getDevice().getDeviceName(), nextDate, -1), CUSTOMER_ID);
+		assertEquals(
+				1,
+				OSComponent.getSiteDevicesCountByTimePeriod(
+						CUSTOMER_ID, TestUtils.getSite().getId(), date));
+		assertEquals(
+				1,
+				OSComponent.getSiteDevicesCountByTimePeriod(
+						CUSTOMER_ID, TestUtils.getSite().getId(), prevDate));
+		assertEquals(
+				1,
+				OSComponent.getSiteDevicesCountByTimePeriod(
+						CUSTOMER_ID, TestUtils.getSite().getId(), nextDate));
+		generationComponent.handleDeviceBody(
+				TestUtils.getDeviceXML(TestUtils.getDevice().getDeviceName(), nextDate, -1), CUSTOMER_ID);
+		assertEquals(
+				1,
+				OSComponent.getSiteDevicesCountByTimePeriod(
+						CUSTOMER_ID, TestUtils.getSite().getId(), date));
+		assertEquals(
+				1,
+				OSComponent.getSiteDevicesCountByTimePeriod(
+						CUSTOMER_ID, TestUtils.getSite().getId(), prevDate));
+		assertEquals(
+				1,
+				OSComponent.getSiteDevicesCountByTimePeriod(
+						CUSTOMER_ID,
+						TestUtils.getSite().getId(),
+						nextDate)); // Shouldn't stamp dup'd value for same device/date
 	}
 
 	@Test
@@ -245,7 +274,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				.minusDays(2);
 		SearchJSON json = new SearchJSON(
 				CUSTOMER_ID,
-				deviceName + 0,
+				TestUtils.getDevice().getDisplayName(),
 				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
 				Date.from(ldt.minusDays(7).atZone(ZoneId.systemDefault()).toInstant())
 						.getTime());
@@ -253,7 +282,21 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		json.setTimeZone(ZonedDateTime.now().getZone().getId());
 		SearchResponse response = OSComponent.search(json);
 		assertEquals(
-				90.0, ((Aggregate) response.aggregations().get("max")).max().value());
+				40.0, ((Aggregate) response.aggregations().get("max")).max().value());
+		assertFalse(response.hits().hits().isEmpty());
+		assertEquals(
+				"[0.0]",
+				((Hit) response.hits().hits().get(0))
+						.fields()
+						.get(MeterConstants.TOTAL_REAL_POWER)
+						.toString());
+		assertFalse(response.hits().hits().isEmpty());
+
+		json.setDeviceName(null);
+		json.setDeviceId(TestUtils.getDevice().getId());
+		response = OSComponent.search(json);
+		assertEquals(
+				40.0, ((Aggregate) response.aggregations().get("max")).max().value());
 		assertFalse(response.hits().hits().isEmpty());
 		assertEquals(
 				"[0.0]",
@@ -271,7 +314,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				.minusDays(2);
 		SearchJSON json = new SearchJSON(
 				CUSTOMER_ID,
-				deviceName + 0,
+				TestUtils.getDevice().getDisplayName(),
 				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
 				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
 						.getTime());
@@ -280,10 +323,16 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		SearchResponse response = OSComponent.search(json);
 		assertEquals(2, response.aggregations().size());
 		assertEquals(
-				-9.7032755E7,
-				((Aggregate) response.aggregations().get("total")).sum().value());
+				150, ((Aggregate) response.aggregations().get("total")).sum().value());
+		assertEquals(20, ((Aggregate) response.aggregations().get("avg")).avg().value());
+
+		json.setDeviceName(null);
+		json.setDeviceId(TestUtils.getDevice().getId());
+		response = OSComponent.search(json);
+		assertEquals(2, response.aggregations().size());
 		assertEquals(
-				45.0, ((Aggregate) response.aggregations().get("avg")).avg().value());
+				150, ((Aggregate) response.aggregations().get("total")).sum().value());
+		assertEquals(20, ((Aggregate) response.aggregations().get("avg")).avg().value());
 	}
 
 	@Test
@@ -310,7 +359,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				.findAny()
 				.orElse(null);
 		assertNotNull(SNEDevice);
-		assertNull(SNEDevice.getName());
+		assertNotNull(SNEDevice.getName());
 		assertNotNull(OSComponent.getLastDeviceEntry(
 				SNEDevice.getDeviceName(),
 				OpenSearchQueries.getDeviceNameQuery(SNEDevice.getDeviceName()),

@@ -26,6 +26,10 @@ import software.amazon.awssdk.utils.StringUtils;
 /** */
 public class TestUtils implements IComponentRegistry, TestConstants {
 
+	private static Device device;
+
+	private static Device site;
+
 	public static String getDeviceXML(String deviceName, Date date, float avgCurrent) {
 		return getDeviceXML(device2Xml, deviceName, date, avgCurrent, -1, -1, -1, -1);
 	}
@@ -88,7 +92,9 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		alarmComponent.deleteAlarmsByCustomerId(customerId);
 	}
 
-	public static void setupSite(String customerId) {
+	public static Device setupSite(String customerId) {
+		device = null;
+		site = null;
 		nukeCustomerId(customerId);
 		if (CUSTOMER_ID.equals(customerId)) {
 			subscriptionComponent.updateSubscription(customerId, 1);
@@ -96,27 +102,30 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		Device testDevice = new Device();
 		testDevice.setClientId(customerId);
 		testDevice.setSite(TestConstants.SITE);
-		for (int ai = 0; ai < 5; ai++) {
-			addDevice(TestConstants.deviceName + ai, testDevice, false);
+		site = deviceComponent
+				.findDeviceById(
+						addDevice(TestConstants.SITE, testDevice, true, null).getId())
+				.get();
+		device = deviceComponent
+				.findDeviceById(addDevice(TestConstants.deviceName + 0, testDevice, false, testDevice.getSiteId())
+						.getId())
+				.get();
+		for (int ai = 1; ai < 5; ai++) {
+			addDevice(TestConstants.deviceName + ai, testDevice, false, testDevice.getSiteId());
 		}
-		addDevice(TestConstants.SITE, testDevice, true);
+		return device;
 	}
 
-	public static void setupSite() {
-		setupSite(CUSTOMER_ID);
+	public static Device setupSite() {
+		return setupSite(CUSTOMER_ID);
 	}
 
 	public static Device getDevice() {
-		return deviceComponent
-				.findDeviceByDeviceName(CUSTOMER_ID, TestConstants.deviceName + 0)
-				.orElse(null);
+		return device;
 	}
 
 	public static Device getSite() {
-		return deviceComponent.getDevicesForCustomerId(CUSTOMER_ID).stream()
-				.filter(Device::isVirtual)
-				.findAny()
-				.get();
+		return site;
 	}
 
 	public static void seedOpenSearchData(String customerId) throws XPathExpressionException, ResponseException {
@@ -147,16 +156,20 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		seedOpenSearchData(CUSTOMER_ID);
 	}
 
-	private static void addDevice(String name, Device testDevice, boolean isVirtual) {
+	private static Device addDevice(String name, Device testDevice, boolean isVirtual, String siteId) {
 		testDevice.setId(TokenGenerator.generateNewToken());
 		testDevice.setName("pretty" + name);
 		testDevice.setDeviceName(name);
 		testDevice.setVirtual(isVirtual);
+		testDevice.setIsSite(null);
 		if (isVirtual) {
+			testDevice.setName(name);
 			testDevice.setDeviceName(null);
 			testDevice.setIsSite("1");
+			siteId = testDevice.getId();
 		}
-		deviceComponent.addDevice(testDevice);
+		testDevice.setSiteId(siteId);
+		return deviceComponent.addDevice(testDevice);
 	}
 
 	public static void validateDateData(String deviceName, Date date) {
@@ -166,7 +179,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 	}
 
 	public static void validateDateData(Date date) {
-		validateDateData(TestConstants.deviceName + 0, date);
+		validateDateData(device.getDisplayName(), date);
 	}
 
 	private static void updateDeviceForClone(Device device, String customerId, String deviceName, String sitePrefix) {

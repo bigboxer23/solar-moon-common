@@ -21,21 +21,22 @@ public class VirtualDeviceComponent {
 		}
 		logger.info("Trying to aquire lock " + device.getName());
 		DynamoLockUtils.doLockedCommand(
-				device.getSite() + "-" + device.getDate().getTime(), device.getName(), () -> {
+				device.getSiteId() + "-" + device.getDate().getTime(), device.getName(), () -> {
 					Device virtualDevice =
 							IComponentRegistry.deviceComponent
-									.getDevicesBySite(device.getCustomerId(), device.getSite())
+									.getDevicesBySiteId(device.getCustomerId(), device.getSiteId())
 									.stream()
 									.filter(Device::isVirtual)
 									.findAny()
 									.orElse(null);
 					if (virtualDevice == null) {
-						logger.warn("cannot find virtualDevice " + device.getCustomerId() + ":" + device.getSite());
+						logger.warn("cannot find virtualDevice " + device.getCustomerId() + ":" + device.getSiteId());
 						return;
 					}
 					List<DeviceData> siteDevices = IComponentRegistry.OSComponent.getDevicesForSiteByTimePeriod(
-							device.getCustomerId(), device.getSite(), device.getDate());
+							device.getCustomerId(), device.getSiteId(), device.getDate());
 					DeviceData virtualDeviceData = new DeviceData(
+							virtualDevice.getSiteId(),
 							virtualDevice.getSite(),
 							virtualDevice.getName(),
 							virtualDevice.getClientId(),
@@ -71,18 +72,18 @@ public class VirtualDeviceComponent {
 	}
 
 	private boolean shouldAddVirtualDevice(DeviceData device) {
-		if (DeviceComponent.NO_SITE.equals(device.getSite())) {
+		if (DeviceComponent.NO_SITE.equals(device.getSiteId())) {
 			return false;
 		}
 		OpenSearchUtils.waitForIndexing();
 		int deviceCount = IComponentRegistry.deviceComponent
-				.getDevicesBySite(device.getCustomerId(), device.getSite())
+				.getDevicesBySiteId(device.getCustomerId(), device.getSiteId())
 				.size();
 		int openSearchDeviceCount = IComponentRegistry.OSComponent.getSiteDevicesCountByTimePeriod(
-				device.getCustomerId(), device.getSite(), device.getDate());
+				device.getCustomerId(), device.getSiteId(), device.getDate());
 		if (deviceCount - 1 != openSearchDeviceCount) {
 			logger.debug("not calculating site "
-					+ device.getSite()
+					+ device.getSiteId()
 					+ ". Only "
 					+ openSearchDeviceCount
 					+ " devices have written data out of "

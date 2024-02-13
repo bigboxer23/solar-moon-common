@@ -65,7 +65,7 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 	@Test
 	public void testFilterByDeviceId() {
 		Device device = TestUtils.getDevice();
-		Alarm alarm = new Alarm(TEST_ALARM_ID, device.getClientId(), device.getId(), device.getSite());
+		Alarm alarm = new Alarm(TEST_ALARM_ID, device.getClientId(), device.getId(), device.getSiteId());
 		alarmComponent.updateAlarm(alarm);
 		alarm = new Alarm(TokenGenerator.generateNewToken(), CUSTOMER_ID, "Test-" + 2, SITE);
 		alarmComponent.updateAlarm(alarm);
@@ -77,21 +77,21 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 	@Test
 	public void testFilterBySiteId() {
 		Device device = TestUtils.getDevice();
-		Alarm alarm = new Alarm(TEST_ALARM_ID, device.getClientId(), device.getId(), device.getSite());
+		Alarm alarm = new Alarm(TEST_ALARM_ID, device.getClientId(), device.getId(), device.getSiteId());
 		alarmComponent.updateAlarm(alarm);
 		alarm = new Alarm(TokenGenerator.generateNewToken(), device.getClientId(), device.getId(), SITE + 1);
 		alarmComponent.updateAlarm(alarm);
-		List<Alarm> alarms = alarmComponent.findAlarmsBySite(CUSTOMER_ID, SITE);
+		List<Alarm> alarms = alarmComponent.findAlarmsBySite(CUSTOMER_ID, device.getSiteId());
 		assertEquals(1, alarms.size());
-		assertEquals(SITE, alarms.getFirst().getSiteId());
+		assertEquals(device.getSiteId(), alarms.getFirst().getSiteId());
 	}
 
 	@Test
 	public void testFilterAlarms() {
 		Device device = TestUtils.getDevice();
-		Alarm alarm = new Alarm(TEST_ALARM_ID, device.getClientId(), device.getId(), device.getSite());
+		Alarm alarm = new Alarm(TEST_ALARM_ID, device.getClientId(), device.getId(), device.getSiteId());
 		alarmComponent.updateAlarm(alarm);
-		alarm = new Alarm(TokenGenerator.generateNewToken(), device.getClientId(), "Test-" + 2, device.getSite());
+		alarm = new Alarm(TokenGenerator.generateNewToken(), device.getClientId(), "Test-" + 2, device.getSiteId());
 		alarmComponent.updateAlarm(alarm);
 		alarm = new Alarm(TokenGenerator.generateNewToken(), device.getClientId(), "Test-" + 1, SITE + 1);
 		alarmComponent.updateAlarm(alarm);
@@ -111,7 +111,10 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 						.filterAlarms(device.getClientId(), null, device.getId())
 						.size());
 		assertEquals(
-				2, alarmComponent.filterAlarms(device.getClientId(), SITE, null).size());
+				2,
+				alarmComponent
+						.filterAlarms(device.getClientId(), TestUtils.getSite().getSiteId(), null)
+						.size());
 	}
 
 	@Test
@@ -119,19 +122,19 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		Device device = TestUtils.getDevice();
 		assertNotNull(device);
 		Optional<Alarm> alarm = alarmComponent.alarmConditionDetected(
-				device.getClientId(), device.getId(), device.getSite(), "Test alarm!");
+				device.getClientId(), device.getId(), device.getSiteId(), "Test alarm!");
 		assertTrue(alarm.isPresent());
 		assertEquals(NEEDS_EMAIL, alarm.get().getEmailed());
 		Thread.sleep(1000);
 		Optional<Alarm> alarm2 = alarmComponent.alarmConditionDetected(
-				device.getClientId(), device.getId(), device.getSite(), "Test alarm!");
+				device.getClientId(), device.getId(), device.getSiteId(), "Test alarm!");
 		assertTrue(alarm2.isPresent());
 		assertTrue(alarm.get().getLastUpdate() < alarm2.get().getLastUpdate());
 		assertEquals(alarm.get().getAlarmId(), alarm2.get().getAlarmId());
 		alarm2.get().setState(RESOLVED);
 		alarmComponent.updateAlarm(alarm2.get());
 		alarm2 = alarmComponent.alarmConditionDetected(
-				device.getClientId(), device.getId(), device.getSite(), "Test alarm!");
+				device.getClientId(), device.getId(), device.getSiteId(), "Test alarm!");
 		assertTrue(alarm2.isPresent());
 		assertNotEquals(alarm.get().getAlarmId(), alarm2.get().getAlarmId());
 	}
@@ -140,13 +143,13 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 	public void getMostRecentAlarm() throws InterruptedException {
 		Device device = TestUtils.getDevice();
 		Optional<Alarm> alarm = alarmComponent.alarmConditionDetected(
-				device.getClientId(), device.getId(), device.getSite(), "Test alarm!");
+				device.getClientId(), device.getId(), device.getSiteId(), "Test alarm!");
 		assertTrue(alarm.isPresent());
 		alarm.get().setState(RESOLVED);
 		alarmComponent.updateAlarm(alarm.get());
 		Thread.sleep(1000);
 		Optional<Alarm> alarm2 = alarmComponent.alarmConditionDetected(
-				device.getClientId(), device.getId(), device.getSite(), "Test alarm!");
+				device.getClientId(), device.getId(), device.getSiteId(), "Test alarm!");
 		assertTrue(alarm2.isPresent());
 		assertNotEquals(alarm.get().getAlarmId(), alarm2.get().getAlarmId());
 	}
@@ -236,7 +239,8 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		Device device = TestUtils.getDevice();
 		assertEquals(0, alarmComponent.getAlarms(CUSTOMER_ID).size());
 		assertEquals(0, alarmComponent.quickCheckDevices().size());
-		deviceUpdateComponent.update(device.getId(), System.currentTimeMillis() - TimeConstants.THIRTY_MINUTES + 2000);
+		deviceUpdateComponent.update(
+				device.getId(), System.currentTimeMillis() - AlarmComponent.QUICK_CHECK_THRESHOLD + 2000);
 		assertEquals(0, alarmComponent.quickCheckDevices().size());
 		Thread.sleep(2000);
 		assertEquals(1, alarmComponent.quickCheckDevices().size());
@@ -250,25 +254,26 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		Device device = TestUtils.getDevice();
 		assertNotNull(device);
 		Optional<Alarm> alarm = alarmComponent.alarmConditionDetected(
-				device.getClientId(), device.getId(), device.getSite(), "Test alarm!");
+				device.getClientId(), device.getId(), device.getSiteId(), "Test alarm!");
 		assertTrue(alarm.isPresent());
 		assertEquals(NEEDS_EMAIL, alarm.get().getEmailed());
 		Thread.sleep(1000);
 		Optional<Alarm> alarm2 = alarmComponent.alarmConditionDetected(
-				device.getClientId(), device.getId(), device.getSite(), "Test alarm!");
+				device.getClientId(), device.getId(), device.getSiteId(), "Test alarm!");
 		assertTrue(alarm2.isPresent());
 
 		assertEquals(1, alarmComponent.findNonEmailedAlarms(CUSTOMER_ID).size());
 
 		alarmComponent.alarmConditionDetected(
-				device.getClientId(), device.getId() + "invalild", device.getSite(), "Test alarm!");
+				device.getClientId(), device.getId() + "invalild", device.getSiteId(), "Test alarm!");
 		assertEquals(2, alarmComponent.findNonEmailedAlarms(CUSTOMER_ID).size());
 		alarm.get().setEmailed(RESOLVED_NOT_EMAILED);
 		alarmComponent.updateAlarm(alarm.get());
 		assertEquals(1, alarmComponent.findNonEmailedAlarms(CUSTOMER_ID).size());
 		assertTrue(alarmComponent.findNonEmailedAlarms(CUSTOMER_ID + "invalid").isEmpty());
 
-		alarmComponent.alarmConditionDetected(CUSTOMER_ID + "invalid", device.getId(), device.getSite(), "Test alarm!");
+		alarmComponent.alarmConditionDetected(
+				CUSTOMER_ID + "invalid", device.getId(), device.getSiteId(), "Test alarm!");
 		assertEquals(
 				1, alarmComponent.findNonEmailedAlarms(CUSTOMER_ID + "invalid").size());
 		assertEquals(1, alarmComponent.findNonEmailedAlarms(CUSTOMER_ID).size());
@@ -308,17 +313,18 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 	public void faultDetected() {
 		Device device = TestUtils.getDevice();
 		Optional<Alarm> alarm =
-				alarmComponent.faultDetected(CUSTOMER_ID, device.getId(), device.getSite(), "Error content");
+				alarmComponent.faultDetected(CUSTOMER_ID, device.getId(), device.getSiteId(), "Error content");
 		assertTrue(alarm.isPresent());
 		assertEquals(DONT_EMAIL, alarm.get().getEmailed());
 		assertEquals(ACTIVE, alarm.get().getState());
 		assertEquals("Error content", alarm.get().getMessage());
-		alarm = alarmComponent.faultDetected(CUSTOMER_ID, device.getId(), device.getSite(), "Error content2222");
+		alarm = alarmComponent.faultDetected(CUSTOMER_ID, device.getId(), device.getSiteId(), "Error content2222");
 		assertTrue(alarm.isPresent());
 		assertEquals(DONT_EMAIL, alarm.get().getEmailed());
 		assertEquals(ACTIVE, alarm.get().getState());
 		assertEquals("Error content", alarm.get().getMessage());
-		alarm = alarmComponent.alarmConditionDetected(CUSTOMER_ID, device.getId(), device.getSite(), "Error content2");
+		alarm = alarmComponent.alarmConditionDetected(
+				CUSTOMER_ID, device.getId(), device.getSiteId(), "Error content2");
 		assertTrue(alarm.isPresent());
 		assertEquals(NEEDS_EMAIL, alarm.get().getEmailed());
 		assertEquals(ACTIVE, alarm.get().getState());

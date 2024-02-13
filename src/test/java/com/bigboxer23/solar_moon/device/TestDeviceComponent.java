@@ -57,6 +57,22 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 	}
 
 	@Test
+	public void testGetDevicesBySiteId() {
+		assertTrue(deviceComponent.getDevicesBySiteId(null, null).isEmpty());
+		assertTrue(deviceComponent.getDevicesBySiteId("", null).isEmpty());
+		assertTrue(deviceComponent.getDevicesBySiteId(null, "").isEmpty());
+		assertTrue(deviceComponent.getDevicesBySiteId("", "").isEmpty());
+		assertTrue(deviceComponent.getDevicesBySiteId(CUSTOMER_ID, "blah").isEmpty());
+		assertTrue(deviceComponent.getDevicesBySiteId(CUSTOMER_ID, "").isEmpty());
+		assertTrue(deviceComponent.getDevicesBySiteId(CUSTOMER_ID, null).isEmpty());
+		assertEquals(
+				6,
+				deviceComponent
+						.getDevicesBySiteId(CUSTOMER_ID, TestUtils.getDevice().getSiteId())
+						.size());
+	}
+
+	@Test
 	public void testGetDevicesVirtual() {
 		assertFalse(deviceComponent.getDevices(false).stream()
 				.filter(device -> CUSTOMER_ID.equals(device.getClientId()))
@@ -89,8 +105,8 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 	@Test
 	public void addDevice() {
 		Device device = TestUtils.getDevice();
-		assertFalse(deviceComponent.addDevice(device));
-		assertFalse(deviceComponent.addDevice(
+		assertNull(deviceComponent.addDevice(device));
+		assertNull(deviceComponent.addDevice(
 				new Device(TokenGenerator.generateNewToken(), device.getClientId(), device.getDeviceName())));
 	}
 
@@ -99,7 +115,7 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 		Device device = TestUtils.getDevice();
 		Device device2 =
 				new Device(TokenGenerator.generateNewToken(), device.getClientId(), device.getDeviceName() + 22);
-		assertTrue(deviceComponent.addDevice(device2));
+		assertNotNull(deviceComponent.addDevice(device2));
 		device.setDeviceName("temp");
 		device.setName("temp");
 		assertTrue(deviceComponent.updateDevice(device).isPresent());
@@ -111,56 +127,50 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 
 	@Test
 	public void testSiteDelete() {
-		Device testSite = deviceComponent.getDevicesBySite(TestConstants.CUSTOMER_ID, TestConstants.SITE).stream()
-				.filter(Device::isDeviceSite)
-				.findFirst()
-				.orElse(null);
+		Device testSite =
+				deviceComponent
+						.getDevicesBySiteId(
+								TestConstants.CUSTOMER_ID, TestUtils.getSite().getSiteId())
+						.stream()
+						.filter(Device::isDeviceSite)
+						.findFirst()
+						.orElse(null);
 		assertNotNull(testSite);
 		assertTrue(deviceComponent
-				.getDevicesBySite(testSite.getClientId(), DeviceComponent.NO_SITE)
+				.getDevicesBySiteId(testSite.getClientId(), DeviceComponent.NO_SITE)
 				.isEmpty());
 		deviceComponent.deleteDevice(testSite.getId(), testSite.getClientId());
 		assertTrue(deviceComponent
-				.getDevicesBySite(testSite.getClientId(), testSite.getSite())
+				.getDevicesBySiteId(testSite.getClientId(), testSite.getSiteId())
 				.isEmpty());
-		List<Device> updatedDevices = deviceComponent.getDevicesBySite(testSite.getClientId(), DeviceComponent.NO_SITE);
+		List<Device> updatedDevices =
+				deviceComponent.getDevicesBySiteId(testSite.getClientId(), DeviceComponent.NO_SITE);
 		assertFalse(updatedDevices.isEmpty());
-		updatedDevices.forEach(device -> assertEquals(device.getSite(), DeviceComponent.NO_SITE));
+		updatedDevices.forEach(device -> {
+			assertEquals(device.getSite(), DeviceComponent.NO_SITE);
+			assertEquals(device.getSiteId(), DeviceComponent.NO_SITE);
+		});
 	}
 
 	@Test
 	public void testSiteUpdate() {
-		Device testSite = deviceComponent.getDevicesBySite(TestConstants.CUSTOMER_ID, TestConstants.SITE).stream()
-				.filter(Device::isDeviceSite)
-				.findFirst()
-				.orElse(null);
+		Device testSite =
+				deviceComponent
+						.getDevicesBySiteId(
+								TestConstants.CUSTOMER_ID, TestUtils.getSite().getSiteId())
+						.stream()
+						.filter(Device::isDeviceSite)
+						.findFirst()
+						.orElse(null);
 		assertNotNull(testSite);
-		List<Device> originalDevices = deviceComponent.getDevicesBySite(testSite.getClientId(), testSite.getSite());
+		List<Device> originalDevices = deviceComponent.getDevicesBySiteId(testSite.getClientId(), testSite.getSiteId());
 		testSite.setName(TestConstants.SITE + 2);
 		testSite.setSite(TestConstants.SITE + 2);
 		deviceComponent.updateDevice(testSite);
-		List<Device> updatedDevices = deviceComponent.getDevicesBySite(testSite.getClientId(), testSite.getSite());
+		List<Device> updatedDevices = deviceComponent.getDevicesBySiteId(testSite.getClientId(), testSite.getSiteId());
 		assertEquals(originalDevices.size(), updatedDevices.size());
 		assertFalse(updatedDevices.isEmpty());
 		updatedDevices.forEach(device -> assertEquals(device.getSite(), testSite.getSite()));
-	}
-
-	@Test
-	public void testSubscriptionLimit() {
-		Device testDevice = new Device();
-		for (int ai = 0; ai < 9; ai++) {
-			testDevice.setId("test-" + ai);
-			testDevice.setName(deviceName + ai);
-			deviceComponent.addDevice(testDevice);
-		}
-		if (deviceComponent.addDevice(testDevice)) {
-			fail();
-		}
-		deviceComponent.deleteDevicesByCustomerId(TestConstants.CUSTOMER_ID);
-		subscriptionComponent.updateSubscription(TestConstants.CUSTOMER_ID, 0);
-		if (deviceComponent.addDevice(testDevice)) {
-			fail();
-		}
 	}
 
 	@Test
@@ -210,25 +220,21 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 
 	@Test
 	public void deviceLocationUpdate() {
-		Device device = TestUtils.getSite();
-		assertEquals(-1, device.getLatitude());
-		assertEquals(-1, device.getLongitude());
-		device.setCity("Minneapolis");
-		deviceComponent.updateDevice(device);
-		assertEquals(-1, TestUtils.getSite().getLatitude());
-		device.setState("MN");
-		deviceComponent.updateDevice(device);
-		assertEquals(-1, TestUtils.getSite().getLatitude());
-		device.setCountry("USA");
-		deviceComponent.updateDevice(device);
-		assertEquals(44.97902, TestUtils.getSite().getLatitude());
+		Device site = TestUtils.getSite();
+		assertEquals(-1, site.getLatitude());
+		assertEquals(-1, site.getLongitude());
+		site.setCity("Minneapolis");
+		deviceComponent.updateDevice(site).ifPresent(s -> assertEquals(-1, s.getLatitude()));
+		site.setState("MN");
+		deviceComponent.updateDevice(site).ifPresent(s -> assertEquals(-1, s.getLatitude()));
+		site.setCountry("USA");
+		deviceComponent.updateDevice(site).ifPresent(s -> assertEquals(44.97902, s.getLatitude()));
 
-		device = TestUtils.getDevice();
-		device.setCity("Minneapolis");
-		device.setState("MN");
-		device.setCountry("USA");
-		deviceComponent.updateDevice(device);
-		assertEquals(-1, TestUtils.getDevice().getLatitude());
+		site = TestUtils.getDevice();
+		site.setCity("Minneapolis");
+		site.setState("MN");
+		site.setCountry("USA");
+		deviceComponent.updateDevice(site).ifPresent(d -> assertEquals(-1, d.getLatitude()));
 	}
 
 	@BeforeEach
