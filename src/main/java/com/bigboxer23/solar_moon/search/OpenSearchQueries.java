@@ -181,7 +181,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 		SearchRequest.Builder search = getBaseBuilder(size)
 				.from(offset)
 				.docvalueFields(new FieldAndFormat.Builder()
-						.field(getKeywordField(SITE))
+						.field(getKeywordField(SITE_ID))
 						.build())
 				.docvalueFields(new FieldAndFormat.Builder()
 						.field(getKeywordField(DEVICE_NAME))
