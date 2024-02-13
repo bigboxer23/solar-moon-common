@@ -290,6 +290,9 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		if (!StringUtils.isBlank(searchJSON.getSite())) {
 			filters.add(OpenSearchQueries.getSiteQuery(searchJSON.getSite()));
 		}
+		if (!StringUtils.isBlank(searchJSON.getSiteId())) {
+			filters.add(OpenSearchQueries.getSiteIdQuery(searchJSON.getSiteId()));
+		}
 		if (!StringUtils.isBlank(searchJSON.getDeviceId())) {
 			filters.add(OpenSearchQueries.getDeviceIdQuery(searchJSON.getDeviceId()));
 		}

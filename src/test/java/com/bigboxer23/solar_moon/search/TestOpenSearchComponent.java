@@ -65,6 +65,10 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		assertEquals(6, OSComponent.getDevicesFacet(search).size());
 
 		search.setSite(null);
+		search.setSiteId(TestUtils.getSite().getId());
+		assertEquals(6, OSComponent.getDevicesFacet(search).size());
+
+		search.setSiteId(null);
 		search.setDeviceId("fake device");
 		assertEquals(0, OSComponent.getDevicesFacet(search).size());
 
