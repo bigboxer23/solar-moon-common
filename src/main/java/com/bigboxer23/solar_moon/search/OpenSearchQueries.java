@@ -178,12 +178,12 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 								._toAggregation());
 	}
 
-	public static SearchRequest.Builder geDeviceNameFacet() {
+	public static SearchRequest.Builder geDeviceIdFacet() {
 		return getBaseBuilder(0)
 				.aggregations(
 						"terms",
 						AggregationBuilders.terms()
-								.field(getKeywordField(MeterConstants.DEVICE_NAME))
+								.field(getKeywordField(MeterConstants.DEVICE_ID))
 								.size(1000)
 								.build()
 								._toAggregation());
@@ -196,7 +196,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 						.field(getKeywordField(SITE_ID))
 						.build())
 				.docvalueFields(new FieldAndFormat.Builder()
-						.field(getKeywordField(DEVICE_NAME))
+						.field(getKeywordField(DEVICE_ID))
 						.build())
 				.docvalueFields(new FieldAndFormat.Builder().field(ENG_CONS).build())
 				.docvalueFields(
@@ -235,7 +235,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 										"terms",
 										new Aggregation.Builder()
 												.terms(new TermsAggregation.Builder()
-														.field(getKeywordField(DEVICE_NAME))
+														.field(getKeywordField(DEVICE_ID))
 														.order(Collections.singletonList(
 																Collections.singletonMap("1", SortOrder.Desc)))
 														.size(10)

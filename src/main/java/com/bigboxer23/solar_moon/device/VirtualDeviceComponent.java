@@ -19,9 +19,9 @@ public class VirtualDeviceComponent {
 		if (!shouldAddVirtualDevice(device)) {
 			return;
 		}
-		logger.info("Trying to aquire lock " + device.getName());
+		logger.info("Trying to aquire lock " + device.getDeviceId());
 		DynamoLockUtils.doLockedCommand(
-				device.getSiteId() + "-" + device.getDate().getTime(), device.getName(), () -> {
+				device.getSiteId() + "-" + device.getDate().getTime(), device.getDeviceId(), () -> {
 					Device virtualDevice =
 							IComponentRegistry.deviceComponent
 									.getDevicesBySiteId(device.getCustomerId(), device.getSiteId())
@@ -36,11 +36,7 @@ public class VirtualDeviceComponent {
 					List<DeviceData> siteDevices = IComponentRegistry.OSComponent.getDevicesForSiteByTimePeriod(
 							device.getCustomerId(), device.getSiteId(), device.getDate());
 					DeviceData virtualDeviceData = new DeviceData(
-							virtualDevice.getSiteId(),
-							virtualDevice.getSite(),
-							virtualDevice.getName(),
-							virtualDevice.getClientId(),
-							virtualDevice.getId());
+							virtualDevice.getSiteId(), virtualDevice.getClientId(), virtualDevice.getId());
 					virtualDeviceData.setIsVirtual();
 					if (virtualDevice.isDeviceSite()) {
 						virtualDeviceData.setIsSite();
@@ -60,7 +56,7 @@ public class VirtualDeviceComponent {
 					}
 					IComponentRegistry.locationComponent.addLocationData(virtualDeviceData, virtualDevice);
 					IComponentRegistry.weatherComponent.addWeatherData(virtualDeviceData, virtualDevice);
-					logger.info("adding virtual device " + virtualDeviceData.getName() + " : " + device.getDate());
+					logger.info("adding virtual device " + virtualDeviceData.getDeviceId() + " : " + device.getDate());
 					try {
 						IComponentRegistry.OSComponent.logData(
 								virtualDeviceData.getDate(), Collections.singletonList(virtualDeviceData));

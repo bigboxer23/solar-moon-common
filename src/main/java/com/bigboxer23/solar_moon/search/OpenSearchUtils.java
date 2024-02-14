@@ -17,9 +17,9 @@ import org.slf4j.LoggerFactory;
 public class OpenSearchUtils {
 	private static final Logger logger = LoggerFactory.getLogger(OpenSearchUtils.class);
 
-	public static DeviceData getDeviceDataFromFields(String deviceName, Map<String, Object> fields) {
+	public static DeviceData getDeviceDataFromFields(String deviceId, Map<String, Object> fields) {
 		if (fields == null) {
-			logger.warn("No fields associated with result for " + deviceName);
+			logger.warn("No fields associated with result for " + deviceId);
 			return null;
 		}
 		return new DeviceData(fields);

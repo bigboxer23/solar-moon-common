@@ -61,9 +61,6 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		search.setSite("fake site");
 		assertEquals(0, OSComponent.getDevicesFacet(search).size());
 
-		search.setSite(SITE);
-		assertEquals(6, OSComponent.getDevicesFacet(search).size());
-
 		search.setSite(null);
 		search.setSiteId(TestUtils.getSite().getId());
 		assertEquals(6, OSComponent.getDevicesFacet(search).size());
@@ -100,14 +97,16 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		Date nextDate =
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
 		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, prevDate, -1), CUSTOMER_ID);
-		DeviceData data = OSComponent.getDeviceEntryWithinLast15Min(CUSTOMER_ID, deviceName + 0);
+		DeviceData data = OSComponent.getDeviceEntryWithinLast15Min(
+				CUSTOMER_ID, TestUtils.getDevice().getId());
 		assertNull(data);
 		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, nextDate, -1), CUSTOMER_ID);
-		data = OSComponent.getDeviceEntryWithinLast15Min(CUSTOMER_ID, deviceName + 0);
+		data = OSComponent.getDeviceEntryWithinLast15Min(
+				CUSTOMER_ID, TestUtils.getDevice().getId());
 		assertNull(data);
 		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, date, -1), CUSTOMER_ID);
 		data = OSComponent.getDeviceEntryWithinLast15Min(
-				CUSTOMER_ID, TestUtils.getDevice().getDisplayName());
+				CUSTOMER_ID, TestUtils.getDevice().getId());
 		assertNotNull(data);
 		assertTrue(data.isValid());
 		assertNotNull(data.getCustomerId());
@@ -117,7 +116,8 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	@Test
 	public void testGetDeviceByTimePeriod() throws XPathExpressionException, InterruptedException, ResponseException {
 		Date date = TimeUtils.get15mRoundedDate();
-		assertNull(OSComponent.getDeviceByTimePeriod(CUSTOMER_ID, deviceName + 0, date));
+		assertNull(OSComponent.getDeviceByTimePeriod(
+				CUSTOMER_ID, TestUtils.getDevice().getId(), date));
 
 		LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 		Date past =
@@ -191,7 +191,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				.minusDays(2);
 		SearchJSON json = new SearchJSON(
 				CUSTOMER_ID,
-				deviceName + 0,
+				TestUtils.getDevice().getId(),
 				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
 				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
 						.getTime());
@@ -220,7 +220,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				.minusDays(2);
 		SearchJSON json = new SearchJSON(
 				CUSTOMER_ID,
-				SITE,
+				TestUtils.getSite().getId(),
 				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
 				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
 						.getTime());
@@ -278,7 +278,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				.minusDays(2);
 		SearchJSON json = new SearchJSON(
 				CUSTOMER_ID,
-				TestUtils.getDevice().getDisplayName(),
+				TestUtils.getDevice().getId(),
 				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
 				Date.from(ldt.minusDays(7).atZone(ZoneId.systemDefault()).toInstant())
 						.getTime());
@@ -318,7 +318,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				.minusDays(2);
 		SearchJSON json = new SearchJSON(
 				CUSTOMER_ID,
-				TestUtils.getDevice().getDisplayName(),
+				TestUtils.getDevice().getId(),
 				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
 				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
 						.getTime());
@@ -365,8 +365,8 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		assertNotNull(SNEDevice);
 		assertNotNull(SNEDevice.getName());
 		assertNotNull(OSComponent.getLastDeviceEntry(
-				SNEDevice.getDeviceName(),
-				OpenSearchQueries.getDeviceNameQuery(SNEDevice.getDeviceName()),
+				SNEDevice.getId(),
+				OpenSearchQueries.getDeviceIdQuery(SNEDevice.getId()),
 				OpenSearchQueries.getCustomerIdQuery(CUSTOMER_ID)));
 	}
 

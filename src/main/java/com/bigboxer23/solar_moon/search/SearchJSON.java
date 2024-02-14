@@ -46,9 +46,9 @@ public class SearchJSON {
 		setSiteId(search.getSiteId());
 	}
 
-	public SearchJSON(String customerId, String deviceName, long endDate, long startDate) {
+	public SearchJSON(String customerId, String deviceId, long endDate, long startDate) {
 		setCustomerId(customerId);
-		setDeviceName(deviceName);
+		setDeviceId(deviceId);
 		setEndDate(endDate);
 		setStartDate(startDate);
 	}

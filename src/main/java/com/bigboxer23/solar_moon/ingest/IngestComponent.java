@@ -74,12 +74,7 @@ public class IngestComponent implements MeterConstants {
 		TransactionUtil.addDeviceId(device.getId());
 		DeviceData deviceData = Optional.of(device)
 				.map(server -> parseDeviceInformation(
-						body,
-						server.getSiteId(),
-						server.getSite(),
-						server.getDisplayName(),
-						customerId,
-						server.getId()))
+						body, server.getSiteId(), server.getDisplayName(), customerId, server.getId()))
 				.filter(DeviceData::isValid)
 				.orElse(null);
 		if (deviceData == null) {
@@ -168,10 +163,10 @@ public class IngestComponent implements MeterConstants {
 	}
 
 	protected DeviceData parseDeviceInformation(
-			String body, String siteId, String site, String name, String customerId, String deviceId) {
+			String body, String siteId, String name, String customerId, String deviceId) {
 		try {
 			logger.debug("parsing device info " + siteId + ":" + name + "\n" + body);
-			DeviceData deviceData = new DeviceData(siteId, site, name, customerId, deviceId);
+			DeviceData deviceData = new DeviceData(siteId, customerId, deviceId);
 			if (!isOK(body)) {
 				IComponentRegistry.alarmComponent.faultDetected(
 						customerId, deviceData.getDeviceId(), deviceData.getSiteId(), findError(body));
@@ -253,7 +248,7 @@ public class IngestComponent implements MeterConstants {
 				|| deviceData.getAverageCurrent() == -1
 				|| deviceData.getPowerFactor() == -1) {
 			logger.info("missing required values to calculate real power "
-					+ deviceData.getName()
+					+ deviceData.getDeviceId()
 					+ " "
 					+ deviceData.getAverageVoltage()
 					+ ","
@@ -276,16 +271,17 @@ public class IngestComponent implements MeterConstants {
 	 * difference
 	 */
 	private void calculateTotalEnergyConsumed(DeviceData deviceData) {
-		if (deviceData.getName() == null) {
-			logger.info("Can't calc total energy w/o device name");
+		if (deviceData.getDeviceId() == null) {
+			logger.info("Can't calc total energy w/o device id");
 			return;
 		}
-		logger.debug("calculating total energy consumed. " + deviceData.getName());
+		logger.debug("calculating total energy consumed. " + deviceData.getDeviceId());
 		float totalEnergyConsumption = deviceData.getTotalEnergyConsumed();
 		if (totalEnergyConsumption < 0) {
 			return;
 		}
-		Float previousTotalEnergyConsumed = IComponentRegistry.OSComponent.getTotalEnergyConsumed(deviceData.getName());
+		Float previousTotalEnergyConsumed =
+				IComponentRegistry.OSComponent.getTotalEnergyConsumed(deviceData.getDeviceId());
 		if (previousTotalEnergyConsumed != null) {
 			deviceData.setEnergyConsumed(totalEnergyConsumption - previousTotalEnergyConsumed);
 		}

@@ -68,7 +68,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				.filter(alarm -> alarm.getState() == ACTIVE)
 				.ifPresent(alarm -> {
 					logger.warn("Resolving alarm for "
-							+ deviceData.getName()
+							+ deviceData.getDeviceId()
 							+ " "
 							+ deviceData.getDate().getTime());
 					alarm.setState(RESOLVED);
@@ -280,7 +280,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		TransactionUtil.addDeviceId(device.getId());
 		TransactionUtil.updateCustomerId(device.getClientId());
 		DeviceData data =
-				OSComponent.getLastDeviceEntry(device.getName(), OpenSearchQueries.getDeviceIdQuery(device.getId()));
+				OSComponent.getLastDeviceEntry(device.getId(), OpenSearchQueries.getDeviceIdQuery(device.getId()));
 		if (data == null || device.isDisabled()) {
 			logger.debug("likely new device with no data (or disabled) " + device.getId());
 			return Optional.empty();

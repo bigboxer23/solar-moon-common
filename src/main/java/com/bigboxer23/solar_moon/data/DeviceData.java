@@ -18,12 +18,8 @@ public class DeviceData {
 	private Date date;
 
 	public DeviceData(Map<String, Object> openSearchMap) {
-		this(
-				(String) openSearchMap.get(SITE_ID),
-				(String) openSearchMap.get(SITE), // TODO: remove eventually
-				(String) openSearchMap.get(DEVICE_NAME),
-				(String) openSearchMap.get(CUSTOMER_ID_ATTRIBUTE),
-				(String) openSearchMap.get(DEVICE_ID));
+		this((String) openSearchMap.get(SITE_ID), (String) openSearchMap.get(CUSTOMER_ID_ATTRIBUTE), (String)
+				openSearchMap.get(DEVICE_ID));
 		setTotalRealPower(doubleToFloat(openSearchMap.get(TOTAL_REAL_POWER)));
 		setEnergyConsumed(doubleToFloat(openSearchMap.get(ENG_CONS)));
 		setPowerFactor(doubleToFloat(openSearchMap.get(TOTAL_PF)));
@@ -78,11 +74,9 @@ public class DeviceData {
 				.orElse(null);
 	}
 
-	public DeviceData(String siteId, String site, String name, String customerId, String deviceId) {
+	public DeviceData(String siteId, String customerId, String deviceId) {
 		attributes = new HashMap<>();
 		attributes.put(SITE_ID, new DeviceAttribute(SITE_ID, "", siteId));
-		attributes.put(SITE, new DeviceAttribute(SITE, "", site));
-		attributes.put(DEVICE_NAME, new DeviceAttribute(DEVICE_NAME, "", name));
 		setCustomerId(customerId);
 		setDeviceId(deviceId);
 	}
@@ -191,18 +185,6 @@ public class DeviceData {
 		return Optional.ofNullable(attributes.get(TOTAL_ENG_CONS))
 				.map(DeviceAttribute::getUnit)
 				.orElse(null);
-	}
-
-	public String getName() {
-		return (String) attributes.get(DEVICE_NAME).getValue();
-	}
-
-	public void setName(String name) {
-		attributes.put(DEVICE_NAME, new DeviceAttribute(DEVICE_NAME, "", name));
-	}
-
-	public String getSite() {
-		return (String) attributes.get(SITE).getValue();
 	}
 
 	public String getSiteId() {
