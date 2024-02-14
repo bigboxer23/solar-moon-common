@@ -34,7 +34,8 @@ public class TestVirtualDeviceComponent implements IComponentRegistry, TestConst
 		}
 		latch.await();
 		OpenSearchUtils.waitForIndexing();
-		assertNotNull(OSComponent.getDeviceByTimePeriod(CUSTOMER_ID, SITE, date));
+		assertNotNull(OSComponent.getDeviceByTimePeriod(
+				CUSTOMER_ID, TestUtils.getSite().getId(), date));
 	}
 
 	@Test
@@ -44,10 +45,11 @@ public class TestVirtualDeviceComponent implements IComponentRegistry, TestConst
 			generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, date, -1), CUSTOMER_ID);
 		}
 		OpenSearchUtils.waitForIndexing();
-		assertNull(OSComponent.getDeviceEntryWithinLast15Min(CUSTOMER_ID, SITE));
+		assertNull(OSComponent.getDeviceEntryWithinLast15Min(
+				CUSTOMER_ID, TestUtils.getSite().getId()));
 		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 4, date, -1), CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
-		TestUtils.validateDateData(SITE, date);
+		TestUtils.validateDateData(TestUtils.getSite().getId(), date);
 	}
 
 	@Test
@@ -65,18 +67,20 @@ public class TestVirtualDeviceComponent implements IComponentRegistry, TestConst
 			generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, past, -1), CUSTOMER_ID);
 		}
 		OpenSearchUtils.waitForIndexing();
-		TestUtils.validateDateData(SITE, past);
-		assertNull(OSComponent.getDeviceByTimePeriod(CUSTOMER_ID, SITE, date));
+		TestUtils.validateDateData(TestUtils.getSite().getId(), past);
+		assertNull(OSComponent.getDeviceByTimePeriod(
+				CUSTOMER_ID, TestUtils.getSite().getId(), date));
 
 		for (int ai = 0; ai < 5; ai++) {
 			generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, future, -1), CUSTOMER_ID);
 		}
 		OpenSearchUtils.waitForIndexing();
-		TestUtils.validateDateData(SITE, future);
-		assertNull(OSComponent.getDeviceByTimePeriod(CUSTOMER_ID, SITE, date));
+		TestUtils.validateDateData(TestUtils.getSite().getId(), future);
+		assertNull(OSComponent.getDeviceByTimePeriod(
+				CUSTOMER_ID, TestUtils.getSite().getId(), date));
 		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 4, date, -1), CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
-		TestUtils.validateDateData(SITE, date);
+		TestUtils.validateDateData(TestUtils.getSite().getId(), date);
 	}
 
 	private class TestHandleBodyRunnable implements Runnable {

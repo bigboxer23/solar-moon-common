@@ -172,14 +172,14 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		return deviceComponent.addDevice(testDevice);
 	}
 
-	public static void validateDateData(String deviceName, Date date) {
-		DeviceData data = OSComponent.getDeviceByTimePeriod(CUSTOMER_ID, deviceName, date);
+	public static void validateDateData(String deviceId, Date date) {
+		DeviceData data = OSComponent.getDeviceByTimePeriod(CUSTOMER_ID, deviceId, date);
 		assertNotNull(data);
 		assertEquals(date, data.getDate());
 	}
 
 	public static void validateDateData(Date date) {
-		validateDateData(device.getDisplayName(), date);
+		validateDateData(device.getId(), date);
 	}
 
 	private static void updateDeviceForClone(Device device, String customerId, String deviceName, String sitePrefix) {
@@ -244,14 +244,10 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 							if (data.getPowerFactor() == -1) {
 								data.getAttributes().remove(TOTAL_PF);
 							}
-							data.getAttributes()
-									.put(
-											MeterConstants.SITE,
-											new DeviceAttribute(MeterConstants.SITE, "", site.getName()));
+							data.getAttributes().put(SITE_ID, new DeviceAttribute(SITE_ID, "", site.getId()));
 							data.setCustomerId(customerId);
 							Optional<Device> srcDevice = Optional.ofNullable(devices.get(data.getDeviceId()));
 							data.setDeviceId(srcDevice.map(Device::getId).orElse(null));
-							data.setName(srcDevice.map(Device::getName).orElse(null));
 						}
 						return data;
 					})

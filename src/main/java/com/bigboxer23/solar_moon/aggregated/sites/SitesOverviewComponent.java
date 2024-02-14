@@ -50,8 +50,8 @@ public class SitesOverviewComponent implements IComponentRegistry {
 	}
 
 	public SiteWeatherData getWeatherInformation(Device site) {
-		return Optional.ofNullable(OSComponent.getLastDeviceEntry(
-						site.getName(), OpenSearchQueries.getDeviceIdQuery(site.getId())))
+		return Optional.ofNullable(
+						OSComponent.getLastDeviceEntry(site.getId(), OpenSearchQueries.getDeviceIdQuery(site.getId())))
 				.filter(deviceData -> !StringUtils.isEmpty(deviceData.getWeatherSummary())) // No weather stamped for
 				// some reason
 				.map(SiteWeatherData::new)
@@ -110,10 +110,10 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		searchJson.setDaylight(false);
 		searchJson.setDeviceId(
 				siteOverview.getSite().isSubtraction() ? siteOverview.getSite().getId() : null);
-		searchJson.setSite(
+		searchJson.setSiteId(
 				siteOverview.getSite().isSubtraction()
 						? null
-						: siteOverview.getSite().getDisplayName());
+						: siteOverview.getSite().getId());
 		searchJson.setType(
 				siteOverview.getSite().isSubtraction()
 						? OpenSearchConstants.TIME_SERIES_SEARCH_TYPE
@@ -150,7 +150,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 			String type,
 			Map<String, SearchResponse> map) {
 		SearchJSON searchJson = new SearchJSON(search);
-		searchJson.setSite(null);
+		searchJson.setSiteId(null);
 		searchJson.setDaylight(daylight);
 		searchJson.setType(type);
 		siteOverview.getDevices().stream().filter(d -> !d.isDeviceSite()).forEach(d -> {

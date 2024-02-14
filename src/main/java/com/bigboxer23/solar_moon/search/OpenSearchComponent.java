@@ -83,10 +83,10 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		}
 	}
 
-	public Float getTotalEnergyConsumed(String deviceName) {
+	public Float getTotalEnergyConsumed(String deviceId) {
 		try {
 			SearchRequest request = OpenSearchQueries.getSearchRequestBuilder()
-					.query(OpenSearchQueries.getDeviceNameQuery(deviceName))
+					.query(OpenSearchQueries.getDeviceIdQuery(deviceId))
 					.sort(new SortOptions.Builder()
 							.field(new FieldSort.Builder()
 									.field(TIMESTAMP)
@@ -102,18 +102,18 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					.build();
 			SearchResponse<Map> response = getClient().search(request, Map.class);
 			if (response.hits().hits().isEmpty()) {
-				logger.warn("couldn't find previous value for " + deviceName);
+				logger.warn("couldn't find previous value for " + deviceId);
 				return null;
 			}
 			Map<String, Object> fields = response.hits().hits().get(0).source();
 			if (fields == null) {
-				logger.warn("No fields associated with result for " + deviceName);
+				logger.warn("No fields associated with result for " + deviceId);
 				return null;
 			}
 			return Optional.ofNullable((Double) fields.get(MeterConstants.TOTAL_ENG_CONS))
 					.map(Double::floatValue)
 					.orElseGet(() -> {
-						logger.warn("Unexpected value type for " + deviceName);
+						logger.warn("Unexpected value type for " + deviceId);
 						return null;
 					});
 		} catch (IOException e) {
@@ -122,15 +122,15 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		}
 	}
 
-	public DeviceData getDeviceEntryWithinLast15Min(String customerId, String deviceName) {
+	public DeviceData getDeviceEntryWithinLast15Min(String customerId, String deviceId) {
 		return getLastDeviceEntry(
-				deviceName,
-				OpenSearchQueries.getDeviceNameQuery(deviceName),
+				deviceId,
+				OpenSearchQueries.getDeviceIdQuery(deviceId),
 				OpenSearchQueries.getCustomerIdQuery(customerId),
 				OpenSearchQueries.getLast15MinQuery());
 	}
 
-	public DeviceData getLastDeviceEntry(String deviceName, Query query, Query... queries) {
+	public DeviceData getLastDeviceEntry(String deviceId, Query query, Query... queries) {
 		try {
 			SearchRequest request = OpenSearchQueries.getSearchRequestBuilder()
 					.query(QueryBuilders.bool().filter(query, queries).build()._toQuery())
@@ -139,11 +139,11 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					.build();
 			SearchResponse<Map> response = getClient().search(request, Map.class);
 			if (response.hits().hits().isEmpty()) {
-				logger.debug("couldn't find previous value for " + deviceName);
+				logger.debug("couldn't find previous value for " + deviceId);
 				return null;
 			}
 			return OpenSearchUtils.getDeviceDataFromFields(
-					deviceName, response.hits().hits().get(0).source());
+					deviceId, response.hits().hits().get(0).source());
 		} catch (IOException e) {
 			logger.error("getLastDeviceEntry:", e);
 			return null;
@@ -170,20 +170,20 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		}
 	}
 
-	public DeviceData getDeviceByTimePeriod(String customerId, String deviceName, Date date) {
+	public DeviceData getDeviceByTimePeriod(String customerId, String deviceId, Date date) {
 		try {
 			SearchRequest request = OpenSearchQueries.getSearchRequestBuilder()
 					.query(QueryBuilders.bool()
 							.filter(
 									OpenSearchQueries.getCustomerIdQuery(customerId),
-									OpenSearchQueries.getDeviceNameQuery(deviceName),
+									OpenSearchQueries.getDeviceIdQuery(deviceId),
 									OpenSearchQueries.getDateRangeQuery(date))
 							.build()
 							._toQuery())
 					.build();
 			SearchResponse<Map> response = getClient().search(request, Map.class);
 			if (response.hits().hits().isEmpty()) {
-				logger.debug("Couldn't find previous value for " + deviceName);
+				logger.debug("Couldn't find previous value for " + deviceId);
 				return null;
 			}
 			if (response.hits().hits().size() > 1) {
@@ -191,7 +191,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 						"too many device results: " + response.hits().hits().size());
 			}
 			return OpenSearchUtils.getDeviceDataFromFields(
-					deviceName, response.hits().hits().get(0).source());
+					deviceId, response.hits().hits().get(0).source());
 		} catch (IOException e) {
 			logger.error("getDeviceByTimePeriod", e);
 			return null;
@@ -358,7 +358,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	public List<StringTermsBucket> getDevicesFacet(SearchJSON searchJSON) throws IOException {
 		return getClient()
 				.search(
-						OpenSearchQueries.geDeviceNameFacet()
+						OpenSearchQueries.geDeviceIdFacet()
 								.query(getQuery(searchJSON))
 								.build(),
 						Map.class)
