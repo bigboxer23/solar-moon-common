@@ -36,7 +36,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 	private SitesSiteData getSiteOverviewData(Device site, SearchJSON search) {
 		SitesSiteData siteData = new SitesSiteData();
 		siteData.setSite(site);
-		fillTimeInformation(siteData, site);
+		fillLocalTimeInformation(siteData, site);
 		siteData.setWeather(getWeatherInformation(site));
 		fillAvgTotalInformation(siteData, site, search);
 		siteData.setWeeklyMaxPower(getMaxInformation(site.getId(), site.getClientId()));
@@ -58,7 +58,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 				.orElse(null);
 	}
 
-	public void fillTimeInformation(SitesSiteData siteData, Device site) {
+	public void fillLocalTimeInformation(SitesSiteData siteData, Device site) {
 		locationComponent
 				.getLocalTimeString(site.getLatitude(), site.getLongitude())
 				.map(time -> time.format(DateTimeFormatter.ofPattern("h:mm a")))

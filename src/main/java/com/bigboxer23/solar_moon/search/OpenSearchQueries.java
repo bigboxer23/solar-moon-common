@@ -299,6 +299,8 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 
 	public static SearchRequest.Builder getMaxCurrentBuilder(String timezone, String bucketSize) {
 		return getBaseBuilder(1)
+				.docvalueFields(new FieldAndFormat.Builder().field(AVG_VOLT).build())
+				.docvalueFields(new FieldAndFormat.Builder().field(AVG_CURRENT).build())
 				.aggregations(
 						"max",
 						new Aggregation.Builder()
