@@ -33,7 +33,7 @@ public class EmailTemplateContent {
 
 	private String buttonColor = "#5178c2";
 
-	private String backgroundColor = "#f6f6f6";
+	private String backgroundColor = "#eef2f9";
 
 	private String panelColor = "#FFFFFF";
 

@@ -1,5 +1,7 @@
 package com.bigboxer23.solar_moon.notifications;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.lambda.utils.PropertyUtils;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.MustacheFactory;
@@ -22,13 +24,17 @@ public class NotificationComponent {
 
 	private static final MustacheFactory mf = new DefaultMustacheFactory("templates");
 
-	private static final String SENDER = "info@solarmoonanalytics.com";
+	private static final String SENDER = PropertyUtils.getProperty("emailer.info");
 
 	private final String recipientOverride = PropertyUtils.getProperty("recipient_override");
 
 	private final String additionalRecipient = PropertyUtils.getProperty("additional_recipient");
 
 	public void sendNotification(String recipient, String subject, EmailTemplateContent template) {
+		sendNotification(SENDER, recipient, subject, template);
+	}
+
+	public void sendNotification(String sender, String recipient, String subject, EmailTemplateContent template) {
 		StringWriter content = new StringWriter();
 		try {
 			mf.compile(template.getTemplateName()).execute(content, template).flush();
@@ -52,7 +58,7 @@ public class NotificationComponent {
 												.build())
 										.build())
 								.build())
-						.source(SENDER)
+						.source(sender)
 						.build());
 			} catch (SesException e) {
 				logger.warn(e.awsErrorDetails().errorMessage(), e);
@@ -71,5 +77,20 @@ public class NotificationComponent {
 
 	private String getRecipient(String recipient) {
 		return StringUtils.isBlank(recipientOverride) ? recipient : recipientOverride;
+	}
+
+	public void sendResponseMail(String recipient, String subject, String responseContent, String previousContent) {
+		IComponentRegistry.notificationComponent.sendNotification(
+				PropertyUtils.getProperty("emailer.support"),
+				recipient,
+				subject,
+				new SupportEmailTemplateContent(
+						subject,
+						IComponentRegistry.customerComponent
+								.findCustomerByEmail(recipient)
+								.map(Customer::getName)
+								.orElse(recipient),
+						responseContent,
+						previousContent));
 	}
 }
