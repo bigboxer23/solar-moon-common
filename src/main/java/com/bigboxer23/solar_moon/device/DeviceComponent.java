@@ -184,6 +184,9 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 			return null;
 		}
 		maybeUpdateLocationData(device);
+		if (device.getSite().equalsIgnoreCase(device.getDeviceName()) && device.getSiteId() == null) {
+			device.setSiteId(device.getId());
+		}
 		logAction("add", device.getId());
 		getTable().putItem(device);
 		return device;
