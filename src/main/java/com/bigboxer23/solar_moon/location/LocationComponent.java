@@ -2,8 +2,8 @@ package com.bigboxer23.solar_moon.location;
 
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
-import com.bigboxer23.solar_moon.lambda.utils.PropertyUtils;
 import com.bigboxer23.solar_moon.util.TimezoneMapper;
+import com.bigboxer23.utils.properties.PropertyUtils;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
