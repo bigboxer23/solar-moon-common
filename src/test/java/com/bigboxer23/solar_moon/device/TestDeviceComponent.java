@@ -109,8 +109,9 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 		assertNull(deviceComponent.addDevice(
 				new Device(TokenGenerator.generateNewToken(), device.getClientId(), device.getDeviceName())));
 
-		//Test new site gets siteId automatically stamped
-		Device siteDevice = new Device(TokenGenerator.generateNewToken(), device.getClientId(), device.getDeviceName() + "siteTest");
+		// Test new site gets siteId automatically stamped
+		Device siteDevice = new Device(
+				TokenGenerator.generateNewToken(), device.getClientId(), device.getDeviceName() + "siteTest");
 		siteDevice.setSite("temporary");
 		assertNotNull(deviceComponent.addDevice(siteDevice).getSiteId());
 	}

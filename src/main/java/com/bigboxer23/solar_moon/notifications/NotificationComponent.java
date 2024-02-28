@@ -2,7 +2,7 @@ package com.bigboxer23.solar_moon.notifications;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Customer;
-import com.bigboxer23.solar_moon.lambda.utils.PropertyUtils;
+import com.bigboxer23.utils.properties.PropertyUtils;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.MustacheFactory;
 import java.io.IOException;
