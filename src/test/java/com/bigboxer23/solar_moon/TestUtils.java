@@ -222,6 +222,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		SearchJSON search = new SearchJSON();
 		search.setCustomerId(srcCustomerId);
 		search.setType(DATA_SEARCH_TYPE);
+		search.setIncludeSource(true);
 		search.setSize(7500);
 		search.setOffset(0);
 		for (int week = 1; week < numberOfWeeks; week++) {
