@@ -14,6 +14,8 @@ import org.opensearch.client.opensearch._types.query_dsl.QueryBuilders;
 import org.opensearch.client.opensearch.core.DeleteByQueryRequest;
 import org.opensearch.client.opensearch.core.SearchRequest;
 import org.opensearch.client.opensearch.core.UpdateByQueryRequest;
+import org.opensearch.client.opensearch.core.search.SourceConfig;
+import org.opensearch.client.opensearch.core.search.SourceFilter;
 
 /** */
 public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
@@ -155,8 +157,8 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.build();
 	}
 
-	private static SearchRequest.Builder getBaseBuilder(int count) {
-		return getSearchRequestBuilder()
+	private static SearchRequest.Builder getBaseBuilder(int count, boolean includeSource) {
+		SearchRequest.Builder builder = getSearchRequestBuilder()
 				.storedFields("*")
 				.size(count)
 				.docvalueFields(new FieldAndFormat.Builder()
@@ -165,10 +167,16 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 						.build())
 				.docvalueFields(
 						new FieldAndFormat.Builder().field(TOTAL_REAL_POWER).build());
+		if (includeSource) {
+			builder.source(new SourceConfig.Builder()
+					.filter(new SourceFilter.Builder().excludes("a").build())
+					.build());
+		}
+		return builder;
 	}
 
 	public static SearchRequest.Builder getWeatherSummaryFacet() {
-		return getBaseBuilder(0)
+		return getBaseBuilder(0, false)
 				.aggregations(
 						"terms",
 						AggregationBuilders.terms()
@@ -179,7 +187,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 	}
 
 	public static SearchRequest.Builder geDeviceIdFacet() {
-		return getBaseBuilder(0)
+		return getBaseBuilder(0, false)
 				.aggregations(
 						"terms",
 						AggregationBuilders.terms()
@@ -189,8 +197,8 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 								._toAggregation());
 	}
 
-	public static SearchRequest.Builder getDataSearch(int offset, int size) {
-		SearchRequest.Builder search = getBaseBuilder(size)
+	public static SearchRequest.Builder getDataSearch(int offset, int size, boolean includeSource) {
+		SearchRequest.Builder search = getBaseBuilder(size, includeSource)
 				.from(offset)
 				.docvalueFields(new FieldAndFormat.Builder()
 						.field(getKeywordField(SITE_ID))
@@ -219,7 +227,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 
 	public static SearchRequest.Builder getStackedTimeSeriesBuilder(String timezone, String bucketSize) {
 
-		return getBaseBuilder(0)
+		return getBaseBuilder(0, false)
 				.aggregations(
 						"2",
 						new Aggregation.Builder()
@@ -252,7 +260,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 	}
 
 	public static SearchRequest.Builder getTimeSeriesBuilder(String timezone, String bucketSize) {
-		return getBaseBuilder(0)
+		return getBaseBuilder(0, false)
 				.aggregations(
 						"2",
 						new Aggregation.Builder()
@@ -275,7 +283,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 	}
 
 	public static SearchRequest.Builder getTimeSeriesMaxBuilder(String timezone, String bucketSize) {
-		return getBaseBuilder(0)
+		return getBaseBuilder(0, false)
 				.aggregations(
 						"2",
 						new Aggregation.Builder()
@@ -298,7 +306,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 	}
 
 	public static SearchRequest.Builder getMaxCurrentBuilder(String timezone, String bucketSize) {
-		return getBaseBuilder(1)
+		return getBaseBuilder(1, false)
 				.docvalueFields(new FieldAndFormat.Builder().field(AVG_VOLT).build())
 				.docvalueFields(new FieldAndFormat.Builder().field(AVG_CURRENT).build())
 				.aggregations(
@@ -315,17 +323,17 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 	}
 
 	public static SearchRequest.Builder getAverageTotalBuilder(String timezone, String bucketSize) {
-		return getBaseBuilder(0)
+		return getBaseBuilder(0, false)
 				.aggregations("avg", getAverageAggregation())
 				.aggregations("total", getTotalAggregation());
 	}
 
 	public static SearchRequest.Builder getAverageBuilder(String timezone, String bucketSize) {
-		return getBaseBuilder(0).aggregations("avg", getAverageAggregation());
+		return getBaseBuilder(0, false).aggregations("avg", getAverageAggregation());
 	}
 
 	public static SearchRequest.Builder getTotalBuilder(String timezone, String bucketSize) {
-		return getBaseBuilder(0).aggregations("total", getTotalAggregation());
+		return getBaseBuilder(0, false).aggregations("total", getTotalAggregation());
 	}
 
 	private static Aggregation getAverageAggregation() {
@@ -341,7 +349,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 	}
 
 	public static SearchRequest.Builder getTotalEnergyConsumedBuilder(String timezone, String bucketSize) {
-		return getBaseBuilder(0)
+		return getBaseBuilder(0, false)
 				.aggregations(
 						"2",
 						new Aggregation.Builder()

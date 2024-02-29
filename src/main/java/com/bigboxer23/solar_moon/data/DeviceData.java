@@ -68,6 +68,9 @@ public class DeviceData {
 		if (value == null) {
 			return -1;
 		}
+		if (value instanceof Integer) {
+			return (Integer) value;
+		}
 		return Optional.of(value)
 				.map(val -> (Double) val)
 				.map(Double::floatValue)

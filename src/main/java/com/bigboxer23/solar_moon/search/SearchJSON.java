@@ -23,6 +23,7 @@ public class SearchJSON {
 	private boolean noVirtual;
 	private boolean noIsSite;
 	private boolean daylight;
+	private boolean includeSource = false;
 
 	public SearchJSON() {}
 
@@ -44,6 +45,7 @@ public class SearchJSON {
 		setSize(search.getSize());
 		setOffset(search.getOffset());
 		setSiteId(search.getSiteId());
+		setIncludeSource(search.isIncludeSource());
 	}
 
 	public SearchJSON(String customerId, String deviceId, long endDate, long startDate) {
