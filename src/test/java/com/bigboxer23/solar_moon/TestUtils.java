@@ -135,7 +135,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		for (int aj = 0; aj < 5; aj++) {
 			System.out.println(TestConstants.deviceName + aj);
 			for (int ai = 0; ai < 5; ai++) {
-				generationComponent.handleDeviceBody(
+				obviousIngestComponent.handleDeviceBody(
 						TestUtils.getDeviceXML(
 								TestConstants.deviceName + aj,
 								Date.from(ldt.minusMinutes(15 * ai)
