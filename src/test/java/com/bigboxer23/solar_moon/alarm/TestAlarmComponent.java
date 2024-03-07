@@ -165,7 +165,7 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 
 		// test device, but old OpenSearch
 		LocalDateTime ldt = LocalDateTime.now();
-		generationComponent.handleDeviceBody(
+		obviousIngestComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(
 						deviceName + 0,
 						Date.from(ldt.minusMinutes(61)
@@ -185,7 +185,7 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		assertNotEquals(alarm.get().getLastUpdate(), checkedAlarm.get().getLastUpdate());
 
 		// test device, valid OpenSearch
-		generationComponent.handleDeviceBody(
+		obviousIngestComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(
 						deviceName + 0,
 						Date.from(ldt.minusMinutes(59)
@@ -206,7 +206,7 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 
 		// Check we create new alarm after current is cleared
 		OSComponent.deleteByCustomerId(CUSTOMER_ID);
-		generationComponent.handleDeviceBody(
+		obviousIngestComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(
 						deviceName + 0,
 						Date.from(ldt.minusMinutes(61)

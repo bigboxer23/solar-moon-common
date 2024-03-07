@@ -96,15 +96,15 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				Date.from(ldt.minusMinutes(30).atZone(ZoneId.systemDefault()).toInstant());
 		Date nextDate =
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
-		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, prevDate, -1), CUSTOMER_ID);
+		obviousIngestComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, prevDate, -1), CUSTOMER_ID);
 		DeviceData data = OSComponent.getDeviceEntryWithinLast15Min(
 				CUSTOMER_ID, TestUtils.getDevice().getId());
 		assertNull(data);
-		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, nextDate, -1), CUSTOMER_ID);
+		obviousIngestComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, nextDate, -1), CUSTOMER_ID);
 		data = OSComponent.getDeviceEntryWithinLast15Min(
 				CUSTOMER_ID, TestUtils.getDevice().getId());
 		assertNull(data);
-		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, date, -1), CUSTOMER_ID);
+		obviousIngestComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 0, date, -1), CUSTOMER_ID);
 		data = OSComponent.getDeviceEntryWithinLast15Min(
 				CUSTOMER_ID, TestUtils.getDevice().getId());
 		assertNotNull(data);
@@ -125,16 +125,16 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		Date future =
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
 
-		generationComponent.handleDeviceBody(
+		obviousIngestComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(TestUtils.getDevice().getDeviceName(), past, -1), CUSTOMER_ID);
-		generationComponent.handleDeviceBody(
+		obviousIngestComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(TestUtils.getDevice().getDeviceName(), future, -1), CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
 		assertNull(OSComponent.getDeviceByTimePeriod(
 				CUSTOMER_ID, TestUtils.getDevice().getDeviceName(), date));
 		TestUtils.validateDateData(future);
 		TestUtils.validateDateData(past);
-		generationComponent.handleDeviceBody(
+		obviousIngestComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(TestUtils.getDevice().getDeviceName(), date, -1), CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
 		TestUtils.validateDateData(date);
@@ -148,11 +148,11 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				Date.from(ldt.minusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
 		Date nextDate =
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
-		generationComponent.handleDeviceBody(
+		obviousIngestComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(TestUtils.getDevice().getDeviceName(), date, -1), CUSTOMER_ID);
-		generationComponent.handleDeviceBody(
+		obviousIngestComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(TestUtils.getDevice().getDeviceName(), prevDate, -1), CUSTOMER_ID);
-		generationComponent.handleDeviceBody(
+		obviousIngestComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(TestUtils.getDevice().getDeviceName(), nextDate, -1), CUSTOMER_ID);
 		assertEquals(
 				1,
@@ -166,7 +166,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 				1,
 				OSComponent.getSiteDevicesCountByTimePeriod(
 						CUSTOMER_ID, TestUtils.getSite().getId(), nextDate));
-		generationComponent.handleDeviceBody(
+		obviousIngestComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(TestUtils.getDevice().getDeviceName(), nextDate, -1), CUSTOMER_ID);
 		assertEquals(
 				1,
@@ -348,7 +348,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		LocalDateTime ldt = LocalDateTime.ofInstant(
 						TimeUtils.get15mRoundedDate().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
-		generationComponent.handleDeviceBody(
+		obviousIngestComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(
 						deviceName,
 						Date.from(ldt.minusMinutes(15)

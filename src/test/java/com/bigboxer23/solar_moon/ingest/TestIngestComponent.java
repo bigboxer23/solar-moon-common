@@ -33,9 +33,9 @@ public class TestIngestComponent implements TestConstants, IComponentRegistry {
 
 	@Test
 	public void testFindDeviceName() throws XPathExpressionException {
-		assertEquals(device1Name, generationComponent.findDeviceName(device1Xml));
+		assertEquals(device1Name, obviousIngestComponent.findDeviceName(device1Xml));
 		try {
-			generationComponent.findDeviceName("invalid xml");
+			obviousIngestComponent.findDeviceName("invalid xml");
 		} catch (XPathExpressionException e) {
 			return;
 		}
@@ -44,10 +44,10 @@ public class TestIngestComponent implements TestConstants, IComponentRegistry {
 
 	@Test
 	public void testIsUpdateEvent() throws XPathExpressionException {
-		assertTrue(generationComponent.isUpdateEvent(device1Xml));
-		assertFalse(generationComponent.isUpdateEvent(nonUpdateStatus));
+		assertTrue(obviousIngestComponent.isUpdateEvent(device1Xml));
+		assertFalse(obviousIngestComponent.isUpdateEvent(nonUpdateStatus));
 		try {
-			generationComponent.isUpdateEvent("invalid xml");
+			obviousIngestComponent.isUpdateEvent("invalid xml");
 		} catch (XPathExpressionException e) {
 			return;
 		}
@@ -56,7 +56,7 @@ public class TestIngestComponent implements TestConstants, IComponentRegistry {
 
 	@Test
 	public void testCalculatedTotalRealPower() {
-		DeviceData aDeviceData2 = generationComponent.parseDeviceInformation(
+		DeviceData aDeviceData2 = obviousIngestComponent.parseDeviceInformation(
 				device2Xml, device.getSiteId(), TestConstants.deviceName, device.getClientId(), device.getId());
 		assertEquals(2.134055f, aDeviceData2.getTotalRealPower());
 		aDeviceData2.setPowerFactor(-aDeviceData2.getPowerFactor());
@@ -65,14 +65,14 @@ public class TestIngestComponent implements TestConstants, IComponentRegistry {
 
 	@Test
 	public void testParseDeviceInformation() {
-		DeviceData deviceData = generationComponent.parseDeviceInformation(
+		DeviceData deviceData = obviousIngestComponent.parseDeviceInformation(
 				device2XmlNull, device.getSiteId(), TestConstants.deviceName, device.getClientId(), device.getId());
 		assertNull(deviceData);
-		deviceData = generationComponent.parseDeviceInformation(
+		deviceData = obviousIngestComponent.parseDeviceInformation(
 				device2Xml, device.getSiteId(), TestConstants.deviceName, device.getClientId(), device.getId());
 		assertNotNull(deviceData);
 		assertTrue(deviceData.isValid());
-		assertNull(generationComponent.parseDeviceInformation(
+		assertNull(obviousIngestComponent.parseDeviceInformation(
 				TestConstants.deviceName,
 				TestConstants.deviceName,
 				TestConstants.deviceName,
@@ -84,36 +84,37 @@ public class TestIngestComponent implements TestConstants, IComponentRegistry {
 	public void testHandleDeviceBody() throws XPathExpressionException, ResponseException {
 		String deviceXML = TestUtils.getDeviceXML(TestConstants.deviceName + 0, new Date(), -1);
 		TestUtils.setupSite();
-		assertNull(generationComponent.handleDeviceBody(null, null));
-		assertNull(generationComponent.handleDeviceBody(deviceXML, null));
-		assertNull(generationComponent.handleDeviceBody("", null));
-		assertNull(generationComponent.handleDeviceBody(null, TestConstants.CUSTOMER_ID));
-		assertNull(generationComponent.handleDeviceBody("", null));
-		assertNull(generationComponent.handleDeviceBody(deviceXML, ""));
-		assertNull(generationComponent.handleDeviceBody(null, TestConstants.CUSTOMER_ID));
-		assertNotNull(generationComponent.handleDeviceBody(deviceXML, TestConstants.CUSTOMER_ID + "invalid"));
+		assertNull(obviousIngestComponent.handleDeviceBody(null, null));
+		assertNull(obviousIngestComponent.handleDeviceBody(deviceXML, null));
+		assertNull(obviousIngestComponent.handleDeviceBody("", null));
+		assertNull(obviousIngestComponent.handleDeviceBody(null, TestConstants.CUSTOMER_ID));
+		assertNull(obviousIngestComponent.handleDeviceBody("", null));
+		assertNull(obviousIngestComponent.handleDeviceBody(deviceXML, ""));
+		assertNull(obviousIngestComponent.handleDeviceBody(null, TestConstants.CUSTOMER_ID));
+		assertNull(obviousIngestComponent.handleDeviceBody(
+				deviceXML, TestConstants.CUSTOMER_ID + "invalid")); // No subscription
 		TestUtils.nukeCustomerId(TestConstants.CUSTOMER_ID + "invalid");
-		assertNull(generationComponent.handleDeviceBody(nonUpdateStatus, TestConstants.CUSTOMER_ID));
-		assertNull(generationComponent.handleDeviceBody(
+		assertNull(obviousIngestComponent.handleDeviceBody(nonUpdateStatus, TestConstants.CUSTOMER_ID));
+		assertNull(obviousIngestComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(device2XmlNull, TestConstants.deviceName + 0, null, -1),
 				TestConstants.CUSTOMER_ID));
-		assertNotNull(generationComponent.handleDeviceBody(deviceXML, TestConstants.CUSTOMER_ID));
+		assertNotNull(obviousIngestComponent.handleDeviceBody(deviceXML, TestConstants.CUSTOMER_ID));
 	}
 
 	@Test
 	public void testDateRead() {
-		DeviceData deviceData = generationComponent.parseDeviceInformation(
+		DeviceData deviceData = obviousIngestComponent.parseDeviceInformation(
 				device2Xml, device.getSiteId(), TestConstants.deviceName, device.getClientId(), device.getId());
 		assertNotNull(deviceData.getDate());
 		SimpleDateFormat sdf = new SimpleDateFormat(MeterConstants.DATE_PATTERN);
 		assertEquals(sdf.format(deviceData.getDate()), "2020-08-21 12:30:00 CDT");
-		deviceData = generationComponent.parseDeviceInformation(
+		deviceData = obviousIngestComponent.parseDeviceInformation(
 				device2XmlNoDate, device.getSiteId(), TestConstants.deviceName, device.getClientId(), device.getId());
 		assertNull(deviceData);
-		deviceData = generationComponent.parseDeviceInformation(
+		deviceData = obviousIngestComponent.parseDeviceInformation(
 				device2XmlBadDate, device.getSiteId(), TestConstants.deviceName, device.getClientId(), device.getId());
 		assertNull(deviceData);
-		deviceData = generationComponent.parseDeviceInformation(
+		deviceData = obviousIngestComponent.parseDeviceInformation(
 				device2XmlNoTZ, device.getSiteId(), TestConstants.deviceName, device.getClientId(), device.getId());
 		assertNull(deviceData);
 	}
@@ -131,14 +132,14 @@ public class TestIngestComponent implements TestConstants, IComponentRegistry {
 	public void findError() {
 		assertEquals(
 				"Device Failed to Respond (the modbus device may be off or disconnected)" + " errorCode:139",
-				generationComponent.findError(deviceError));
+				obviousIngestComponent.findError(deviceError));
 	}
 
 	@Test
 	public void isOK() {
-		assertTrue(generationComponent.isOK(device2Xml));
-		assertFalse(generationComponent.isOK(deviceError));
-		assertFalse(generationComponent.isOK(null));
-		assertFalse(generationComponent.isOK(""));
+		assertTrue(obviousIngestComponent.isOK(device2Xml));
+		assertFalse(obviousIngestComponent.isOK(deviceError));
+		assertFalse(obviousIngestComponent.isOK(null));
+		assertFalse(obviousIngestComponent.isOK(""));
 	}
 }

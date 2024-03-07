@@ -42,12 +42,12 @@ public class TestVirtualDeviceComponent implements IComponentRegistry, TestConst
 	public void testHandleSite() throws XPathExpressionException, ResponseException {
 		Date date = TimeUtils.get15mRoundedDate();
 		for (int ai = 0; ai < 4; ai++) {
-			generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, date, -1), CUSTOMER_ID);
+			obviousIngestComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, date, -1), CUSTOMER_ID);
 		}
 		OpenSearchUtils.waitForIndexing();
 		assertNull(OSComponent.getDeviceEntryWithinLast15Min(
 				CUSTOMER_ID, TestUtils.getSite().getId()));
-		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 4, date, -1), CUSTOMER_ID);
+		obviousIngestComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 4, date, -1), CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
 		TestUtils.validateDateData(TestUtils.getSite().getId(), date);
 	}
@@ -61,10 +61,10 @@ public class TestVirtualDeviceComponent implements IComponentRegistry, TestConst
 		Date future =
 				Date.from(ldt.plusMinutes(15).atZone(ZoneId.systemDefault()).toInstant());
 		for (int ai = 0; ai < 4; ai++) {
-			generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, date, -1), CUSTOMER_ID);
+			obviousIngestComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, date, -1), CUSTOMER_ID);
 		}
 		for (int ai = 0; ai < 5; ai++) {
-			generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, past, -1), CUSTOMER_ID);
+			obviousIngestComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, past, -1), CUSTOMER_ID);
 		}
 		OpenSearchUtils.waitForIndexing();
 		TestUtils.validateDateData(TestUtils.getSite().getId(), past);
@@ -72,13 +72,13 @@ public class TestVirtualDeviceComponent implements IComponentRegistry, TestConst
 				CUSTOMER_ID, TestUtils.getSite().getId(), date));
 
 		for (int ai = 0; ai < 5; ai++) {
-			generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, future, -1), CUSTOMER_ID);
+			obviousIngestComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + ai, future, -1), CUSTOMER_ID);
 		}
 		OpenSearchUtils.waitForIndexing();
 		TestUtils.validateDateData(TestUtils.getSite().getId(), future);
 		assertNull(OSComponent.getDeviceByTimePeriod(
 				CUSTOMER_ID, TestUtils.getSite().getId(), date));
-		generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 4, date, -1), CUSTOMER_ID);
+		obviousIngestComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + 4, date, -1), CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
 		TestUtils.validateDateData(TestUtils.getSite().getId(), date);
 	}
@@ -98,7 +98,7 @@ public class TestVirtualDeviceComponent implements IComponentRegistry, TestConst
 		@SneakyThrows
 		@Override
 		public void run() {
-			generationComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + count, date, -1), CUSTOMER_ID);
+			obviousIngestComponent.handleDeviceBody(TestUtils.getDeviceXML(deviceName + count, date, -1), CUSTOMER_ID);
 			latch.countDown();
 		}
 	}

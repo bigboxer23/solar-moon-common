@@ -7,10 +7,7 @@ import com.bigboxer23.utils.properties.PropertyUtils;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Optional;
+import java.util.*;
 import net.time4j.Moment;
 import net.time4j.PlainDate;
 import net.time4j.calendar.astro.SolarTime;
@@ -68,8 +65,13 @@ public class LocationComponent {
 
 	public boolean isDay(Date dateToCheck, double latitude, double longitude) throws Exception {
 		SolarTime location = SolarTime.ofLocation(latitude, longitude);
-		Optional<Moment> sunrise = PlainDate.nowInSystemTime().get(location.sunrise());
-		Optional<Moment> sunset = PlainDate.nowInSystemTime().get(location.sunset());
+
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(dateToCheck);
+		PlainDate plainDate = PlainDate.of(
+				calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DATE));
+		Optional<Moment> sunrise = plainDate.get(location.sunrise());
+		Optional<Moment> sunset = plainDate.get(location.sunset());
 		if (sunrise.isEmpty() || sunset.isEmpty()) {
 			throw new Exception("Cannot find sunrise or sunset" + sunrise.isEmpty() + " " + sunset.isEmpty());
 		}
@@ -78,6 +80,15 @@ public class LocationComponent {
 	}
 
 	public Optional<LocalDateTime> getLocalTimeString(double latitude, double longitude) {
+		Optional<String> TZString = getLocalTimeZone(latitude, longitude);
+		if (TZString.isEmpty()) {
+			logger.error("unknown timezone: " + latitude + "," + longitude);
+			return Optional.empty();
+		}
+		return Optional.of(LocalDateTime.ofInstant(Instant.now(), ZoneId.of(TZString.get())));
+	}
+
+	public Optional<String> getLocalTimeZone(double latitude, double longitude) {
 		if (latitude == -1 && longitude == -1) {
 			return Optional.empty();
 		}
@@ -94,6 +105,6 @@ public class LocationComponent {
 			logger.error("unknown timezone: " + latitude + "," + longitude);
 			return Optional.empty();
 		}
-		return Optional.of(LocalDateTime.ofInstant(Instant.now(), ZoneId.of(TZString)));
+		return Optional.of(TZString);
 	}
 }

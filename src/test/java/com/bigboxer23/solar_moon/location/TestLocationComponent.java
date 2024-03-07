@@ -43,5 +43,9 @@ public class TestLocationComponent implements IComponentRegistry, TestConstants 
 		time = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS).withHour(23);
 		assertFalse(locationComponent.isDay(
 				Date.from(time.atZone(ZoneId.of("America/Chicago")).toInstant()), testLatitude, testLongitude));
+
+		time = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS).withHour(12).minusDays(7);
+		assertTrue(locationComponent.isDay(
+				Date.from(time.atZone(ZoneId.of("America/Chicago")).toInstant()), testLatitude, testLongitude));
 	}
 }

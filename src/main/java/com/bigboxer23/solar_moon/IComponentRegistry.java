@@ -10,6 +10,8 @@ import com.bigboxer23.solar_moon.device.VirtualDeviceComponent;
 import com.bigboxer23.solar_moon.download.DownloadComponent;
 import com.bigboxer23.solar_moon.gson.SearchResponseAdapter;
 import com.bigboxer23.solar_moon.ingest.IngestComponent;
+import com.bigboxer23.solar_moon.ingest.ObviusIngestComponent;
+import com.bigboxer23.solar_moon.ingest.sma.SMAIngestComponent;
 import com.bigboxer23.solar_moon.location.LocationComponent;
 import com.bigboxer23.solar_moon.maintenance.MaintenanceComponent;
 import com.bigboxer23.solar_moon.mapping.MappingComponent;
@@ -52,6 +54,10 @@ public interface IComponentRegistry {
 	VirtualDeviceComponent virtualDeviceComponent = new VirtualDeviceComponent();
 
 	IngestComponent generationComponent = new IngestComponent();
+
+	ObviusIngestComponent obviousIngestComponent = new ObviusIngestComponent();
+
+	SMAIngestComponent smaIngestComponent = new SMAIngestComponent();
 
 	MaintenanceComponent maintenanceComponent = new MaintenanceComponent();
 
