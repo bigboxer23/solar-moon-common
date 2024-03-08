@@ -27,6 +27,10 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 	public AlarmEmailTemplateContent(String customerId, List<Alarm> alarms) {
 		super("email.template.html", "Potential issue detected with device", "", "", "See active alarms");
 		Optional<Customer> customer = customerComponent.findCustomerByCustomerId(customerId);
+		if (customer.isEmpty()) {
+			logger.error("cannot find customer for " + customerId);
+			return;
+		}
 		devices = alarms.stream()
 				.map(a -> deviceComponent.getDevice(a.getDeviceId(), customerId))
 				.filter(Objects::nonNull)
@@ -38,8 +42,11 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 					return !d.isNotificationsDisabled();
 				})
 				.toList();
-		setRecipient(customer.map(Customer::getEmail).orElse(null));
-		setCustomerName("Hello " + customer.map(Customer::getName).orElse(null));
+		setRecipient(customer.get().getEmail());
+		setCustomerName("Hello "
+				+ (StringUtils.isEmpty(customer.get().getName())
+						? customer.get().getEmail()
+						: customer.get().getName()));
 		if (devices.size() == 1) {
 			singleDevice();
 		} else {
@@ -63,7 +70,7 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 				+ devices.getFirst().getDisplayName()
 				+ "</b>");
 		if (!StringUtils.isEmpty(devices.getFirst().getSiteId())) {
-			builder.append(" within site ").append(devices.getFirst().getSiteId());
+			builder.append(" within site ").append(devices.getFirst().getSite());
 		}
 		builder.append(". <br/><br/>Our monitoring system has indicated that your device has stopped"
 				+ " responding or is not generating power as expected. Please click the link"
@@ -79,7 +86,7 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 		devices.forEach(d -> {
 			builder.append("<br/><b>").append(d.getDisplayName()).append("</b>");
 			if (!StringUtils.isEmpty(d.getSiteId())) {
-				builder.append(" within site ").append(d.getSiteId());
+				builder.append(" within site ").append(d.getSite());
 			}
 		});
 		builder.append("<br/><br/>Our monitoring system has indicated that your devices have stopped"
