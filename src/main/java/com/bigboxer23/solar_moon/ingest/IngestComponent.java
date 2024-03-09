@@ -27,15 +27,14 @@ public class IngestComponent implements MeterConstants {
 			return null;
 		}
 		IComponentRegistry.alarmComponent.resolveActiveAlarms(deviceData);
-		Device site = IComponentRegistry.deviceComponent
-				.findDeviceById(device.getSiteId())
-				.orElse(null);
+		Optional<Device> site =
+				IComponentRegistry.deviceComponent.findDeviceById(device.getSiteId(), device.getClientId());
 		if (device.isDeviceSite()) {
 			deviceData.setIsSite();
 		}
 		calculateTotalEnergyConsumed(deviceData);
-		IComponentRegistry.locationComponent.addLocationData(deviceData, site);
-		IComponentRegistry.weatherComponent.addWeatherData(deviceData, site);
+		IComponentRegistry.locationComponent.addLocationData(deviceData, site.orElse(null));
+		IComponentRegistry.weatherComponent.addWeatherData(deviceData, site.orElse(null));
 		IComponentRegistry.OSComponent.logData(
 				deviceData.getDate() != null ? deviceData.getDate() : new Date(),
 				Collections.singletonList(deviceData));

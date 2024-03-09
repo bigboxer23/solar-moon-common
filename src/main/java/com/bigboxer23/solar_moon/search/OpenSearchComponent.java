@@ -161,6 +161,38 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		}
 	}
 
+	public void deleteBySiteId(String siteId, String customerId) {
+		try {
+			getClient()
+					.deleteByQuery(OpenSearchQueries.getDeleteRequestBuilder()
+							.query(QueryBuilders.bool()
+									.filter(
+											OpenSearchQueries.getCustomerIdQuery(customerId),
+											OpenSearchQueries.getSiteIdQuery(siteId))
+									.build()
+									._toQuery())
+							.build());
+		} catch (IOException e) {
+			logger.error("deleteByCustomerId: ", e);
+		}
+	}
+
+	public void deleteByDeviceId(String deviceId, String customerId) {
+		try {
+			getClient()
+					.deleteByQuery(OpenSearchQueries.getDeleteRequestBuilder()
+							.query(QueryBuilders.bool()
+									.filter(
+											OpenSearchQueries.getCustomerIdQuery(customerId),
+											OpenSearchQueries.getDeviceIdQuery(deviceId))
+									.build()
+									._toQuery())
+							.build());
+		} catch (IOException e) {
+			logger.error("deleteByCustomerId: ", e);
+		}
+	}
+
 	public void deleteById(String id) {
 		try {
 			getClient()

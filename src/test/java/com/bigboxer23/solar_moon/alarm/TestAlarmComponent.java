@@ -225,7 +225,8 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		device.get().setDisabled(true);
 		deviceComponent.updateDevice(device.get());
 		assertTrue(deviceComponent
-				.getDevice(device.get().getId(), device.get().getClientId())
+				.findDeviceById(device.get().getId(), device.get().getClientId())
+				.get()
 				.isDisabled());
 		alarm = alarmComponent.checkDevice(device.get());
 		assertFalse(alarm.isPresent());

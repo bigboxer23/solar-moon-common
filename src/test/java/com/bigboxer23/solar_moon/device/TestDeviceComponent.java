@@ -37,13 +37,17 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 
 	@Test
 	public void testGetDevice() {
-		assertNotNull(deviceComponent.getDevice(TestUtils.getDevice().getId(), CUSTOMER_ID));
-		assertNull(deviceComponent.getDevice(null, null));
-		assertNull(deviceComponent.getDevice("", null));
-		assertNull(deviceComponent.getDevice(null, ""));
-		assertNull(deviceComponent.getDevice("", ""));
-		assertNull(deviceComponent.getDevice("blah", CUSTOMER_ID));
-		assertNull(deviceComponent.getDevice(TestUtils.getDevice().getId(), "blah"));
+		assertTrue(deviceComponent
+				.findDeviceById(TestUtils.getDevice().getId(), CUSTOMER_ID)
+				.isPresent());
+		assertFalse(deviceComponent.findDeviceById(null, null).isPresent());
+		assertFalse(deviceComponent.findDeviceById("", null).isPresent());
+		assertFalse(deviceComponent.findDeviceById(null, "").isPresent());
+		assertFalse(deviceComponent.findDeviceById("", "").isPresent());
+		assertFalse(deviceComponent.findDeviceById("blah", CUSTOMER_ID).isPresent());
+		assertFalse(deviceComponent
+				.findDeviceById(TestUtils.getDevice().getId(), "blah")
+				.isPresent());
 	}
 
 	@Test
@@ -221,7 +225,9 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 
 	@Test
 	public void findDeviceById() {
-		assertTrue(deviceComponent.findDeviceById(TestUtils.getDevice().getId()).isPresent());
+		assertTrue(deviceComponent
+				.findDeviceById(TestUtils.getDevice().getId(), CUSTOMER_ID)
+				.isPresent());
 	}
 
 	@Test

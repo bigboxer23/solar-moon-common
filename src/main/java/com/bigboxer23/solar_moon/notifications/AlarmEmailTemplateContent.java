@@ -8,7 +8,6 @@ import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.Data;
 import software.amazon.awssdk.utils.StringUtils;
@@ -32,8 +31,9 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 			return;
 		}
 		devices = alarms.stream()
-				.map(a -> deviceComponent.getDevice(a.getDeviceId(), customerId))
-				.filter(Objects::nonNull)
+				.map(a -> deviceComponent.findDeviceById(a.getDeviceId(), customerId))
+				.filter(Optional::isPresent)
+				.map(Optional::get)
 				.filter(d -> {
 					if (d.isNotificationsDisabled()) {
 						TransactionUtil.addDeviceId(d.getId());

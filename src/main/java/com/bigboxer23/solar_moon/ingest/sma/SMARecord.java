@@ -12,4 +12,13 @@ public class SMARecord {
 	private String timestamp;
 
 	private String value;
+
+	public SMARecord() {}
+
+	public SMARecord(SMARecord donor) {
+		setDevice(donor.getDevice());
+		setAttributeName(donor.getAttributeName());
+		setTimestamp(donor.getTimestamp());
+		setValue(donor.getValue());
+	}
 }

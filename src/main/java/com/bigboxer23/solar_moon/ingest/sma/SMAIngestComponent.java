@@ -2,7 +2,9 @@ package com.bigboxer23.solar_moon.ingest.sma;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.DeviceData;
+import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.util.XMLUtil;
+import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.io.StringReader;
 import java.util.*;
 import javax.xml.xpath.XPathConstants;
@@ -52,13 +54,46 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 			devices.computeIfAbsent(record.getDevice(), k -> new SMADevice(customerId))
 					.addRecord(record);
 		});
+		addMissingDevices(customerId, devices);
 		devices.forEach((key, smaDevice) -> {
 			try {
+				TransactionUtil.addDeviceId(smaDevice.getDevice().getId());
 				IComponentRegistry.generationComponent.handleDevice(
 						smaDevice.getDevice(), translateToDeviceData(smaDevice));
 			} catch (ResponseException e) {
 				logger.error("ingestXMLFile", e);
 			}
+		});
+	}
+
+	/**
+	 * Devices disappear at night sometimes, add them back in at 0 production
+	 *
+	 * @param customerId
+	 * @param devices
+	 */
+	private void addMissingDevices(String customerId, Map<String, SMADevice> devices) {
+		if (devices.isEmpty()) {
+			return;
+		}
+		devices.keySet().stream().findFirst().ifPresent(key -> {
+			SMADevice donor = devices.get(key);
+			if (DeviceComponent.NO_SITE.equals(donor.getDevice().getSiteId())) {
+				logger.debug("cannot find ghost devices w/o site configuration");
+				return;
+			}
+			IComponentRegistry.deviceComponent
+					.getDevicesBySiteId(customerId, donor.getDevice().getSiteId())
+					.forEach(d -> {
+						if (d.getDeviceName() != null && !devices.containsKey(d.getDeviceName())) {
+							logger.debug("adding ghost device " + d.getDeviceName());
+							SMADevice smaDevice = new SMADevice(customerId);
+							SMARecord record = new SMARecord(donor.getRecords().getFirst());
+							record.setDevice(d.getDeviceName());
+							smaDevice.addRecord(record);
+							devices.put(d.getDeviceName(), smaDevice);
+						}
+					});
 		});
 	}
 

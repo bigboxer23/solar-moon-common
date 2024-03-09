@@ -71,19 +71,21 @@ public class VirtualDeviceComponent {
 		if (DeviceComponent.NO_SITE.equals(device.getSiteId())) {
 			return false;
 		}
+		List<Device> devices =
+				IComponentRegistry.deviceComponent.getDevicesBySiteId(device.getCustomerId(), device.getSiteId());
+		if (devices.stream().noneMatch(Device::isVirtual)) {
+			return false;
+		}
 		OpenSearchUtils.waitForIndexing();
-		int deviceCount = IComponentRegistry.deviceComponent
-				.getDevicesBySiteId(device.getCustomerId(), device.getSiteId())
-				.size();
 		int openSearchDeviceCount = IComponentRegistry.OSComponent.getSiteDevicesCountByTimePeriod(
 				device.getCustomerId(), device.getSiteId(), device.getDate());
-		if (deviceCount - 1 != openSearchDeviceCount) {
+		if (devices.size() - 1 != openSearchDeviceCount) {
 			logger.debug("not calculating site "
 					+ device.getSiteId()
 					+ ". Only "
 					+ openSearchDeviceCount
 					+ " devices have written data out of "
-					+ deviceCount
+					+ devices.size()
 					+ ".");
 			return false;
 		}

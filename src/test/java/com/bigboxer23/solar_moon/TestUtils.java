@@ -14,6 +14,7 @@ import com.bigboxer23.solar_moon.search.SearchJSON;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TimeUtils;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
+import com.bigboxer23.utils.properties.PropertyUtils;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -21,6 +22,8 @@ import java.util.*;
 import javax.xml.xpath.XPathExpressionException;
 import org.opensearch.client.ResponseException;
 import org.opensearch.client.opensearch.core.SearchResponse;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
@@ -29,6 +32,8 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 	private static Device device;
 
 	private static Device site;
+
+	private static S3Client s3;
 
 	public static String getDeviceXML(String deviceName, Date date, float avgCurrent) {
 		return getDeviceXML(device2Xml, deviceName, date, avgCurrent, -1, -1, -1, -1);
@@ -104,11 +109,13 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		testDevice.setSite(TestConstants.SITE);
 		site = deviceComponent
 				.findDeviceById(
-						addDevice(TestConstants.SITE, testDevice, true, null).getId())
+						addDevice(TestConstants.SITE, testDevice, true, null).getId(), customerId)
 				.get();
 		device = deviceComponent
-				.findDeviceById(addDevice(TestConstants.deviceName + 0, testDevice, false, testDevice.getSiteId())
-						.getId())
+				.findDeviceById(
+						addDevice(TestConstants.deviceName + 0, testDevice, false, testDevice.getSiteId())
+								.getId(),
+						customerId)
 				.get();
 		for (int ai = 1; ai < 5; ai++) {
 			addDevice(TestConstants.deviceName + ai, testDevice, false, testDevice.getSiteId());
@@ -259,5 +266,14 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 			}
 			System.out.println(deviceFilter + " " + week + ":" + datas.size());
 		}
+	}
+
+	public static S3Client getS3Client() {
+		if (s3 == null) {
+			s3 = S3Client.builder()
+					.region(Region.of(PropertyUtils.getProperty("aws.region")))
+					.build();
+		}
+		return s3;
 	}
 }
