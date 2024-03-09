@@ -16,12 +16,6 @@ import software.amazon.awssdk.utils.StringUtils;
 /** */
 public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 
-	private final SubscriptionComponent subscriptionComponent;
-
-	public DeviceComponent(SubscriptionComponent subscriptionComponent) {
-		this.subscriptionComponent = subscriptionComponent;
-	}
-
 	public static final String NO_SITE = "No Site"; // TODO:set as site id instead of name (or also as name)
 
 	public Optional<Device> findDeviceByDeviceName(String customerId, String deviceName) {
@@ -135,12 +129,12 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 				.findFirst();
 	}
 
-	public Device getDevice(String id, String customerId) {
+	public Optional<Device> findDeviceById(String id, String customerId) {
 		if (StringUtils.isBlank(id) || StringUtils.isBlank(customerId)) {
 			return null;
 		}
 		logAction("get", id);
-		return getTable().getItem(new Device(id, customerId));
+		return Optional.ofNullable(getTable().getItem(new Device(id, customerId)));
 	}
 
 	public boolean isValidAdd(Device device) {
@@ -167,15 +161,15 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	public Device addDevice(Device device) {
-		if (!subscriptionComponent.canAddAnotherDevice(device.getClientId())) {
+		if (!IComponentRegistry.subscriptionComponent.canAddAnotherDevice(device.getClientId())) {
 			logger.warn("Cannot add new device, not enough devices in license: "
-					+ (subscriptionComponent.getSubscriptionPacks(device.getClientId())
+					+ (IComponentRegistry.subscriptionComponent.getSubscriptionPacks(device.getClientId())
 							* SubscriptionComponent.DEVICES_PER_SUBSCRIPTION)
 					+ ":"
 					+ getDevicesForCustomerId(device.getClientId()).size());
 			return null;
 		}
-		if (getDevice(device.getId(), device.getClientId()) != null) {
+		if (findDeviceById(device.getId(), device.getClientId()).isPresent()) {
 			logger.warn(device.getClientId() + ":" + device.getId() + " exists, not putting into db.");
 			return null;
 		}
@@ -206,7 +200,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 			return Optional.empty();
 		}
 		if (device.isDeviceSite()) {
-			Device site = getDevice(device.getId(), device.getClientId());
+			Device site = findDeviceById(device.getId(), device.getClientId()).get();
 			if (!site.getName().equals(device.getName())) {
 				getDevicesBySiteId(site.getClientId(), site.getSiteId()).forEach(childDevice -> {
 					childDevice.setSite(device.getName());
@@ -220,17 +214,21 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 
 	public void deleteDevice(String id, String customerId) {
 		logAction("delete", id);
-		Device device = getDevice(id, customerId);
-		if (device.isDeviceSite()) {
-			getDevicesBySiteId(customerId, device.getId()).forEach(childDevice -> {
+		Optional<Device> device = findDeviceById(id, customerId);
+		if (device.isEmpty()) {
+			return;
+		}
+		if (device.get().isDeviceSite()) {
+			getDevicesBySiteId(customerId, device.get().getId()).forEach(childDevice -> {
 				childDevice.setSite(NO_SITE);
 				childDevice.setSiteId(NO_SITE);
 				updateDevice(childDevice);
 			});
 		}
-		getTable().deleteItem(device);
-		IComponentRegistry.deviceUpdateComponent.delete(device.getId());
-		IComponentRegistry.alarmComponent.deleteAlarmByDeviceId(device.getClientId(), device.getId());
+		getTable().deleteItem(device.get());
+		IComponentRegistry.deviceUpdateComponent.delete(device.get().getId());
+		IComponentRegistry.alarmComponent.deleteAlarmByDeviceId(
+				device.get().getClientId(), device.get().getId());
 	}
 
 	public void deleteDevicesByCustomerId(String customerId) {

@@ -4,6 +4,7 @@ import com.bigboxer23.solar_moon.aggregated.overview.OverviewComponent;
 import com.bigboxer23.solar_moon.aggregated.sites.SitesOverviewComponent;
 import com.bigboxer23.solar_moon.alarm.AlarmComponent;
 import com.bigboxer23.solar_moon.customer.CustomerComponent;
+import com.bigboxer23.solar_moon.device.CachingDeviceComponent;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.device.DeviceUpdateComponent;
 import com.bigboxer23.solar_moon.device.VirtualDeviceComponent;
@@ -19,6 +20,7 @@ import com.bigboxer23.solar_moon.notifications.NotificationComponent;
 import com.bigboxer23.solar_moon.search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.search.status.OpenSearchStatusComponent;
 import com.bigboxer23.solar_moon.subscription.SubscriptionComponent;
+import com.bigboxer23.solar_moon.weather.CachingPirateWeatherComponent;
 import com.bigboxer23.solar_moon.weather.PirateWeatherComponent;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -39,13 +41,13 @@ public interface IComponentRegistry {
 
 	SubscriptionComponent subscriptionComponent = new SubscriptionComponent();
 
-	DeviceComponent deviceComponent = new DeviceComponent(subscriptionComponent);
+	DeviceComponent deviceComponent = new CachingDeviceComponent();
 
 	OpenSearchComponent OSComponent = new OpenSearchComponent();
 
 	OpenSearchStatusComponent OpenSearchStatusComponent = new OpenSearchStatusComponent();
 
-	PirateWeatherComponent weatherComponent = new PirateWeatherComponent();
+	PirateWeatherComponent weatherComponent = new CachingPirateWeatherComponent();
 
 	NotificationComponent notificationComponent = new NotificationComponent();
 

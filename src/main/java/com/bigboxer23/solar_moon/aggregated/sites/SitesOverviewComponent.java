@@ -26,8 +26,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 
 	public SitesSiteData getExtendedSiteOverviewData(String siteId, SearchJSON search) {
 		return deviceComponent
-				.findDeviceById(siteId)
-				.filter(site -> site.getClientId().equalsIgnoreCase(search.getCustomerId()))
+				.findDeviceById(siteId, search.getCustomerId())
 				.map(site -> getSiteOverviewData(site, search))
 				.map(siteOverview -> fillExtendedSiteOverviewData(siteOverview, search))
 				.orElse(null);

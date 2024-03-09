@@ -5,11 +5,9 @@ import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 import lombok.Data;
+import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 @Data
@@ -29,7 +27,7 @@ public class SMADevice implements ISMAIngestConstants {
 	}
 
 	public void addRecord(SMARecord record) {
-		if (TOTAL_YIELD.equalsIgnoreCase(record.getAttributeName())) {
+		if (getDevice() == null) {
 			setDeviceName(record.getDevice());
 			SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
 			setDevice(IComponentRegistry.generationComponent.findDeviceFromDeviceName(customerId, deviceName));
@@ -37,17 +35,21 @@ public class SMADevice implements ISMAIngestConstants {
 				IComponentRegistry.logger.error("cannot add record, no device created (licensing?)");
 				return;
 			}
-			if (!DeviceComponent.NO_SITE.equals(getDevice().getSiteId())) {
-				Device siteDevice =
-						IComponentRegistry.deviceComponent.getDevice(getDevice().getSiteId(), customerId);
-				IComponentRegistry.locationComponent
-						.getLocalTimeZone(siteDevice.getLatitude(), siteDevice.getLongitude())
-						.ifPresent(timeZone -> sdf.setTimeZone(TimeZone.getTimeZone(timeZone)));
-			}
-			try {
-				setTimestamp(sdf.parse(record.getTimestamp()));
-			} catch (ParseException e) {
-				IComponentRegistry.logger.warn("cannot parse date string: " + record.getTimestamp(), e);
+			if (!StringUtils.isEmpty(record.getTimestamp())) {
+				if (!DeviceComponent.NO_SITE.equals(getDevice().getSiteId())) {
+					Optional<Device> siteDevice = IComponentRegistry.deviceComponent.findDeviceById(
+							getDevice().getSiteId(), customerId);
+					IComponentRegistry.locationComponent
+							.getLocalTimeZone(
+									siteDevice.map(Device::getLatitude).orElse(-1.0),
+									siteDevice.map(Device::getLongitude).orElse(-1.0))
+							.ifPresent(timeZone -> sdf.setTimeZone(TimeZone.getTimeZone(timeZone)));
+				}
+				try {
+					setTimestamp(sdf.parse(record.getTimestamp()));
+				} catch (ParseException e) {
+					IComponentRegistry.logger.warn("cannot parse date string: " + record.getTimestamp(), e);
+				}
 			}
 		}
 		records.add(record);
