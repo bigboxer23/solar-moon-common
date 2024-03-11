@@ -1,15 +1,17 @@
 package com.bigboxer23.solar_moon.ingest.sma;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.util.XMLUtil;
-import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.io.StringReader;
 import java.util.*;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+
+import com.bigboxer23.solar_moon.web.TransactionUtil;
 import org.opensearch.client.ResponseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +56,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 			devices.computeIfAbsent(record.getDevice(), k -> new SMADevice(customerId))
 					.addRecord(record);
 		});
+		maybeAssignSite(customerId, devices);
 		addMissingDevices(customerId, devices);
 		devices.forEach((key, smaDevice) -> {
 			try {
@@ -64,6 +67,58 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 				logger.error("ingestXMLFile", e);
 			}
 		});
+	}
+
+	private void maybeAssignSite(String customerId, Map<String, SMADevice> devices) {
+		boolean shouldChangeSite = devices.values().stream()
+				.allMatch(d -> DeviceComponent.NO_SITE.equals(d.getDevice().getSiteId()));
+		if (shouldChangeSite) {
+			logger.info("all new items, assigning site");
+			Double[] yield = {(double) -1};
+			String[] deviceNameHolder = new String[1];
+			devices.values().forEach(sma -> {
+				sma.getRecords().stream()
+						.filter(r -> TOTAL_YIELD.equalsIgnoreCase(r.getAttributeName()))
+						.findFirst()
+						.ifPresent(r -> {
+							try {
+								double localYield = Double.parseDouble(r.getValue());
+								if (localYield > yield[0]) {
+									yield[0] = localYield;
+									deviceNameHolder[0] = r.getDevice();
+								}
+							} catch (NumberFormatException nfe) {
+							}
+						});
+			});
+			lookupSiteDeviceAndAssignSiteToDeviceList(customerId, deviceNameHolder[0], devices.values());
+		}
+	}
+
+	private void lookupSiteDeviceAndAssignSiteToDeviceList(
+			String customerId, String siteDeviceName, Collection<SMADevice> devices) {
+		logger.warn("Attempting to update site for " + siteDeviceName);
+		Optional<Device> siteOptional =
+				IComponentRegistry.deviceComponent.findDeviceByDeviceName(customerId, siteDeviceName);
+		if (siteOptional.isEmpty()) {
+			logger.warn("Cannot find device for " + siteDeviceName + ". Cannot automatically stamp site");
+			return;
+		}
+		Device site = siteOptional.get();
+		site.setVirtual(false);
+		site.setIsSite("1");
+		site.setSiteId(siteOptional.get().getId());
+		site.setSite(siteOptional.get().getDisplayName());
+		IComponentRegistry.deviceComponent.updateDevice(site).ifPresent(s -> devices.stream()
+				.map(SMADevice::getDevice)
+				.filter(Objects::nonNull)
+				.filter(device -> DeviceComponent.NO_SITE.equalsIgnoreCase(device.getSiteId()))
+				.forEach(device -> {
+					logger.warn("adjusting site for " + device.getDisplayName() + " " + site.getSite());
+					device.setSite(site.getDisplayName());
+					device.setSiteId(site.getId());
+					IComponentRegistry.deviceComponent.updateDevice(device);
+				}));
 	}
 
 	/**
