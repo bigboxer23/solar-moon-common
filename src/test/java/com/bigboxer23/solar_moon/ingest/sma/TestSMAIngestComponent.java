@@ -7,7 +7,6 @@ import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.TestConstants;
 import com.bigboxer23.solar_moon.TestUtils;
 import com.bigboxer23.solar_moon.data.Device;
-import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import com.bigboxer23.solar_moon.search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.search.OpenSearchUtils;
@@ -25,7 +24,6 @@ import org.opensearch.client.opensearch.core.search.Hit;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 /** */
 public class TestSMAIngestComponent implements TestConstants, IComponentRegistry, MeterConstants {
@@ -67,25 +65,6 @@ public class TestSMAIngestComponent implements TestConstants, IComponentRegistry
 		List<Device> devices = deviceComponent.getDevicesForCustomerId(CUSTOMER_ID);
 		assertFalse(devices.isEmpty());
 		assertEquals(36, devices.size());
-		Optional<Device> siteOptional =
-				deviceComponent.findDeviceByDeviceName(CUSTOMER_ID, "Cluster Controller:165001455");
-		assertTrue(siteOptional.isPresent());
-
-		siteOptional.get().setVirtual(false);
-		siteOptional.get().setIsSite("1");
-		siteOptional.get().setSiteId(siteOptional.get().getId());
-		siteOptional.get().setSite(siteOptional.get().getDisplayName());
-		siteOptional = deviceComponent.updateDevice(siteOptional.get());
-		assertTrue(siteOptional.isPresent());
-		Device site = siteOptional.get();
-		devices.stream()
-				.filter(device -> DeviceComponent.NO_SITE.equalsIgnoreCase(device.getSiteId()))
-				.forEach(device -> {
-					System.out.println("adjusting site");
-					device.setSite(site.getDisplayName());
-					device.setSiteId(site.getId());
-					deviceComponent.updateDevice(device);
-				});
 		smaIngestComponent.ingestXMLFile(IOUtils.toString(new FileReader(t121500)), CUSTOMER_ID);
 		smaIngestComponent.ingestXMLFile(IOUtils.toString(new FileReader(t123000)), CUSTOMER_ID);
 
