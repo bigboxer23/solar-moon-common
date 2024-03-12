@@ -237,7 +237,11 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 
 	public void logAction(String action, String id) {
 		TransactionUtil.addDeviceId(id);
-		logger.info("device " + action);
+		if ("get".equalsIgnoreCase(action)) {
+			logger.debug("device " + action);
+		} else {
+			logger.info("device " + action);
+		}
 	}
 
 	@Override

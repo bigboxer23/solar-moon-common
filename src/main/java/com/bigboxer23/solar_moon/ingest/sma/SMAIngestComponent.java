@@ -5,13 +5,12 @@ import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.util.XMLUtil;
+import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.io.StringReader;
 import java.util.*;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-
-import com.bigboxer23.solar_moon.web.TransactionUtil;
 import org.opensearch.client.ResponseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -60,7 +60,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			return;
 		}
 		IComponentRegistry.deviceUpdateComponent.update(deviceData.getDeviceId());
-		if (deviceData.getTotalRealPower() <= 0) {
+		if (deviceData.getTotalRealPower() <= 0 && deviceData.isDayLight()) {
 			logger.warn("not resolving alarm, no real power reported");
 			return;
 		}

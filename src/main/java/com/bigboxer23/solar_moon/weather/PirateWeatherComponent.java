@@ -27,18 +27,9 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 	public Optional<PirateWeatherDataResponse> fetchForecastData(double latitude, double longitude) {
 		try (Response response =
 				OkHttpUtil.getSynchronous(MessageFormat.format(FORCAST_URL, latitude, longitude), null)) {
-			ResponseBody responseBody = response.body();
-			if (responseBody == null) {
-				IComponentRegistry.logger.warn("no forecast body");
-				return Optional.empty();
-			}
-			String body = responseBody.string();
-			IComponentRegistry.logger.debug("getForecastData body " + body);
-			return Optional.ofNullable(IComponentRegistry.moshi
-					.adapter(PirateWeatherDataResponse.class)
-					.fromJson(body));
+			return OkHttpUtil.getBody(response, PirateWeatherDataResponse.class);
 		} catch (IOException e) {
-			IComponentRegistry.logger.error("getForcastData", e);
+			IComponentRegistry.logger.error("getForecastData", e);
 		}
 		return Optional.empty();
 	}
@@ -123,7 +114,7 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 
 	public void updateWeather(double latitude, double longitude, PirateWeatherData data) {
 		if (data == null) {
-			logger.warn("invalid weather, not storing");
+			logger.warn("invalid weather, not storing " + latitude + "," + longitude);
 			return;
 		}
 		logger.info("Updating weather for: " + latitude + "," + longitude);
