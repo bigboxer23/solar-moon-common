@@ -60,8 +60,26 @@ public class IngestComponent implements MeterConstants {
 		Float previousTotalEnergyConsumed =
 				IComponentRegistry.OSComponent.getTotalEnergyConsumed(deviceData.getDeviceId());
 		if (previousTotalEnergyConsumed != null) {
-			deviceData.setEnergyConsumed(totalEnergyConsumption - previousTotalEnergyConsumed);
+			deviceData.setEnergyConsumed(maybeCorrectForRollover(previousTotalEnergyConsumed, totalEnergyConsumption)
+					- previousTotalEnergyConsumed);
 		}
+	}
+
+	/**
+	 * Obvius device has rollover at 10Gwh, add a correction when determining Wh calculation
+	 *
+	 * @param prev
+	 * @param newTotal
+	 * @return
+	 */
+	protected float maybeCorrectForRollover(float prev, float newTotal) {
+		if (prev < newTotal) {
+			return newTotal;
+		}
+		if (newTotal < OBVIOUS_ROLLOVER_MARGIN && prev > (OBVIOUS_ROLLOVER - OBVIOUS_ROLLOVER_MARGIN) && prev < OBVIOUS_ROLLOVER) {
+			return OBVIOUS_ROLLOVER + newTotal;
+		}
+		return newTotal;
 	}
 
 	public Device findDeviceFromDeviceName(String customerId, String deviceName) {
