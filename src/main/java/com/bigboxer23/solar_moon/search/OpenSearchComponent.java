@@ -113,7 +113,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 			return Optional.ofNullable((Double) fields.get(MeterConstants.TOTAL_ENG_CONS))
 					.map(Double::floatValue)
 					.orElseGet(() -> {
-						logger.warn("Unexpected value type for " + deviceId);
+						logger.warn("Unexpected value type: " + fields.get(MeterConstants.TOTAL_ENG_CONS));
 						return null;
 					});
 		} catch (IOException e) {

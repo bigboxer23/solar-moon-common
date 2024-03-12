@@ -246,7 +246,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 														.field(getKeywordField(DEVICE_ID))
 														.order(Collections.singletonList(
 																Collections.singletonMap("1", SortOrder.Desc)))
-														.size(10)
+														.size(50)
 														.build())
 												.aggregations(
 														"1",

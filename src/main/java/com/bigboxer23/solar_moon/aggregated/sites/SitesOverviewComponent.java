@@ -104,7 +104,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		return siteOverview;
 	}
 
-	private void fillSiteTimeSeries(SitesSiteData siteOverview, SearchJSON search) {
+	protected void fillSiteTimeSeries(SitesSiteData siteOverview, SearchJSON search) {
 		SearchJSON searchJson = new SearchJSON(search);
 		searchJson.setDaylight(false);
 		searchJson.setDeviceId(

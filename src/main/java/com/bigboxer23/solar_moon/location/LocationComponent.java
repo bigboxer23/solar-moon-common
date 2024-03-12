@@ -40,7 +40,7 @@ public class LocationComponent {
 	}
 
 	public void addLocationData(DeviceData data, Device site) {
-		if (data == null || !data.isValid()) {
+		if (data == null) {
 			logger.warn("Device invalid, not adding location data");
 			return;
 		}
