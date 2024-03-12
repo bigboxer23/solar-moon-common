@@ -56,4 +56,7 @@ public interface MeterConstants {
 	String WEATHER_SUMMARY = "weatherSummary";
 
 	String CUSTOMER_ID_ATTRIBUTE = "customer-id";
+
+	float OBVIOUS_ROLLOVER = 10000000;
+	float OBVIOUS_ROLLOVER_MARGIN = 1000;
 }
