@@ -74,7 +74,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		if (shouldChangeSite) {
 			logger.info("all new items, assigning site");
 			Double[] yield = {(double) -1};
-			String[] deviceNameHolder = new String[1];
+			String[] siteNameHolder = new String[1];
 			devices.values().forEach(sma -> {
 				sma.getRecords().stream()
 						.filter(r -> TOTAL_YIELD.equalsIgnoreCase(r.getAttributeName()))
@@ -84,13 +84,13 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 								double localYield = Double.parseDouble(r.getValue());
 								if (localYield > yield[0]) {
 									yield[0] = localYield;
-									deviceNameHolder[0] = r.getDevice();
+									siteNameHolder[0] = r.getDevice();
 								}
 							} catch (NumberFormatException nfe) {
 							}
 						});
 			});
-			lookupSiteDeviceAndAssignSiteToDeviceList(customerId, deviceNameHolder[0], devices.values());
+			lookupSiteDeviceAndAssignSiteToDeviceList(customerId, siteNameHolder[0], devices.values());
 		}
 	}
 
@@ -111,6 +111,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		IComponentRegistry.deviceComponent.updateDevice(site).ifPresent(s -> devices.stream()
 				.map(SMADevice::getDevice)
 				.filter(Objects::nonNull)
+				.filter(device -> !site.getId().equals(device.getId()))
 				.filter(device -> DeviceComponent.NO_SITE.equalsIgnoreCase(device.getSiteId()))
 				.forEach(device -> {
 					logger.warn("adjusting site for " + device.getDisplayName() + " " + site.getSite());

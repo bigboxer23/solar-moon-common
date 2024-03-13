@@ -76,7 +76,9 @@ public class IngestComponent implements MeterConstants {
 		if (prev < newTotal) {
 			return newTotal;
 		}
-		if (newTotal < OBVIOUS_ROLLOVER_MARGIN && prev > (OBVIOUS_ROLLOVER - OBVIOUS_ROLLOVER_MARGIN) && prev < OBVIOUS_ROLLOVER) {
+		if (newTotal < OBVIOUS_ROLLOVER_MARGIN
+				&& prev > (OBVIOUS_ROLLOVER - OBVIOUS_ROLLOVER_MARGIN)
+				&& prev < OBVIOUS_ROLLOVER) {
 			return OBVIOUS_ROLLOVER + newTotal;
 		}
 		return newTotal;
