@@ -5,6 +5,7 @@ import static com.bigboxer23.solar_moon.search.OpenSearchConstants.DATA_SEARCH_T
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
@@ -125,6 +126,10 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 
 	public static Device setupSite() {
 		return setupSite(CUSTOMER_ID);
+	}
+
+	public static Optional<Customer> setupCustomer() {
+		return customerComponent.addCustomer(CUSTOMER_EMAIL, CUSTOMER_ID, CUSTOMER_NAME, CUSTOMER_STRIPE_ID);
 	}
 
 	public static Device getDevice() {

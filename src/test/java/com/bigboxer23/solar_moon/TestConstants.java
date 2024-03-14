@@ -10,6 +10,12 @@ public interface TestConstants {
 
 	String CUSTOMER_ID = "0badd0c2-450b-4204-80d5-c7c77fc13500";
 
+	String CUSTOMER_EMAIL = "noreply@solarmoonanalytics.com";
+	String CUSTOMER_NAME = "mr fake customer";
+	String CUSTOMER_ACCESS_KEY = "4ab84ed3-0ce1-4615-b919-c34c7b619702";
+
+	String CUSTOMER_STRIPE_ID = "ST_id_1234";
+
 	String SITE = "testSite";
 
 	String device1Name = "Test generator 1";

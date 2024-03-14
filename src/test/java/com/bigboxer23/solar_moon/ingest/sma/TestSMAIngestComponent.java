@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.TestConstants;
 import com.bigboxer23.solar_moon.TestUtils;
+import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import com.bigboxer23.solar_moon.search.OpenSearchQueries;
@@ -13,6 +14,7 @@ import com.bigboxer23.solar_moon.search.OpenSearchUtils;
 import com.bigboxer23.solar_moon.search.SearchJSON;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import javax.xml.xpath.XPathExpressionException;
 import org.apache.commons.io.FileUtils;
@@ -92,5 +94,43 @@ public class TestSMAIngestComponent implements TestConstants, IComponentRegistry
 
 		response = OSComponent.search(search);
 		assertEquals(120, response.hits().total().value());
+	}
+
+	@Test
+	public void getDateFormatter() {
+		customerComponent.deleteCustomerByCustomerId(CUSTOMER_ID);
+		Optional<Customer> customer = TestUtils.setupCustomer();
+		TestUtils.setupSite();
+
+		TimeZone nativeZone = new SimpleDateFormat().getTimeZone();
+		String testCustomerDefaultTZ = "America/New_York";
+		String testSiteTZ = "America/Anchorage";
+
+		assertEquals(nativeZone, SMAIngestComponent.getDateFormatter(null).getTimeZone());
+
+		assertEquals(
+				nativeZone,
+				SMAIngestComponent.getDateFormatter(TestUtils.getDevice()).getTimeZone());
+
+		assertTrue(customer.isPresent());
+		customer.get().setDefaultTimezone(testCustomerDefaultTZ);
+		IComponentRegistry.customerComponent.updateCustomer(customer.get());
+
+		assertEquals(
+				testCustomerDefaultTZ,
+				SMAIngestComponent.getDateFormatter(TestUtils.getDevice())
+						.getTimeZone()
+						.getID());
+
+		Device site = TestUtils.getSite();
+		site.setCity("Anchorage");
+		site.setState("AK");
+		site.setCountry("USA");
+		IComponentRegistry.deviceComponent.updateDevice(site);
+		assertEquals(
+				testSiteTZ,
+				SMAIngestComponent.getDateFormatter(TestUtils.getDevice())
+						.getTimeZone()
+						.getID());
 	}
 }

@@ -62,6 +62,8 @@ public class Customer {
 
 	private boolean active = true;
 
+	private String defaultTimezone;
+
 	@DynamoDbPartitionKey
 	public String getEmail() {
 		return email;

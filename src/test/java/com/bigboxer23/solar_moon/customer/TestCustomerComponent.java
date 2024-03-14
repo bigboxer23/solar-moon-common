@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.TestConstants;
+import com.bigboxer23.solar_moon.TestUtils;
 import com.bigboxer23.solar_moon.data.Customer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,13 +13,7 @@ import org.junit.jupiter.api.Test;
 /** */
 // @ActiveProfiles("test")
 public class TestCustomerComponent implements IComponentRegistry, TestConstants {
-	protected static final String CUSTOMER_EMAIL = "noreply@solarmoonanalytics.com";
-	protected static final String CUSTOMER_NAME = "mr fake customer";
-	protected static final String CUSTOMER_ACCESS_KEY = "4ab84ed3-0ce1-4615-b919-c34c7b619702";
-
-	protected static final String CUSTOMER_STRIPE_ID = "ST_id_1234";
-
-	private final Customer testCustomer = new Customer();
+	private Customer testCustomer;
 
 	@Test
 	public void testFindCustomerByStripeId() {
@@ -51,10 +46,7 @@ public class TestCustomerComponent implements IComponentRegistry, TestConstants 
 
 	@BeforeEach
 	protected void beforeEach() {
-		testCustomer.setCustomerId(CUSTOMER_ID);
-		testCustomer.setEmail(CUSTOMER_EMAIL);
-		testCustomer.setStripeCustomerId(CUSTOMER_STRIPE_ID);
-		customerComponent.addCustomer(CUSTOMER_EMAIL, CUSTOMER_ID, CUSTOMER_NAME, CUSTOMER_STRIPE_ID);
+		testCustomer = TestUtils.setupCustomer().orElse(null);
 	}
 
 	@AfterEach
