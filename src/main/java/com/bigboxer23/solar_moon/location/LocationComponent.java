@@ -23,7 +23,7 @@ public class LocationComponent {
 	private static final Logger logger = LoggerFactory.getLogger(LocationComponent.class);
 
 	public Optional<SearchForTextResult> getLatLongFromText(String city, String state, String country) {
-		String locationString = city + ", " + state + " ," + country;
+		String locationString = city + ", " + state + ", " + country;
 		logger.info("fetching location data for " + locationString);
 		try (LocationClient client = LocationClient.builder().build()) {
 			SearchPlaceIndexForTextResponse response =

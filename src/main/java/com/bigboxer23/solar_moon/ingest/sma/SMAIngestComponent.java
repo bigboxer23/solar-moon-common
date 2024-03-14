@@ -1,12 +1,14 @@
 package com.bigboxer23.solar_moon.ingest.sma;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.util.XMLUtil;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.io.StringReader;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
@@ -193,5 +195,38 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 			}
 		});
 		return record;
+	}
+
+	/**
+	 * set time zone in date formatter by looking up the site's location. If no site attached, fall
+	 * back to the customer's default timezone
+	 *
+	 * @param device
+	 * @return
+	 */
+	public static SimpleDateFormat getDateFormatter(Device device) {
+		SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
+		if (device == null) {
+			logger.error("device is null, cannot set time zone");
+			return sdf;
+		}
+		if (!DeviceComponent.NO_SITE.equals(device.getSiteId())) {
+			Optional<Device> siteDevice =
+					IComponentRegistry.deviceComponent.findDeviceById(device.getSiteId(), device.getClientId());
+			Optional<String> timeZone = IComponentRegistry.locationComponent.getLocalTimeZone(
+					siteDevice.map(Device::getLatitude).orElse(-1.0),
+					siteDevice.map(Device::getLongitude).orElse(-1.0));
+			if (timeZone.isPresent()) {
+				sdf.setTimeZone(TimeZone.getTimeZone(timeZone.get()));
+				return sdf;
+			}
+		}
+		IComponentRegistry.customerComponent
+				.findCustomerByCustomerId(device.getClientId())
+				.map(Customer::getDefaultTimezone)
+				.ifPresent(tz -> {
+					sdf.setTimeZone(TimeZone.getTimeZone(tz));
+				});
+		return sdf;
 	}
 }
