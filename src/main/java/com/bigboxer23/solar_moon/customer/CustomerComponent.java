@@ -29,14 +29,16 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			logger.warn("email, name strip id, or customer id is null/empty, cannot add.");
 			return Optional.empty();
 		}
-		if (findCustomerByCustomerId(customerId).isPresent()) {
+		Optional<Customer> dbCustomer = findCustomerByCustomerId(customerId);
+		if (dbCustomer.isPresent()) {
 			logger.debug(customerId + ":" + email + " exists, not putting into db");
-			return Optional.empty();
+			return dbCustomer;
 		}
 		Customer customer = new Customer(customerId, email, TokenGenerator.generateNewToken(), name);
 		customer.setStripeCustomerId(stripeCustomerId);
 		logger.info("Adding customer " + email);
 		getTable().putItem(customer);
+		IComponentRegistry.smaIngestComponent.handleAccessKeyChange(null, customer.getAccessKey());
 		return Optional.of(customer);
 	}
 
@@ -46,7 +48,9 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			return;
 		}
 		logAction(customer.getCustomerId(), "update");
-		if (customer.getAccessKey() == null || customer.getAccessKey().isBlank()) {
+		boolean newAccessKey =
+				customer.getAccessKey() == null || customer.getAccessKey().isBlank();
+		if (newAccessKey) {
 			logger.info("generating new access key for " + customer.getCustomerId());
 			customer.setAccessKey(TokenGenerator.generateNewToken());
 		}
@@ -61,6 +65,13 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 		});
 		// TODO:validation
 		getTable().updateItem(builder -> builder.item(customer));
+		if (newAccessKey) {
+			IComponentRegistry.smaIngestComponent.handleAccessKeyChange(
+					findCustomerByCustomerId(customer.getCustomerId())
+							.map(Customer::getAccessKey)
+							.orElse(null),
+					customer.getAccessKey());
+		}
 	}
 
 	public Optional<Customer> findCustomerByEmail(String email) {
@@ -84,6 +95,7 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			IComponentRegistry.deviceComponent.deleteDevicesByCustomerId(customerId);
 			IComponentRegistry.mappingComponent.deleteMapping(customerId);
 			IComponentRegistry.OSComponent.deleteByCustomerId(customerId);
+			IComponentRegistry.smaIngestComponent.handleAccessKeyChange(c.getAccessKey(), null);
 			getTable().deleteItem(c);
 		});
 	}

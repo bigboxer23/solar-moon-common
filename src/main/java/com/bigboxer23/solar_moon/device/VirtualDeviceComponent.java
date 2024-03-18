@@ -56,7 +56,8 @@ public class VirtualDeviceComponent {
 					}
 					IComponentRegistry.locationComponent.addLocationData(virtualDeviceData, virtualDevice);
 					IComponentRegistry.weatherComponent.addWeatherData(virtualDeviceData, virtualDevice);
-					logger.info("updating virtual device " + virtualDeviceData.getDeviceId() + " : " + device.getDate());
+					logger.info(
+							"updating virtual device " + virtualDeviceData.getDeviceId() + " : " + device.getDate());
 					try {
 						IComponentRegistry.OSComponent.logData(
 								virtualDeviceData.getDate(), Collections.singletonList(virtualDeviceData));

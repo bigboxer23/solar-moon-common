@@ -13,6 +13,7 @@ import com.bigboxer23.solar_moon.search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.search.OpenSearchUtils;
 import com.bigboxer23.solar_moon.search.SearchJSON;
 import com.bigboxer23.solar_moon.util.TimeConstants;
+import com.bigboxer23.utils.properties.PropertyUtils;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.opensearch.client.opensearch.core.SearchResponse;
 import org.opensearch.client.opensearch.core.search.Hit;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
@@ -114,7 +116,7 @@ public class TestSMAIngestComponent implements TestConstants, IComponentRegistry
 
 		assertTrue(customer.isPresent());
 		customer.get().setDefaultTimezone(testCustomerDefaultTZ);
-		IComponentRegistry.customerComponent.updateCustomer(customer.get());
+		customerComponent.updateCustomer(customer.get());
 
 		assertEquals(
 				testCustomerDefaultTZ,
@@ -126,11 +128,35 @@ public class TestSMAIngestComponent implements TestConstants, IComponentRegistry
 		site.setCity("Anchorage");
 		site.setState("AK");
 		site.setCountry("USA");
-		IComponentRegistry.deviceComponent.updateDevice(site);
+		deviceComponent.updateDevice(site);
 		assertEquals(
 				testSiteTZ,
 				SMAIngestComponent.getDateFormatter(TestUtils.getDevice())
 						.getTimeZone()
 						.getID());
+	}
+
+	@Test
+	public void handleAccessKeyChange() {
+		Optional<Customer> customer = TestUtils.setupCustomer();
+		assertTrue(customer.isPresent());
+		smaIngestComponent.handleAccessKeyChange(null, null);
+		smaIngestComponent.handleAccessKeyChange(null, customer.get().getAccessKey());
+		File tmpTest = new File("target/" + customer.get().getAccessKey());
+		tmpTest.delete();
+		smaIngestComponent
+				.getS3Client()
+				.getObject(
+						GetObjectRequest.builder()
+								.bucket(PropertyUtils.getProperty("ftp.s3.bucket"))
+								.key(customer.get().getAccessKey() + "/")
+								.build(),
+						tmpTest.toPath());
+		smaIngestComponent
+				.getS3Client()
+				.deleteObject(DeleteObjectRequest.builder()
+						.bucket(PropertyUtils.getProperty("ftp.s3.bucket"))
+						.key(customer.get().getAccessKey() + "/")
+						.build());
 	}
 }
