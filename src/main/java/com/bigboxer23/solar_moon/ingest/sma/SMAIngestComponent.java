@@ -33,7 +33,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 
 	private static S3Client s3;
 
-	protected S3Client getS3Client() {
+	public S3Client getS3Client() {
 		if (s3 == null) {
 			s3 = S3Client.builder()
 					.region(Region.of(PropertyUtils.getProperty("aws.region")))
