@@ -7,6 +7,7 @@ import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.util.XMLUtil;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
+import com.bigboxer23.utils.properties.PropertyUtils;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -19,11 +20,27 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 public class SMAIngestComponent implements ISMAIngestConstants {
 	private static final Logger logger = LoggerFactory.getLogger(SMAIngestComponent.class);
+
+	private static S3Client s3;
+
+	protected S3Client getS3Client() {
+		if (s3 == null) {
+			s3 = S3Client.builder()
+					.region(Region.of(PropertyUtils.getProperty("aws.region")))
+					.build();
+		}
+		return s3;
+	}
 
 	public void ingestXMLFile(String xml, String customerId) throws XPathExpressionException {
 		if (StringUtils.isEmpty(xml)) {
@@ -228,5 +245,23 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 					sdf.setTimeZone(TimeZone.getTimeZone(tz));
 				});
 		return sdf;
+	}
+
+	public void handleAccessKeyChange(String oldAccessKey, String newAccessKey) {
+		if (!StringUtils.isEmpty(oldAccessKey)) {
+			// TODO: maybe remove this later? Might be useful to keep here for un-updated sma device
+			// TODO: pushing
+		}
+		if (!StringUtils.isEmpty(newAccessKey)) {
+			logger.warn("Creating new folder for access key " + newAccessKey);
+			PutObjectResponse response = getS3Client()
+					.putObject(
+							PutObjectRequest.builder()
+									.bucket(PropertyUtils.getProperty("ftp.s3.bucket"))
+									.key(newAccessKey + "/")
+									.build(),
+							RequestBody.empty());
+			System.out.println(response);
+		}
 	}
 }
