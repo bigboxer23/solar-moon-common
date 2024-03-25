@@ -6,6 +6,7 @@ import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
+import com.bigboxer23.solar_moon.web.TransactionUtil;
 import com.bigboxer23.utils.http.OkHttpUtil;
 import com.bigboxer23.utils.properties.PropertyUtils;
 import java.io.IOException;
@@ -62,6 +63,7 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 		IComponentRegistry.deviceComponent.getSites().stream()
 				.filter(site -> (site.getLatitude() != -1 && site.getLongitude() != -1))
 				.forEach(site -> {
+					TransactionUtil.updateCustomerId(site.getClientId());
 					if (getLastUpdate(site.getLatitude(), site.getLongitude())
 							>= System.currentTimeMillis() - TimeConstants.FIFTEEN_MINUTES) {
 						logger.debug("Not getting new weather, previous data isn't old.");
@@ -72,9 +74,15 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 										new Date(), site.getLatitude(), site.getLongitude())
 								|| LocalDateTime.now().getMinute() == 0) {
 							logger.info("fetching weather data for " + site.getLatitude() + "," + site.getLongitude());
-							fetchForecastData(site.getLatitude(), site.getLongitude())
-									.ifPresent(w ->
-											updateWeather(site.getLatitude(), site.getLongitude(), w.getCurrently()));
+							Optional<PirateWeatherDataResponse> response =
+									fetchForecastData(site.getLatitude(), site.getLongitude());
+							if (response.isEmpty()) {
+								logger.warn("bad weather data returned, waiting and attempting" + " to fetch again.");
+								Thread.sleep(2000);
+								response = fetchForecastData(site.getLatitude(), site.getLongitude());
+							}
+							response.ifPresent(
+									w -> updateWeather(site.getLatitude(), site.getLongitude(), w.getCurrently()));
 						}
 					} catch (Exception e) {
 						logger.error("fetchNewWeather", e);
