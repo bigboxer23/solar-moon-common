@@ -41,9 +41,9 @@ public class OverviewComponent implements IComponentRegistry {
 		if (searchJson == null || StringUtils.isBlank(searchJson.getTimeZone())) {
 			return;
 		}
-		SearchJSON search = new SearchJSON(searchJson);
-		data.setOverall(getData(null, search, OpenSearchConstants.STACKED_TIME_SERIES_SEARCH_TYPE));
+		data.setOverall(getData(null, searchJson, OpenSearchConstants.STACKED_TIME_SERIES_SEARCH_TYPE));
 
+		SearchJSON search = new SearchJSON(searchJson);
 		Date start = TimeUtils.getStartOfDay(search.getTimeZone());
 		search.setEndDate(start.getTime() + TimeConstants.DAY);
 		search.setStartDate(start.getTime());
@@ -62,7 +62,6 @@ public class OverviewComponent implements IComponentRegistry {
 		data.setTotal(OSComponent.search(search));
 		search.setType(timeSeriesType);
 		data.setTimeSeries(OSComponent.search(search));
-		search.setDaylight(true);
 		search.setType(OpenSearchConstants.AVG_SEARCH_TYPE);
 		data.setAvg(OSComponent.search(search));
 		if (device != null) {

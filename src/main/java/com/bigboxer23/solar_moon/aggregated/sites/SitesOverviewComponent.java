@@ -106,7 +106,6 @@ public class SitesOverviewComponent implements IComponentRegistry {
 
 	protected void fillSiteTimeSeries(SitesSiteData siteOverview, SearchJSON search) {
 		SearchJSON searchJson = new SearchJSON(search);
-		searchJson.setDaylight(false);
 		searchJson.setDeviceId(
 				siteOverview.getSite().isSubtraction() ? siteOverview.getSite().getId() : null);
 		searchJson.setSiteId(
@@ -137,7 +136,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		fillDeviceMap(
 				siteOverview,
 				search,
-				false,
+				search.isDaylight(),
 				OpenSearchConstants.TIME_SERIES_SEARCH_TYPE,
 				siteOverview.getDeviceTimeSeries());
 	}
