@@ -14,6 +14,7 @@ import software.amazon.awssdk.utils.StringUtils;
 /** */
 public class OverviewComponent implements IComponentRegistry {
 	public OverviewData getOverviewData(SearchJSON search) {
+		logger.info("Fetching overview data");
 		search.setIsSite(true);
 		OverviewData data = new OverviewData(
 				deviceComponent.getDevicesForCustomerId(search.getCustomerId()),

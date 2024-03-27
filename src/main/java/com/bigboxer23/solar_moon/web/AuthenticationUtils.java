@@ -7,6 +7,7 @@ import java.util.Base64;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
@@ -47,13 +48,13 @@ public class AuthenticationUtils {
 	}
 
 	public static String getCustomerIdFromRequest(LambdaRequest request) {
-
 		String customerId = Optional.ofNullable(request.getRequestContext().getAuthorizer())
 				.map(auth -> auth.getClaims().getUsername())
 				.orElse(null);
 		if (!StringUtils.isEmpty(sourceUserId)
 				&& !StringUtils.isEmpty(destinationUserId)
 				&& sourceUserId.equalsIgnoreCase(customerId)) {
+			MDC.put("customer.src", sourceUserId);
 			return destinationUserId;
 		}
 		return customerId;
