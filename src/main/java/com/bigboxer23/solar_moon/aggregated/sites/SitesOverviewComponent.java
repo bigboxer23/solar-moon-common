@@ -7,6 +7,7 @@ import com.bigboxer23.solar_moon.search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.search.SearchJSON;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TimeUtils;
+import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
@@ -17,14 +18,9 @@ import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 public class SitesOverviewComponent implements IComponentRegistry {
-	public SitesOverviewData getSitesOverviewData(SearchJSON search) {
-		SitesOverviewData data = new SitesOverviewData();
-		data.setDevices(deviceComponent.getDevicesForCustomerId(search.getCustomerId()));
-		fillSiteInformation(data, search);
-		return data;
-	}
-
 	public SitesSiteData getExtendedSiteOverviewData(String siteId, SearchJSON search) {
+		TransactionUtil.addDeviceId(siteId);
+		logger.info("Fetching site data");
 		return deviceComponent
 				.findDeviceById(siteId, search.getCustomerId())
 				.map(site -> getSiteOverviewData(site, search))
