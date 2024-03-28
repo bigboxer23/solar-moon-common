@@ -133,7 +133,6 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		if (StringUtils.isBlank(id) || StringUtils.isBlank(customerId)) {
 			return null;
 		}
-		logAction("get", id);
 		return Optional.ofNullable(getTable().getItem(new Device(id, customerId)));
 	}
 
@@ -237,11 +236,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 
 	public void logAction(String action, String id) {
 		TransactionUtil.addDeviceId(id);
-		if ("get".equalsIgnoreCase(action)) {
-			logger.debug("device " + action);
-		} else {
-			logger.info("device " + action);
-		}
+		logger.info("device " + action);
 	}
 
 	@Override
