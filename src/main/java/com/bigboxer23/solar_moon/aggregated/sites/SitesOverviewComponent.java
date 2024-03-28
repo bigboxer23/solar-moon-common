@@ -91,8 +91,9 @@ public class SitesOverviewComponent implements IComponentRegistry {
 						.findAlarmsBySite(
 								search.getCustomerId(), siteOverview.getSite().getId())
 						.stream()
-						.filter(alarm -> alarm.getStartDate() > search.getStartDate()
-								&& search.getEndDate() > alarm.getStartDate())
+						.filter(alarm -> (alarm.getStartDate() > search.getStartDate()
+										&& search.getEndDate() > alarm.getStartDate())
+								|| alarm.getEndDate() == 0)
 						.toList());
 		fillSiteTimeSeries(siteOverview, search);
 		fillDevicesTimeSeries(siteOverview, search);
