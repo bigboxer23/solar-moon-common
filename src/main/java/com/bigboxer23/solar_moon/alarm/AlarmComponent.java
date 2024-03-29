@@ -2,11 +2,9 @@ package com.bigboxer23.solar_moon.alarm;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.*;
-import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.notifications.AlarmEmailTemplateContent;
-import com.bigboxer23.solar_moon.notifications.NotificationComponent;
-import com.bigboxer23.solar_moon.search.OpenSearchComponent;
+import com.bigboxer23.solar_moon.notifications.ResolvedAlertEmailTemplateContent;
 import com.bigboxer23.solar_moon.search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
@@ -23,21 +21,6 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	private static final Logger logger = LoggerFactory.getLogger(AlarmComponent.class);
 
 	protected static final long QUICK_CHECK_THRESHOLD = TimeConstants.FORTY_FIVE_MINUTES;
-
-	private final DeviceComponent deviceComponent;
-
-	private final OpenSearchComponent OSComponent;
-
-	private final NotificationComponent notificationComponent;
-
-	public AlarmComponent(
-			DeviceComponent deviceComponent,
-			OpenSearchComponent OSComponent,
-			NotificationComponent notificationComponent) {
-		this.deviceComponent = deviceComponent;
-		this.OSComponent = OSComponent;
-		this.notificationComponent = notificationComponent;
-	}
 
 	public Optional<Alarm> getMostRecentAlarm(String deviceId) {
 		List<Alarm> alarms = getTable()
@@ -76,6 +59,11 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 							+ " "
 							+ deviceData.getDate().getTime());
 					alarm.setState(RESOLVED);
+					// If we've sent a notification email to customer, should flag we need
+					// to send a resolve email too
+					if (alarm.getEmailed() > RESOLVED_NOT_EMAILED) {
+						alarm.setResolveEmailed(NEEDS_EMAIL);
+					}
 					if (alarm.getEmailed() == NEEDS_EMAIL) {
 						alarm.setEmailed(RESOLVED_NOT_EMAILED);
 					}
@@ -136,9 +124,9 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	}
 
 	public void sendPendingNotifications() {
-		logger.info("Checking for pending notifications");
+		logger.info("Checking for pending active alert notifications");
 		Map<String, List<Alarm>> customerSortedAlarms = new HashMap<>();
-		findNonEmailedAlarms().forEach(alarm -> {
+		findNonEmailedActiveAlarms().forEach(alarm -> {
 			if (!customerSortedAlarms.containsKey(alarm.getCustomerId())) {
 				customerSortedAlarms.put(alarm.getCustomerId(), new ArrayList<>());
 			}
@@ -147,11 +135,12 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 
 		customerSortedAlarms.forEach((customerId, alarms) -> {
 			TransactionUtil.updateCustomerId(customerId);
-			logger.info("Starting sending notifications");
+			logger.info("Starting sending active notifications");
 			AlarmEmailTemplateContent alarmEmail = new AlarmEmailTemplateContent(customerId, alarms);
 			if (alarmEmail.isNotificationEnabled()
 					&& !IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes()) {
-				notificationComponent.sendNotification(alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
+				IComponentRegistry.notificationComponent.sendNotification(
+						alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
 			} else {
 				if (IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes()) {
 					logger.warn("Not sending notification, opensearch failure has occurred" + " recently.");
@@ -161,6 +150,26 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			}
 			alarms.forEach(a -> {
 				a.setEmailed(System.currentTimeMillis());
+				updateAlarm(a);
+			});
+		});
+
+		logger.info("Checking for pending resolved alert notifications");
+		customerSortedAlarms.clear();
+		findNonEmailedResolvedAlarms().forEach(alarm -> {
+			if (!customerSortedAlarms.containsKey(alarm.getCustomerId())) {
+				customerSortedAlarms.put(alarm.getCustomerId(), new ArrayList<>());
+			}
+			customerSortedAlarms.get(alarm.getCustomerId()).add(alarm);
+		});
+		customerSortedAlarms.forEach((customerId, alarms) -> {
+			TransactionUtil.updateCustomerId(customerId);
+			logger.info("Starting sending resolved notifications");
+			ResolvedAlertEmailTemplateContent alarmEmail = new ResolvedAlertEmailTemplateContent(customerId, alarms);
+			IComponentRegistry.notificationComponent.sendNotification(
+					alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
+			alarms.forEach(a -> {
+				a.setResolveEmailed(System.currentTimeMillis());
 				updateAlarm(a);
 			});
 		});
@@ -197,9 +206,17 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				.toList();
 	}
 
-	public List<Alarm> findNonEmailedAlarms() {
+	public List<Alarm> findNonEmailedActiveAlarms() {
+		return findNonEmailed(Alarm.EMAILED_CUSTOMER_INDEX);
+	}
+
+	public List<Alarm> findNonEmailedResolvedAlarms() {
+		return findNonEmailed(Alarm.RESOLVED_EMAILED_INDEX);
+	}
+
+	private List<Alarm> findNonEmailed(String indexName) {
 		return getTable()
-				.index(Alarm.EMAILED_CUSTOMER_INDEX)
+				.index(indexName)
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(NEEDS_EMAIL)))
 				.stream()
 				.flatMap(page -> page.items().stream())
@@ -262,7 +279,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		List<Alarm> alarms = new ArrayList<>();
 		IComponentRegistry.deviceUpdateComponent
 				.queryByTimeRange(System.currentTimeMillis() - QUICK_CHECK_THRESHOLD)
-				.forEach(d -> deviceComponent
+				.forEach(d -> IComponentRegistry.deviceComponent
 						.findDeviceById(d.getDeviceId())
 						.filter(d2 -> !d2.isDisabled())
 						.flatMap(d2 -> {
@@ -285,8 +302,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		}
 		TransactionUtil.addDeviceId(device.getId());
 		TransactionUtil.updateCustomerId(device.getClientId());
-		DeviceData data =
-				OSComponent.getLastDeviceEntry(device.getId(), OpenSearchQueries.getDeviceIdQuery(device.getId()));
+		DeviceData data = IComponentRegistry.OSComponent.getLastDeviceEntry(
+				device.getId(), OpenSearchQueries.getDeviceIdQuery(device.getId()));
 		if (data == null || device.isDisabled()) {
 			logger.debug("likely new device with no data (or disabled) " + device.getId());
 			return Optional.empty();
@@ -307,7 +324,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			return Optional.empty();
 		}
 		if (deviceData.getTotalRealPower() <= 0.1
-				&& !OSComponent.isDeviceGeneratingPower(
+				&& !IComponentRegistry.OSComponent.isDeviceGeneratingPower(
 						deviceData.getCustomerId(), deviceData.getDeviceId(), TimeConstants.HOUR * 2)) {
 			return alarmConditionDetected(
 					deviceData.getCustomerId(),

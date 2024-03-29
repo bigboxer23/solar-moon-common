@@ -51,7 +51,7 @@ public interface IComponentRegistry {
 
 	NotificationComponent notificationComponent = new NotificationComponent();
 
-	AlarmComponent alarmComponent = new AlarmComponent(deviceComponent, OSComponent, notificationComponent);
+	AlarmComponent alarmComponent = new AlarmComponent();
 
 	VirtualDeviceComponent virtualDeviceComponent = new VirtualDeviceComponent();
 
