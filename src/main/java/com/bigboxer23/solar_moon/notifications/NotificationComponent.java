@@ -47,7 +47,7 @@ public class NotificationComponent {
 					.region(Region.of(PropertyUtils.getProperty("aws.region")))
 					.credentialsProvider(DefaultCredentialsProvider.create())
 					.build(); ) {
-				logger.info("Sending email to " + recipient);
+				logger.info("Sending email to " + recipient + " proxy:" + r);
 				client.sendEmail(SendEmailRequest.builder()
 						.destination(Destination.builder().toAddresses(r).build())
 						.message(Message.builder()

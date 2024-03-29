@@ -21,10 +21,10 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 
 	private String deviceId;
 
-	private List<Device> devices;
+	protected List<Device> devices;
 
 	public AlarmEmailTemplateContent(String customerId, List<Alarm> alarms) {
-		super("email.template.html", "Potential issue detected with device", "", "", "See active alarms");
+		super("email.template.html", "Potential issue detected with device", "", "", "See active alerts");
 		Optional<Customer> customer = customerComponent.findCustomerByCustomerId(customerId);
 		if (customer.isEmpty()) {
 			logger.error("cannot find customer for " + customerId);
@@ -60,12 +60,12 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 				+ " Team");
 	}
 
-	private void singleDevice() {
+	protected void singleDevice() {
 		TransactionUtil.addDeviceId(devices.getFirst().getId());
 		setDeviceId(devices.getFirst().getId());
 		setSubject("Potential issue with your solar energy device "
 				+ devices.getFirst().getDisplayName());
-		setLink("/alarms?device=" + URLEncoder.encode(devices.getFirst().getDisplayName(), StandardCharsets.UTF_8));
+		setLink("/alerts?deviceId=" + URLEncoder.encode(devices.getFirst().getId(), StandardCharsets.UTF_8));
 		StringBuilder builder = new StringBuilder("There may be an issue with your device, <b>"
 				+ devices.getFirst().getDisplayName()
 				+ "</b>");
@@ -78,10 +78,10 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 		setBodyContent1(builder.toString());
 	}
 
-	private void multipleDevices() {
+	protected void multipleDevices() {
 		TransactionUtil.addDeviceId(null);
 		setSubject("Potential issue with your solar energy devices");
-		setLink("/alarms");
+		setLink("/alerts");
 		StringBuilder builder = new StringBuilder("There may be an issue with some of your devices:<br/>");
 		devices.forEach(d -> {
 			builder.append("<br/><b>").append(d.getDisplayName()).append("</b>");

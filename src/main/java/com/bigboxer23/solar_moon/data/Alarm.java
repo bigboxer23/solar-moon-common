@@ -47,6 +47,8 @@ public class Alarm {
 
 	public static final String EMAILED_CUSTOMER_INDEX = "emailed-customerId-index";
 
+	public static final String RESOLVED_EMAILED_INDEX = "resolveEmailed-index";
+
 	private String alarmId;
 
 	private String deviceId;
@@ -67,6 +69,8 @@ public class Alarm {
 
 	private long emailed = AlarmComponent.DONT_EMAIL;
 
+	private long resolveEmailed = AlarmComponent.DONT_EMAIL;
+
 	private long expiration;
 
 	private String deviceName;
@@ -86,6 +90,11 @@ public class Alarm {
 	@DynamoDbSecondaryPartitionKey(indexNames = EMAILED_CUSTOMER_INDEX)
 	public long getEmailed() {
 		return emailed;
+	}
+
+	@DynamoDbSecondaryPartitionKey(indexNames = RESOLVED_EMAILED_INDEX)
+	public long getResolveEmailed() {
+		return resolveEmailed;
 	}
 
 	@DynamoDbPartitionKey

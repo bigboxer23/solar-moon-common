@@ -7,6 +7,7 @@ import com.bigboxer23.solar_moon.TestConstants;
 import com.bigboxer23.solar_moon.TestUtils;
 import com.bigboxer23.solar_moon.data.Alarm;
 import com.bigboxer23.solar_moon.data.Device;
+import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.search.OpenSearchUtils;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
@@ -258,6 +259,8 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 				device.getClientId(), device.getId(), device.getSiteId(), "Test alarm!");
 		assertTrue(alarm.isPresent());
 		assertEquals(NEEDS_EMAIL, alarm.get().getEmailed());
+		assertEquals(DONT_EMAIL, alarm.get().getResolveEmailed());
+
 		Thread.sleep(1000);
 		Optional<Alarm> alarm2 = alarmComponent.alarmConditionDetected(
 				device.getClientId(), device.getId(), device.getSiteId(), "Test alarm!");
@@ -278,7 +281,118 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		assertEquals(
 				1, alarmComponent.findNonEmailedAlarms(CUSTOMER_ID + "invalid").size());
 		assertEquals(1, alarmComponent.findNonEmailedAlarms(CUSTOMER_ID).size());
-		assertEquals(2, alarmComponent.findNonEmailedAlarms().size());
+		assertEquals(2, alarmComponent.findNonEmailedActiveAlarms().size());
+	}
+
+
+	public void createConditionsForResolvedEmailToBeSent() {
+		String customerId = "";
+		String deviceId = "";
+
+		Optional<Device> device = deviceComponent.findDeviceById(deviceId, customerId);
+		assertTrue(device.isPresent());
+
+		Optional<Alarm> alarm = alarmComponent.alarmConditionDetected(
+				customerId, device.get().getId(), device.get().getSiteId(), "Test alarm!");
+		assertTrue(alarm.isPresent());
+		assertEquals(NEEDS_EMAIL, alarm.get().getEmailed());
+		assertEquals(DONT_EMAIL, alarm.get().getResolveEmailed());
+		alarm.get().setEmailed(System.currentTimeMillis());
+		alarm = alarmComponent.updateAlarm(alarm.get());
+		assertTrue(alarm.isPresent());
+
+		DeviceData deviceData = new DeviceData(
+				device.get().getSiteId(),
+				device.get().getClientId(),
+				device.get().getId());
+		deviceData.setDate(new Date());
+		deviceData.setDaylight(true);
+		deviceData.setTotalRealPower(2);
+		alarmComponent.resolveActiveAlarms(deviceData);
+		System.out.println("alarm id: " + alarm.get().getAlarmId());
+	}
+
+	@Test
+	public void findResolvedNonEmailedAlerts() {
+		// Test for case where we've not sent an alert email and should not send a resolved email
+		assertTrue(alarmComponent.findNonEmailedAlarms(CUSTOMER_ID).isEmpty());
+		Device device = TestUtils.getDevice();
+		assertNotNull(device);
+		Optional<Alarm> alarm = alarmComponent.alarmConditionDetected(
+				device.getClientId(), device.getId(), device.getSiteId(), "Test alarm!");
+		assertTrue(alarm.isPresent());
+		assertEquals(NEEDS_EMAIL, alarm.get().getEmailed());
+		assertEquals(DONT_EMAIL, alarm.get().getResolveEmailed());
+		DeviceData deviceData = new DeviceData(device.getSiteId(), device.getClientId(), device.getId());
+		deviceData.setDate(new Date());
+		deviceData.setDaylight(true);
+		deviceData.setTotalRealPower(2);
+		alarmComponent.resolveActiveAlarms(deviceData);
+		alarm = alarmComponent.findAlarmByAlarmId(alarm.get().getAlarmId(), device.getClientId());
+		assertTrue(alarm.isPresent());
+		assertEquals(RESOLVED_NOT_EMAILED, alarm.get().getEmailed());
+		assertEquals(DONT_EMAIL, alarm.get().getResolveEmailed());
+
+		// Test for case where we have sent an alarm email, so on resolution we should send an email
+		// that the alert is over
+		alarm = alarmComponent.alarmConditionDetected(
+				device.getClientId(), device.getId(), device.getSiteId(), "Test alarm!");
+		assertTrue(alarm.isPresent());
+		assertEquals(NEEDS_EMAIL, alarm.get().getEmailed());
+		assertEquals(DONT_EMAIL, alarm.get().getResolveEmailed());
+		alarm.get().setEmailed(System.currentTimeMillis());
+		alarm = alarmComponent.updateAlarm(alarm.get());
+		assertTrue(alarm.isPresent());
+		alarmComponent.resolveActiveAlarms(deviceData);
+		alarm = alarmComponent.findAlarmByAlarmId(alarm.get().getAlarmId(), device.getClientId());
+		assertTrue(alarm.isPresent());
+		assertNotEquals(RESOLVED_NOT_EMAILED, alarm.get().getEmailed());
+		assertEquals(NEEDS_EMAIL, alarm.get().getResolveEmailed());
+	}
+
+	@Test
+	public void resolveActiveAlarms() {
+		// Test the totally valid case
+		assertTrue(alarmComponent.findNonEmailedAlarms(CUSTOMER_ID).isEmpty());
+		Device device = TestUtils.getDevice();
+		assertNotNull(device);
+		DeviceData deviceData = new DeviceData(device.getSiteId(), device.getClientId(), device.getId());
+		deviceData.setDate(new Date());
+		deviceData.setDaylight(true);
+		deviceData.setTotalRealPower(2);
+		validateAlertResolution(deviceData, IAlarmConstants.RESOLVED);
+
+		// Test not daylight
+		deviceData.setDaylight(false);
+		validateAlertResolution(deviceData, IAlarmConstants.ACTIVE);
+		deviceData.setDaylight(true);
+
+		// test low power
+		deviceData.setTotalRealPower(0);
+		validateAlertResolution(deviceData, IAlarmConstants.ACTIVE);
+		deviceData.setTotalRealPower(0.09f);
+		validateAlertResolution(deviceData, IAlarmConstants.ACTIVE);
+		deviceData.setTotalRealPower(0.1f);
+		validateAlertResolution(deviceData, IAlarmConstants.RESOLVED);
+
+		// test old date
+		deviceData.setDate(new Date(deviceData.getDate().getTime() - (2 * TimeConstants.HOUR)));
+		validateAlertResolution(deviceData, IAlarmConstants.ACTIVE);
+	}
+
+	private void validateAlertResolution(DeviceData deviceData, int expectedState) {
+		Optional<Alarm> alarm = alarmComponent.alarmConditionDetected(
+				TestUtils.getDevice().getClientId(),
+				TestUtils.getDevice().getId(),
+				TestUtils.getDevice().getSiteId(),
+				"Test alarm!");
+		assertTrue(alarm.isPresent());
+		assertEquals(IAlarmConstants.ACTIVE, alarm.get().getState());
+		alarmComponent.resolveActiveAlarms(deviceData);
+		alarm = alarmComponent.findAlarmByAlarmId(
+				alarm.get().getAlarmId(), TestUtils.getDevice().getClientId());
+		assertTrue(alarm.isPresent());
+		assertEquals(expectedState, alarm.get().getState());
 	}
 
 	@SneakyThrows
