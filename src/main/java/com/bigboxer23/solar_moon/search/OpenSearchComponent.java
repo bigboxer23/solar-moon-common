@@ -416,11 +416,11 @@ public class OpenSearchComponent implements OpenSearchConstants {
 							Map.class);
 			double maxRecordCount = Math.round((float) offset / TimeConstants.FIFTEEN_MINUTES);
 
-			// Power produced within the offset time, or we haven't collected at least half the
-			// number of records in the offset period (because of daylight not happening yet)
-			if (((Aggregate) response.aggregations().get("avg")).avg().value() > 0
-					|| response.hits().total().value() < (maxRecordCount / 2)) {
-				return false;
+			// Power produced within the offset time, or we haven't collected enough of the records
+			// in the offset period (because of daylight not happening yet)
+			if (((Aggregate) response.aggregations().get("avg")).avg().value() > 0.1
+					|| response.hits().total().value() < (maxRecordCount - 1)) {
+				return true;
 			}
 			logger.warn("Device not generating power "
 					+ maxRecordCount
