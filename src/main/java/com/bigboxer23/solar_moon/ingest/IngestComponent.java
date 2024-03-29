@@ -26,7 +26,7 @@ public class IngestComponent implements MeterConstants {
 			logger.info("device was not valid, not handling.");
 			return null;
 		}
-		IComponentRegistry.alarmComponent.resolveActiveAlarms(deviceData);
+
 		Optional<Device> site =
 				IComponentRegistry.deviceComponent.findDeviceById(device.getSiteId(), device.getClientId());
 		if (device.isDeviceSite()) {
@@ -35,6 +35,7 @@ public class IngestComponent implements MeterConstants {
 		calculateTotalEnergyConsumed(deviceData);
 		IComponentRegistry.locationComponent.addLocationData(deviceData, site.orElse(null));
 		IComponentRegistry.weatherComponent.addWeatherData(deviceData, site.orElse(null));
+		IComponentRegistry.alarmComponent.resolveActiveAlarms(deviceData);
 		IComponentRegistry.OSComponent.logData(
 				deviceData.getDate() != null ? deviceData.getDate() : new Date(),
 				Collections.singletonList(deviceData));

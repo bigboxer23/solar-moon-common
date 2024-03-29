@@ -60,8 +60,12 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			return;
 		}
 		IComponentRegistry.deviceUpdateComponent.update(deviceData.getDeviceId());
-		if (deviceData.getTotalRealPower() <= 0 && deviceData.isDayLight()) {
-			logger.warn("not resolving alarm, no real power reported");
+		if (!deviceData.isDayLight()) {
+			logger.debug("not resolving alarm, not daylight");
+			return;
+		}
+		if (deviceData.getTotalRealPower() <= 0.1) {
+			logger.warn("not resolving alarm, no real power reported " + deviceData.getTotalRealPower());
 			return;
 		}
 		getMostRecentAlarm(deviceData.getDeviceId())
@@ -72,7 +76,9 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 							+ " "
 							+ deviceData.getDate().getTime());
 					alarm.setState(RESOLVED);
-					alarm.setEmailed(RESOLVED_NOT_EMAILED);
+					if (alarm.getEmailed() == NEEDS_EMAIL) {
+						alarm.setEmailed(RESOLVED_NOT_EMAILED);
+					}
 					alarm.setEndDate(new Date().getTime());
 					updateAlarm(alarm);
 				});
@@ -300,8 +306,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		if (!deviceData.isDayLight()) {
 			return Optional.empty();
 		}
-		if (deviceData.getTotalRealPower() == 0
-				&& OSComponent.isDeviceGeneratingPower(
+		if (deviceData.getTotalRealPower() <= 0.1
+				&& !OSComponent.isDeviceGeneratingPower(
 						deviceData.getCustomerId(), deviceData.getDeviceId(), TimeConstants.HOUR * 2)) {
 			return alarmConditionDetected(
 					deviceData.getCustomerId(),

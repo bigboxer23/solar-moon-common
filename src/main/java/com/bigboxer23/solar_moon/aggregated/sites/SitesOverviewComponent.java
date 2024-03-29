@@ -1,6 +1,7 @@
 package com.bigboxer23.solar_moon.aggregated.sites;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.alarm.IAlarmConstants;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.search.OpenSearchConstants;
 import com.bigboxer23.solar_moon.search.OpenSearchQueries;
@@ -93,7 +94,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 						.stream()
 						.filter(alarm -> (alarm.getStartDate() > search.getStartDate()
 										&& search.getEndDate() > alarm.getStartDate())
-								|| alarm.getEndDate() == 0)
+								|| alarm.getState() == IAlarmConstants.ACTIVE)
 						.toList());
 		fillSiteTimeSeries(siteOverview, search);
 		fillDevicesTimeSeries(siteOverview, search);
