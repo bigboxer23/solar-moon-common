@@ -68,8 +68,9 @@ public class NotificationComponent {
 
 	private List<String> getRecipients(String recipient) {
 		List<String> recipients = new ArrayList<>();
-		recipients.add(getRecipient(recipient));
-		if (!StringUtils.isBlank(additionalRecipient)) {
+		String fetchedRecipient = getRecipient(recipient);
+		recipients.add(fetchedRecipient);
+		if (!StringUtils.isBlank(additionalRecipient) && !additionalRecipient.equalsIgnoreCase(fetchedRecipient)) {
 			recipients.add(additionalRecipient);
 		}
 		return recipients;

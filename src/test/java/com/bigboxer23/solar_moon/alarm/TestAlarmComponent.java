@@ -284,7 +284,6 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		assertEquals(2, alarmComponent.findNonEmailedActiveAlarms().size());
 	}
 
-
 	public void createConditionsForResolvedEmailToBeSent() {
 		String customerId = "";
 		String deviceId = "";
