@@ -53,6 +53,7 @@ public class TransactionUtil {
 
 	public static void updateCustomerId(String customerId) {
 		MDC.put("customer.id", customerId);
+		TransactionUtil.addDeviceId(null);
 	}
 
 	public static void updateServiceCalled(String service) {
