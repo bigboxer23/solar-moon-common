@@ -31,6 +31,7 @@ public class ResolvedAlertEmailTemplateContent extends AlarmEmailTemplateContent
 
 	@Override
 	protected void multipleDevices() {
+		super.multipleDevices();
 		setSubject("Alerts for your solar energy devices have resolved");
 		StringBuilder builder = new StringBuilder("Alerts for the following devices have resolved:<br/>");
 		devices.forEach(d -> {
