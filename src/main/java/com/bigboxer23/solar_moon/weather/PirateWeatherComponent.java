@@ -13,7 +13,10 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import okhttp3.Response;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
@@ -60,34 +63,46 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 	}
 
 	public void fetchNewWeather() {
-		IComponentRegistry.deviceComponent.getSites().stream()
+		Map<String, Device> sites = IComponentRegistry.deviceComponent.getSites().stream()
 				.filter(site -> (site.getLatitude() != -1 && site.getLongitude() != -1))
-				.forEach(site -> {
-					TransactionUtil.updateCustomerId(site.getClientId());
-					if (getLastUpdate(site.getLatitude(), site.getLongitude())
-							>= System.currentTimeMillis() - TimeConstants.FIFTEEN_MINUTES) {
-						logger.debug("Not getting new weather, previous data isn't old.");
-						return;
+				.collect(Collectors.toMap(
+						(site) -> site.getLatitude() + ":" + site.getLongitude(),
+						Function.identity(),
+						(existing, replacement) -> existing));
+		sites.values().forEach(site -> {
+			TransactionUtil.updateCustomerId(site.getClientId());
+			long lastUpdate = getLastUpdate(site.getLatitude(), site.getLongitude());
+			if (lastUpdate >= System.currentTimeMillis() - TimeConstants.FIFTEEN_MINUTES) {
+				logger.info("Not getting new weather, previous data isn't old. "
+						+ site.getLatitude()
+						+ ":"
+						+ site.getLongitude());
+				return;
+			}
+			try {
+				if (IComponentRegistry.locationComponent.isDay(new Date(), site.getLatitude(), site.getLongitude())
+						|| LocalDateTime.now().getMinute() == 0) {
+					logger.info("fetching weather data for " + site.getLatitude() + "," + site.getLongitude());
+					Optional<PirateWeatherDataResponse> response =
+							fetchForecastData(site.getLatitude(), site.getLongitude());
+					if (response.isEmpty()) {
+						logger.warn("bad weather data returned, waiting and attempting"
+								+ " to fetch again. "
+								+ site.getLatitude()
+								+ ":"
+								+ site.getLongitude());
+						Thread.sleep(2000);
+						response = fetchForecastData(site.getLatitude(), site.getLongitude());
 					}
-					try {
-						if (IComponentRegistry.locationComponent.isDay(
-										new Date(), site.getLatitude(), site.getLongitude())
-								|| LocalDateTime.now().getMinute() == 0) {
-							logger.info("fetching weather data for " + site.getLatitude() + "," + site.getLongitude());
-							Optional<PirateWeatherDataResponse> response =
-									fetchForecastData(site.getLatitude(), site.getLongitude());
-							if (response.isEmpty()) {
-								logger.warn("bad weather data returned, waiting and attempting" + " to fetch again.");
-								Thread.sleep(2000);
-								response = fetchForecastData(site.getLatitude(), site.getLongitude());
-							}
-							response.ifPresent(
-									w -> updateWeather(site.getLatitude(), site.getLongitude(), w.getCurrently()));
-						}
-					} catch (Exception e) {
-						logger.error("fetchNewWeather", e);
+					response.ifPresent(w -> updateWeather(site.getLatitude(), site.getLongitude(), w.getCurrently()));
+					if (response.isEmpty()) {
+						logger.warn("unable to fetch weather data. " + site.getLatitude() + ":" + site.getLongitude());
 					}
-				});
+				}
+			} catch (Exception e) {
+				logger.error("fetchNewWeather", e);
+			}
+		});
 	}
 
 	public long getLastUpdate(double latitude, double longitude) {
