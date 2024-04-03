@@ -55,7 +55,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				.filter(alarm -> alarm.getState() == ACTIVE)
 				.ifPresent(alarm -> {
 					logger.warn("Resolving alarm for "
-							+ deviceData.getDeviceId()
+							+ alarm.getAlarmId()
 							+ " "
 							+ deviceData.getDate().getTime());
 					alarm.setState(RESOLVED);
@@ -74,11 +74,16 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 
 	}
 
-	private Alarm getNewAlarm(String customerId, String deviceId, String siteId, String content) {
+	protected Alarm getNewAlarm(String customerId, String deviceId, String siteId, String content) {
 		Alarm newAlarm = new Alarm(TokenGenerator.generateNewToken(), customerId, deviceId, siteId);
 		newAlarm.setStartDate(System.currentTimeMillis());
 		newAlarm.setState(ACTIVE);
-		newAlarm.setEmailed(NEEDS_EMAIL);
+		if (!IComponentRegistry.deviceComponent
+				.findDeviceById(deviceId, customerId)
+				.map(Device::isNotificationsDisabled)
+				.orElse(false)) {
+			newAlarm.setEmailed(NEEDS_EMAIL);
+		}
 		return newAlarm;
 	}
 
@@ -113,7 +118,11 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				.filter(a -> a.getState() == ACTIVE)
 				.findAny()
 				.orElseGet(() -> getNewAlarm(customerId, deviceId, siteId, content));
-		if (alarm.getEmailed() == DONT_EMAIL) {
+		if (alarm.getEmailed() == DONT_EMAIL
+				&& !IComponentRegistry.deviceComponent
+						.findDeviceById(deviceId, customerId)
+						.map(Device::isNotificationsDisabled)
+						.orElse(false)) {
 			alarm.setEmailed(NEEDS_EMAIL); // We're turning a "fault" into an alert, should send email now
 		}
 		alarm.setLastUpdate(System.currentTimeMillis());
@@ -143,9 +152,9 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 						alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
 			} else {
 				if (IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes()) {
-					logger.warn("Not sending notification, opensearch failure has occurred" + " recently.");
+					logger.warn("Not sending notification, opensearch failure has occurred " + " recently.");
 				} else {
-					logger.warn("New notification detected, but not sending email as" + " requested.");
+					logger.warn("New notification detected, but not sending email as " + " requested.");
 				}
 			}
 			alarms.forEach(a -> {

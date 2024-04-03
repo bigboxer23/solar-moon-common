@@ -10,7 +10,6 @@ import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.search.OpenSearchUtils;
 import com.bigboxer23.solar_moon.util.TimeConstants;
-import com.bigboxer23.solar_moon.util.TokenGenerator;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -46,7 +45,11 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 
 	@Test
 	public void testAlarmCRUD() {
-		Alarm alarm = new Alarm(TEST_ALARM_ID, CUSTOMER_ID);
+		Alarm alarm = alarmComponent.getNewAlarm(
+				CUSTOMER_ID,
+				TestUtils.getDevice().getId(),
+				TestUtils.getDevice().getSiteId(),
+				null);
 		Optional<Alarm> dbAlarm = alarmComponent.updateAlarm(alarm);
 		assertTrue(dbAlarm.isPresent());
 		assertEquals(TEST_ALARM_ID, dbAlarm.get().getAlarmId());
@@ -66,10 +69,9 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 	@Test
 	public void testFilterByDeviceId() {
 		Device device = TestUtils.getDevice();
-		Alarm alarm = new Alarm(TEST_ALARM_ID, device.getClientId(), device.getId(), device.getSiteId());
-		alarmComponent.updateAlarm(alarm);
-		alarm = new Alarm(TokenGenerator.generateNewToken(), CUSTOMER_ID, "Test-" + 2, SITE);
-		alarmComponent.updateAlarm(alarm);
+		alarmComponent.updateAlarm(
+				alarmComponent.getNewAlarm(device.getClientId(), device.getId(), device.getSiteId(), null));
+		alarmComponent.updateAlarm(alarmComponent.getNewAlarm(CUSTOMER_ID, "Test-" + 2, SITE, null));
 		List<Alarm> alarms = alarmComponent.findAlarmsByDevice(device.getClientId(), device.getId());
 		assertEquals(1, alarms.size());
 		assertEquals(device.getId(), alarms.getFirst().getDeviceId());
@@ -78,10 +80,9 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 	@Test
 	public void testFilterBySiteId() {
 		Device device = TestUtils.getDevice();
-		Alarm alarm = new Alarm(TEST_ALARM_ID, device.getClientId(), device.getId(), device.getSiteId());
-		alarmComponent.updateAlarm(alarm);
-		alarm = new Alarm(TokenGenerator.generateNewToken(), device.getClientId(), device.getId(), SITE + 1);
-		alarmComponent.updateAlarm(alarm);
+		alarmComponent.updateAlarm(
+				alarmComponent.getNewAlarm(device.getClientId(), device.getId(), device.getSiteId(), null));
+		alarmComponent.updateAlarm(alarmComponent.getNewAlarm(device.getClientId(), device.getId(), SITE + 1, null));
 		List<Alarm> alarms = alarmComponent.findAlarmsBySite(CUSTOMER_ID, device.getSiteId());
 		assertEquals(1, alarms.size());
 		assertEquals(device.getSiteId(), alarms.getFirst().getSiteId());
@@ -90,12 +91,11 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 	@Test
 	public void testFilterAlarms() {
 		Device device = TestUtils.getDevice();
-		Alarm alarm = new Alarm(TEST_ALARM_ID, device.getClientId(), device.getId(), device.getSiteId());
-		alarmComponent.updateAlarm(alarm);
-		alarm = new Alarm(TokenGenerator.generateNewToken(), device.getClientId(), "Test-" + 2, device.getSiteId());
-		alarmComponent.updateAlarm(alarm);
-		alarm = new Alarm(TokenGenerator.generateNewToken(), device.getClientId(), "Test-" + 1, SITE + 1);
-		alarmComponent.updateAlarm(alarm);
+		alarmComponent.updateAlarm(
+				alarmComponent.getNewAlarm(device.getClientId(), device.getId(), device.getSiteId(), null));
+		alarmComponent.updateAlarm(
+				alarmComponent.getNewAlarm(device.getClientId(), "Test-" + 2, device.getSiteId(), null));
+		alarmComponent.updateAlarm(alarmComponent.getNewAlarm(device.getClientId(), "Test-" + 1, SITE + 1, null));
 
 		assertEquals(0, alarmComponent.filterAlarms(null, null, null).size());
 		assertEquals(3, alarmComponent.filterAlarms(CUSTOMER_ID, null, null).size());
@@ -159,6 +159,7 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 	public void checkDevice() throws XPathExpressionException, ResponseException {
 		// test invalid device
 		assertFalse(alarmComponent.checkDevice(null).isPresent());
+
 		// test device but no OpenSearch
 		Optional<Device> device = deviceComponent.findDeviceByDeviceName(CUSTOMER_ID, deviceName + 0);
 		assertTrue(device.isPresent());
@@ -186,13 +187,13 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		assertNotEquals(alarm.get().getLastUpdate(), checkedAlarm.get().getLastUpdate());
 
 		// test device, valid OpenSearch
-		obviousIngestComponent.handleDeviceBody(
+		DeviceData deviceData = obviousIngestComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(
 						deviceName + 0,
 						Date.from(ldt.minusMinutes(59)
 								.atZone(ZoneId.systemDefault())
 								.toInstant()),
-						(55)),
+						55),
 				CUSTOMER_ID);
 		OpenSearchUtils.waitForIndexing();
 		checkedAlarm = alarmComponent.checkDevice(device.get());
@@ -202,8 +203,13 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		alarm = alarmComponent.findAlarmByAlarmId(
 				alarm.get().getAlarmId(), alarm.get().getCustomerId());
 		assertTrue(alarm.isPresent());
-		assertEquals(RESOLVED, alarm.get().getState());
-		assertTrue(alarm.get().getEndDate() > 0);
+
+		// This is junk to have different results depending on the time of day, but that's the real
+		// world
+		assertEquals(deviceData.isDayLight() ? RESOLVED : ACTIVE, alarm.get().getState());
+		if (deviceData.isDayLight()) {
+			assertTrue(alarm.get().getEndDate() > 0);
+		}
 
 		// Check we create new alarm after current is cleared
 		OSComponent.deleteByCustomerId(CUSTOMER_ID);
@@ -219,7 +225,11 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		checkedAlarm = alarmComponent.checkDevice(device.get());
 		assertTrue(checkedAlarm.isPresent());
 		assertEquals(ACTIVE, checkedAlarm.get().getState());
-		assertNotEquals(alarm.get().getAlarmId(), checkedAlarm.get().getAlarmId());
+		if (deviceData.isDayLight()) {
+			assertNotEquals(alarm.get().getAlarmId(), checkedAlarm.get().getAlarmId());
+		} else {
+			assertEquals(alarm.get().getAlarmId(), checkedAlarm.get().getAlarmId());
+		}
 
 		// test disabled device, old OpenSearch
 		alarmComponent.deleteAlarmsByCustomerId(CUSTOMER_ID);
@@ -443,6 +453,24 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		assertEquals(NEEDS_EMAIL, alarm.get().getEmailed());
 		assertEquals(ACTIVE, alarm.get().getState());
 		assertEquals("Error content", alarm.get().getMessage());
+	}
+
+	@Test
+	public void getNewAlarm() {
+		Device device = TestUtils.getDevice();
+		Alarm alarm = alarmComponent.getNewAlarm(device.getClientId(), device.getId(), device.getSiteId(), null);
+		assertEquals(NEEDS_EMAIL, alarm.getEmailed());
+		assertEquals(ACTIVE, alarm.getState());
+
+		Device noNotifications = new Device(null, device.getClientId());
+		noNotifications.setSite(TestConstants.SITE);
+		noNotifications = TestUtils.addDevice("getNewAlarm", noNotifications, false, device.getSiteId());
+		noNotifications.setNotificationsDisabled(true);
+		deviceComponent.updateDevice(noNotifications);
+
+		alarm = alarmComponent.getNewAlarm(device.getClientId(), noNotifications.getId(), device.getSiteId(), null);
+		assertEquals(DONT_EMAIL, alarm.getEmailed());
+		assertEquals(ACTIVE, alarm.getState());
 	}
 
 	public void migrateAlarmsFromSiteToSite() {
