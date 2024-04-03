@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import javax.xml.xpath.XPathExpressionException;
+import org.junit.jupiter.api.Test;
 import org.opensearch.client.ResponseException;
 import org.opensearch.client.opensearch.core.SearchResponse;
 import software.amazon.awssdk.regions.Region;
@@ -168,7 +169,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		seedOpenSearchData(CUSTOMER_ID);
 	}
 
-	private static Device addDevice(String name, Device testDevice, boolean isVirtual, String siteId) {
+	public static Device addDevice(String name, Device testDevice, boolean isVirtual, String siteId) {
 		testDevice.setId(TokenGenerator.generateNewToken());
 		testDevice.setName("pretty" + name);
 		testDevice.setDeviceName(name);
