@@ -7,6 +7,7 @@ import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
+import com.bigboxer23.utils.command.RetryingCommand;
 import com.bigboxer23.utils.http.OkHttpUtil;
 import com.bigboxer23.utils.properties.PropertyUtils;
 import java.io.IOException;
@@ -84,24 +85,21 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 				if (IComponentRegistry.locationComponent.isDay(new Date(), site.getLatitude(), site.getLongitude())
 						|| isTopOfHour) {
 					logger.info("fetching weather data for " + site.getLatitude() + "," + site.getLongitude());
-					Optional<PirateWeatherDataResponse> response =
-							fetchForecastData(site.getLatitude(), site.getLongitude());
-					if (response.isEmpty()) {
-						logger.warn("bad weather data returned, waiting and attempting"
-								+ " to fetch again. "
-								+ site.getLatitude()
-								+ ":"
-								+ site.getLongitude());
-						Thread.sleep(2000);
-						response = fetchForecastData(site.getLatitude(), site.getLongitude());
-					}
+					Optional<PirateWeatherDataResponse> response = RetryingCommand.execute(
+							() -> {
+								Optional<PirateWeatherDataResponse> r =
+										fetchForecastData(site.getLatitude(), site.getLongitude());
+								if (r.isEmpty()) {
+									throw new IOException(
+											"fetchNewWeather " + site.getLatitude() + ":" + site.getLongitude());
+								}
+								return r;
+							},
+							site.getLatitude() + ":" + site.getLongitude(), 2);
 					response.ifPresent(w -> updateWeather(site.getLatitude(), site.getLongitude(), w.getCurrently()));
-					if (response.isEmpty()) {
-						logger.warn("unable to fetch weather data. " + site.getLatitude() + ":" + site.getLongitude());
-					}
 				}
 			} catch (Exception e) {
-				logger.error("fetchNewWeather", e);
+				logger.error("fetchNewWeather " + site.getLatitude() + ":" + site.getLongitude(), e);
 			}
 		});
 	}
