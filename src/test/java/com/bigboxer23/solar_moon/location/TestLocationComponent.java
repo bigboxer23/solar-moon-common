@@ -33,19 +33,23 @@ public class TestLocationComponent implements IComponentRegistry, TestConstants 
 	@Test
 	public void isDay() throws Exception {
 		LocalDateTime time = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS).withHour(1);
-		assertFalse(locationComponent.isDay(
-				Date.from(time.atZone(ZoneId.of("America/Chicago")).toInstant()), testLatitude, testLongitude));
+		assertFalse(locationComponent
+				.isDay(Date.from(time.atZone(ZoneId.of("America/Chicago")).toInstant()), testLatitude, testLongitude)
+				.orElse(true));
 
 		time = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS).withHour(12);
-		assertTrue(locationComponent.isDay(
-				Date.from(time.atZone(ZoneId.of("America/Chicago")).toInstant()), testLatitude, testLongitude));
+		assertTrue(locationComponent
+				.isDay(Date.from(time.atZone(ZoneId.of("America/Chicago")).toInstant()), testLatitude, testLongitude)
+				.orElse(true));
 
 		time = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS).withHour(23);
-		assertFalse(locationComponent.isDay(
-				Date.from(time.atZone(ZoneId.of("America/Chicago")).toInstant()), testLatitude, testLongitude));
+		assertFalse(locationComponent
+				.isDay(Date.from(time.atZone(ZoneId.of("America/Chicago")).toInstant()), testLatitude, testLongitude)
+				.orElse(true));
 
 		time = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS).withHour(12).minusDays(7);
-		assertTrue(locationComponent.isDay(
-				Date.from(time.atZone(ZoneId.of("America/Chicago")).toInstant()), testLatitude, testLongitude));
+		assertTrue(locationComponent
+				.isDay(Date.from(time.atZone(ZoneId.of("America/Chicago")).toInstant()), testLatitude, testLongitude)
+				.orElse(false));
 	}
 }

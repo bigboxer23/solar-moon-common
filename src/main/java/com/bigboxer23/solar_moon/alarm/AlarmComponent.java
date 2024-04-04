@@ -298,8 +298,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 						.findDeviceById(d.getDeviceId())
 						.filter(d2 -> !d2.isDisabled())
 						.flatMap(d2 -> {
-							TransactionUtil.addDeviceId(d2.getId());
 							TransactionUtil.updateCustomerId(d2.getClientId());
+							TransactionUtil.addDeviceId(d2.getId());
 							return alarmConditionDetected(
 									d2.getClientId(),
 									d2.getId(),
@@ -315,8 +315,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			logger.warn("Null device, can't check.");
 			return Optional.empty();
 		}
-		TransactionUtil.addDeviceId(device.getId());
 		TransactionUtil.updateCustomerId(device.getClientId());
+		TransactionUtil.addDeviceId(device.getId());
 		DeviceData data = IComponentRegistry.OSComponent.getLastDeviceEntry(
 				device.getId(), OpenSearchQueries.getDeviceIdQuery(device.getId()));
 		if (data == null || device.isDisabled()) {

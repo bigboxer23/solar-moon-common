@@ -26,6 +26,7 @@ import org.opensearch.client.opensearch._types.query_dsl.QueryBuilders;
 import org.opensearch.client.opensearch.core.*;
 import org.opensearch.client.opensearch.core.bulk.BulkOperation;
 import org.opensearch.client.opensearch.core.bulk.IndexOperation;
+import org.opensearch.client.opensearch.core.search.Hit;
 import org.opensearch.client.opensearch.core.search.SourceConfig;
 import org.opensearch.client.opensearch.core.search.SourceFilter;
 import org.opensearch.client.transport.rest_client.RestClientTransport;
@@ -404,24 +405,38 @@ public class OpenSearchComponent implements OpenSearchConstants {
 
 	public boolean isDeviceGeneratingPower(String customerId, String deviceId, long offset) {
 		try {
+			double maxRecordCount = Math.round((float) offset / TimeConstants.FIFTEEN_MINUTES);
+
 			SearchJSON searchJSON =
 					new SearchJSON(customerId, null, System.currentTimeMillis(), System.currentTimeMillis() - offset);
 			searchJSON.setDeviceId(deviceId);
-			searchJSON.setDaylight(true);
+			searchJSON.setSize(Double.valueOf(maxRecordCount).intValue());
+
 			SearchResponse response = getClient()
 					.search(
 							OpenSearchQueries.getAverageBuilder("UTC", "10m")
 									.query(getQuery(searchJSON))
+									.size(searchJSON.getSize())
+									.source(new SourceConfig.Builder()
+											.filter(new SourceFilter.Builder()
+													.includes(Collections.singletonList(MeterConstants.DAYLIGHT))
+													.build())
+											.build())
 									.build(),
 							Map.class);
-			double maxRecordCount = Math.round((float) offset / TimeConstants.FIFTEEN_MINUTES);
+
+			List<Hit> hits = response.hits().hits();
+			boolean isDark = hits.stream()
+					.map(Hit::source)
+					.filter(Objects::nonNull)
+					.anyMatch(source -> !((Map<String, Boolean>) source).get(MeterConstants.DAYLIGHT));
 
 			// Power produced within the offset time, or we haven't collected enough of the records
 			// in the offset period (because of daylight not happening yet)
-			if (((Aggregate) response.aggregations().get("avg")).avg().value() > 0.1
-					|| response.hits().total().value() < (maxRecordCount - 1)) {
+			if (((Aggregate) response.aggregations().get("avg")).avg().value() > 0.1 || isDark) {
 				return true;
 			}
+
 			logger.warn("Device not generating power "
 					+ maxRecordCount
 					+ ":"
