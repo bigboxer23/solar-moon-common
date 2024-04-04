@@ -82,7 +82,9 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 				return;
 			}
 			try {
-				if (IComponentRegistry.locationComponent.isDay(new Date(), site.getLatitude(), site.getLongitude())
+				if (IComponentRegistry.locationComponent
+								.isDay(new Date(), site.getLatitude(), site.getLongitude())
+								.orElse(true)
 						|| isTopOfHour) {
 					logger.info("fetching weather data for " + site.getLatitude() + "," + site.getLongitude());
 					Optional<PirateWeatherDataResponse> response = RetryingCommand.execute(
@@ -95,7 +97,8 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 								}
 								return r;
 							},
-							site.getLatitude() + ":" + site.getLongitude(), 2);
+							site.getLatitude() + ":" + site.getLongitude(),
+							2);
 					response.ifPresent(w -> updateWeather(site.getLatitude(), site.getLongitude(), w.getCurrently()));
 				}
 			} catch (Exception e) {

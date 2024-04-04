@@ -56,14 +56,10 @@ public class LocationComponent {
 			logger.info("no date, can't write day/night");
 			return;
 		}
-		try {
-			data.setDaylight(isDay(data.getDate(), site.getLatitude(), site.getLongitude()));
-		} catch (Exception e) {
-			logger.warn("addLocationData", e);
-		}
+		isDay(data.getDate(), site.getLatitude(), site.getLongitude()).ifPresent(data::setDaylight);
 	}
 
-	public boolean isDay(Date dateToCheck, double latitude, double longitude) throws Exception {
+	public Optional<Boolean> isDay(Date dateToCheck, double latitude, double longitude) {
 		SolarTime location = SolarTime.ofLocation(latitude, longitude);
 
 		Calendar calendar = Calendar.getInstance();
@@ -73,10 +69,11 @@ public class LocationComponent {
 		Optional<Moment> sunrise = plainDate.get(location.sunrise());
 		Optional<Moment> sunset = plainDate.get(location.sunset());
 		if (sunrise.isEmpty() || sunset.isEmpty()) {
-			throw new Exception("Cannot find sunrise or sunset" + sunrise.isEmpty() + " " + sunset.isEmpty());
+			logger.warn("Cannot find sunrise or sunset" + sunrise.isEmpty() + " " + sunset.isEmpty());
+			return Optional.empty();
 		}
-		return sunrise.get().compareTo(Moment.from(dateToCheck.toInstant())) <= 0
-				&& sunset.get().compareTo(Moment.from(dateToCheck.toInstant())) > 0;
+		return Optional.of(sunrise.get().compareTo(Moment.from(dateToCheck.toInstant())) <= 0
+				&& sunset.get().compareTo(Moment.from(dateToCheck.toInstant())) > 0);
 	}
 
 	public Optional<LocalDateTime> getLocalTimeString(double latitude, double longitude) {

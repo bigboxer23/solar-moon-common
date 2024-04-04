@@ -79,8 +79,9 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		devices.forEach((key, smaDevice) -> {
 			try {
 				TransactionUtil.addDeviceId(smaDevice.getDevice().getId());
-				IComponentRegistry.generationComponent.handleDevice(
+				DeviceData data = IComponentRegistry.generationComponent.handleDevice(
 						smaDevice.getDevice(), translateToDeviceData(smaDevice));
+				logger.info("successfully uploaded data: " + data.getDeviceId() + " : " + data.getDate());
 			} catch (ResponseException e) {
 				logger.error("ingestXMLFile", e);
 			}
@@ -156,11 +157,21 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 				logger.debug("cannot find ghost devices w/o site configuration");
 				return;
 			}
+			boolean isDay = IComponentRegistry.locationComponent
+					.isDay(
+							new Date(),
+							donor.getDevice().getLatitude(),
+							donor.getDevice().getLongitude())
+					.orElse(true);
 			IComponentRegistry.deviceComponent
 					.getDevicesBySiteId(customerId, donor.getDevice().getSiteId())
 					.forEach(d -> {
 						if (d.getDeviceName() != null && !devices.containsKey(d.getDeviceName())) {
-							logger.debug("adding ghost device " + d.getDeviceName());
+							if (isDay) {
+								logger.info("adding ghost device " + d.getDeviceName());
+							} else {
+								logger.debug("adding ghost device " + d.getDeviceName());
+							}
 							SMADevice smaDevice = new SMADevice(customerId);
 							SMARecord record = new SMARecord(donor.getRecords().getFirst());
 							record.setDevice(d.getDeviceName());
