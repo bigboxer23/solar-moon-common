@@ -63,6 +63,7 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 	}
 
 	public void fetchNewWeather() {
+		boolean isTopOfHour = LocalDateTime.now().getMinute() == 0;
 		Map<String, Device> sites = IComponentRegistry.deviceComponent.getSites().stream()
 				.filter(site -> (site.getLatitude() != -1 && site.getLongitude() != -1))
 				.collect(Collectors.toMap(
@@ -81,7 +82,7 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 			}
 			try {
 				if (IComponentRegistry.locationComponent.isDay(new Date(), site.getLatitude(), site.getLongitude())
-						|| LocalDateTime.now().getMinute() == 0) {
+						|| isTopOfHour) {
 					logger.info("fetching weather data for " + site.getLatitude() + "," + site.getLongitude());
 					Optional<PirateWeatherDataResponse> response =
 							fetchForecastData(site.getLatitude(), site.getLongitude());
