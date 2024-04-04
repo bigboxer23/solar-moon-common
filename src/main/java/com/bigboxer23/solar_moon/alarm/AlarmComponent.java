@@ -43,33 +43,39 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			return;
 		}
 		IComponentRegistry.deviceUpdateComponent.update(deviceData.getDeviceId());
+		Optional<Alarm> maybeAlarm =
+				getMostRecentAlarm(deviceData.getDeviceId()).filter(alarm -> alarm.getState() == ACTIVE);
+		if (maybeAlarm.isEmpty()) {
+			return;
+		}
 		if (!deviceData.isDayLight()) {
-			logger.debug("not resolving alarm, not daylight");
+			logger.debug("not resolving alarm, not daylight " + maybeAlarm.get().getAlarmId());
 			return;
 		}
 		if (deviceData.getTotalRealPower() <= 0.1) {
-			logger.warn("not resolving alarm, no real power reported " + deviceData.getTotalRealPower());
+			logger.warn("not resolving alarm, no real power reported "
+					+ deviceData.getTotalRealPower()
+					+ " "
+					+ maybeAlarm.get().getAlarmId());
 			return;
 		}
-		getMostRecentAlarm(deviceData.getDeviceId())
-				.filter(alarm -> alarm.getState() == ACTIVE)
-				.ifPresent(alarm -> {
-					logger.warn("Resolving alarm for "
-							+ alarm.getAlarmId()
-							+ " "
-							+ deviceData.getDate().getTime());
-					alarm.setState(RESOLVED);
-					// If we've sent a notification email to customer, should flag we need
-					// to send a resolve email too
-					if (alarm.getEmailed() > RESOLVED_NOT_EMAILED) {
-						alarm.setResolveEmailed(NEEDS_EMAIL);
-					}
-					if (alarm.getEmailed() == NEEDS_EMAIL) {
-						alarm.setEmailed(RESOLVED_NOT_EMAILED);
-					}
-					alarm.setEndDate(new Date().getTime());
-					updateAlarm(alarm);
-				});
+		maybeAlarm.ifPresent(alarm -> {
+			logger.warn("Resolving alarm for "
+					+ alarm.getAlarmId()
+					+ " "
+					+ deviceData.getDate().getTime());
+			alarm.setState(RESOLVED);
+			// If we've sent a notification email to customer, should flag we need
+			// to send a resolve email too
+			if (alarm.getEmailed() > RESOLVED_NOT_EMAILED) {
+				alarm.setResolveEmailed(NEEDS_EMAIL);
+			}
+			if (alarm.getEmailed() == NEEDS_EMAIL) {
+				alarm.setEmailed(RESOLVED_NOT_EMAILED);
+			}
+			alarm.setEndDate(new Date().getTime());
+			updateAlarm(alarm);
+		});
 		// TODO: inspect data to see if looks "normal"
 
 	}
