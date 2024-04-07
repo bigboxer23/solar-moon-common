@@ -389,6 +389,20 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		validateAlertResolution(deviceData, IAlarmConstants.ACTIVE);
 	}
 
+	@Test
+	public void isDeviceOK() {
+		DeviceData data = new DeviceData(
+				TestUtils.getDevice().getSiteId(),
+				CUSTOMER_ID,
+				TestUtils.getDevice().getId());
+		data.setDaylight(false);
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data));
+		data.setDaylight(true);
+		data.setTotalRealPower(1);
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data));
+		//TODO: add some historic data and test against it
+	}
+
 	private void validateAlertResolution(DeviceData deviceData, int expectedState) {
 		Optional<Alarm> alarm = alarmComponent.alarmConditionDetected(
 				TestUtils.getDevice().getClientId(),
