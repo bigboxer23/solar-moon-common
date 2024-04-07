@@ -9,6 +9,7 @@ import com.bigboxer23.solar_moon.search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
+import java.io.IOException;
 import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -335,19 +336,66 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	}
 
 	public Optional<Alarm> checkDeviceExistingData(DeviceData deviceData) {
-		if (!deviceData.isDayLight()) {
+		if (isDeviceOK(deviceData)) {
 			return Optional.empty();
 		}
-		if (deviceData.getTotalRealPower() <= 0.1
-				&& !IComponentRegistry.OSComponent.isDeviceGeneratingPower(
-						deviceData.getCustomerId(), deviceData.getDeviceId(), TimeConstants.HOUR * 2)) {
-			return alarmConditionDetected(
-					deviceData.getCustomerId(),
-					deviceData.getDeviceId(),
-					deviceData.getSiteId(),
-					"Device not generating power");
+		return alarmConditionDetected(
+				deviceData.getCustomerId(),
+				deviceData.getDeviceId(),
+				deviceData.getSiteId(),
+				"Device not generating power");
+	}
+
+	protected boolean isDeviceOK(DeviceData deviceData) {
+		if (!deviceData.isDayLight()) {
+			return true;
 		}
-		return Optional.empty();
+		if (deviceData.getTotalRealPower() > 0.1) {
+			return true;
+		}
+		try {
+			List<DeviceData> historicData = IComponentRegistry.OSComponent.getRecentDeviceData(
+					deviceData.getCustomerId(), deviceData.getDeviceId(), TimeConstants.HOUR * 2);
+
+			boolean isDarkAdjacent = historicData.stream().anyMatch(d -> !d.isDayLight());
+			if (isDarkAdjacent) {
+				logger.debug("dark detected in the recent data, device is assumed to be OK");
+				return true;
+			}
+			double averageRealPower = historicData.stream()
+					.map(DeviceData::getTotalRealPower)
+					.mapToDouble(Double::valueOf)
+					.average()
+					.orElse(-1);
+			if (averageRealPower > 0.1) {
+				logger.debug("average production over .1kW detected");
+				return true;
+			}
+			// Check weather
+			double uvIndex = historicData.stream()
+					.map(DeviceData::getUVIndex)
+					.mapToDouble(Double::valueOf)
+					.average()
+					.orElse(-1);
+			// Check for -1 as could be a site w/o location data set (or we could be missing weather
+			// data)
+			if (uvIndex != -1 && uvIndex <= 0.1) {
+				logger.info("average uv conditions are very low, panel may be OK " + uvIndex);
+				return true;
+			}
+			logger.warn("Device not generating power "
+					+ historicData.size()
+					+ ": "
+					+ isDarkAdjacent
+					+ ": "
+					+ averageRealPower
+					+ ": "
+					+ uvIndex);
+			return false;
+		} catch (IOException e) {
+			logger.error("isDeviceGeneratingPower", e);
+			return true;
+		}
 	}
 
 	public void cleanupOldAlarms() {

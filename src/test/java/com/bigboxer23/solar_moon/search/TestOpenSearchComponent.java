@@ -84,11 +84,6 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	}
 
 	@Test
-	public void isDeviceGeneratingPower() throws IOException {
-		OSComponent.isDeviceGeneratingPower(CUSTOMER_ID, null, TimeConstants.HOUR * 2);
-	}
-
-	@Test
 	public void testGetLastDeviceEntry() throws XPathExpressionException, ResponseException {
 		Date date = TimeUtils.get15mRoundedDate();
 		LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
