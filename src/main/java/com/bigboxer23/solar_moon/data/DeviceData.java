@@ -26,7 +26,9 @@ public class DeviceData {
 		setAverageVoltage(doubleToFloat(openSearchMap.get(AVG_VOLT)));
 		setAverageCurrent(doubleToFloat(openSearchMap.get(AVG_CURRENT)));
 		setTotalEnergyConsumed(doubleToFloat(openSearchMap.get(TOTAL_ENG_CONS)));
-		setDate(new Date((Long) openSearchMap.get(OpenSearchConstants.TIMESTAMP)));
+		if (openSearchMap.containsKey(OpenSearchConstants.TIMESTAMP)) {
+			setDate(new Date((Long) openSearchMap.get(OpenSearchConstants.TIMESTAMP)));
+		}
 		if (openSearchMap.get(VIRTUAL) != null && (Boolean) openSearchMap.get(VIRTUAL)) {
 			setIsVirtual();
 		}
@@ -70,6 +72,9 @@ public class DeviceData {
 		}
 		if (value instanceof Integer) {
 			return (Integer) value;
+		}
+		if (value instanceof Float) {
+			return (Float) value;
 		}
 		return Optional.of(value)
 				.map(val -> (Double) val)

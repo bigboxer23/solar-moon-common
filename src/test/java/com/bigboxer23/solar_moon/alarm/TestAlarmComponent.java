@@ -10,11 +10,11 @@ import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.search.OpenSearchUtils;
 import com.bigboxer23.solar_moon.util.TimeConstants;
+import com.bigboxer23.solar_moon.util.TimeUtils;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 import javax.xml.xpath.XPathExpressionException;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
@@ -390,17 +390,61 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 	}
 
 	@Test
-	public void isDeviceOK() {
+	public void isDeviceOK() throws ResponseException, InterruptedException {
 		DeviceData data = new DeviceData(
 				TestUtils.getDevice().getSiteId(),
 				CUSTOMER_ID,
 				TestUtils.getDevice().getId());
+
 		data.setDaylight(false);
 		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data));
 		data.setDaylight(true);
 		data.setTotalRealPower(1);
 		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data));
-		//TODO: add some historic data and test against it
+		// add some historic data and test against it
+
+		//Test case where external factors shouldn't cause us to report OK
+		data.setTotalRealPower(.01f);
+		data.setUVIndex(.2);
+		seedData(data);
+		assertFalse(IComponentRegistry.alarmComponent.isDeviceOK(data));
+
+		//Test Low UV factor
+		OSComponent.deleteByCustomerId(CUSTOMER_ID);
+		data.setUVIndex(.09);
+		seedData(data);
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data));
+
+		//Test daylight adjacent factor
+		OSComponent.deleteByCustomerId(CUSTOMER_ID);
+		data.setUVIndex(.2);
+		data.setDaylight(false);
+		seedData(data);
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data));
+
+		//Test good power generation adjacent
+		OSComponent.deleteByCustomerId(CUSTOMER_ID);
+		data.setDaylight(true);
+		data.setTotalRealPower(0.11f);
+		seedData(data);
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data));
+	}
+
+	private void seedData(DeviceData seed) throws ResponseException, InterruptedException {
+		LocalDateTime ldt =
+				LocalDateTime.ofInstant(TimeUtils.get15mRoundedDate().toInstant(), ZoneId.systemDefault());
+		List<DeviceData> datas = new ArrayList<>();
+		for (int ai = 0; ai < 8; ai++) {
+			DeviceData deviceData = new DeviceData(seed.getAttributes().entrySet().stream()
+					.collect(Collectors.toMap(
+							Map.Entry::getKey, e -> e.getValue().getValue())));
+			deviceData.setDate(Date.from(
+					ldt.minusMinutes(15 * ai).atZone(ZoneId.systemDefault()).toInstant()));
+			datas.add(deviceData);
+		}
+		IComponentRegistry.OSComponent.logData(null, datas);
+		OpenSearchUtils.waitForIndexing();
+		Thread.sleep(1000);
 	}
 
 	private void validateAlertResolution(DeviceData deviceData, int expectedState) {
