@@ -325,6 +325,11 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			return Optional.empty();
 		}
 		if (data.getDate().getTime() < new Date(System.currentTimeMillis() - TimeConstants.HOUR).getTime()) {
+			if (IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes()) {
+				logger.info(
+						"opensearch failures seen within last 30m so ignoring alerting while system" + " recovers.");
+				return Optional.empty();
+			}
 			return alarmConditionDetected(
 					data.getCustomerId(),
 					data.getDeviceId(),
@@ -351,6 +356,11 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			return true;
 		}
 		if (deviceData.getTotalRealPower() > 0.1) {
+			return true;
+		}
+		if (IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes()) {
+			logger.info(
+					"Opensearch failures seen within last 30m so ignoring alerting while system" + " recovers. (2)");
 			return true;
 		}
 		try {
