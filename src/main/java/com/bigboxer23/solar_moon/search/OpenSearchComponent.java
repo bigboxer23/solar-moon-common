@@ -366,8 +366,8 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			case TOTAL_SEARCH_TYPE -> OpenSearchQueries.getTotalBuilder(
 					searchJSON.getTimeZone(), searchJSON.getBucketSize());
-			case MAX_CURRENT_SEARCH_TYPE -> OpenSearchQueries.getMaxCurrentBuilder(
-					searchJSON.getTimeZone(), searchJSON.getBucketSize());
+			case MAX_CURRENT_SEARCH_TYPE -> OpenSearchQueries.getMaxCurrentBuilder();
+			case MAX_ENERGY_CONSUMED_SEARCH_TYPE -> OpenSearchQueries.getMaxEnergyConsumed();
 			case STACKED_TIME_SERIES_SEARCH_TYPE, GROUPED_BAR_SEARCH_TYPE -> OpenSearchQueries
 					.getStackedTimeSeriesBuilder(searchJSON.getTimeZone(), searchJSON.getBucketSize());
 			case DATA_SEARCH_TYPE -> OpenSearchQueries.getDataSearch(
@@ -416,6 +416,21 @@ public class OpenSearchComponent implements OpenSearchConstants {
 						Map.class)
 				.hits()
 				.hits());
+	}
+
+	public float getMaxTotalEnergyConsumed(String customerId, String deviceId, long offset) {
+		SearchJSON search = new SearchJSON();
+		search.setCustomerId(customerId);
+		search.setType(OpenSearchConstants.MAX_ENERGY_CONSUMED_SEARCH_TYPE);
+		search.setBucketSize("3h");
+		Date end = TimeUtils.get15mRoundedDate();
+		search.setDeviceId(deviceId);
+		search.setEndDate(end.getTime());
+		search.setStartDate(end.getTime() - offset);
+		SearchResponse response = search(search);
+		return Double.valueOf(
+						((Aggregate) response.aggregations().get("max")).max().value())
+				.floatValue();
 	}
 
 	public boolean isOpenSearchAvailable() {

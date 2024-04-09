@@ -5,6 +5,7 @@ import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
+import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.XMLUtil;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import com.bigboxer23.utils.properties.PropertyUtils;
@@ -190,6 +191,9 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		data.setDate(smaDevice.getTimestamp());
 		data.setPowerFactor(1);
 		data.setAverageCurrent(0);
+		data.setTotalEnergyConsumed(0);
+		data.setTotalRealPower(0);
+		data.setAverageVoltage(0);
 		smaDevice.getRecords().forEach(record -> {
 			switch (record.getAttributeName()) {
 				case TOTAL_YIELD:
@@ -202,6 +206,10 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 					data.setAverageVoltage(Float.parseFloat(record.getValue()));
 			}
 		});
+		if (data.getTotalEnergyConsumed() == 0) {
+			data.setTotalEnergyConsumed(IComponentRegistry.OSComponent.getMaxTotalEnergyConsumed(
+					smaDevice.getCustomerId(), smaDevice.getDevice().getId(), TimeConstants.DAY));
+		}
 		return data;
 	}
 

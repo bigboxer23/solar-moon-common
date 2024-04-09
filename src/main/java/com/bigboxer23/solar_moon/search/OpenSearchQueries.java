@@ -305,7 +305,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 								.build());
 	}
 
-	public static SearchRequest.Builder getMaxCurrentBuilder(String timezone, String bucketSize) {
+	public static SearchRequest.Builder getMaxCurrentBuilder() {
 		return getBaseBuilder(1, false)
 				.docvalueFields(new FieldAndFormat.Builder().field(AVG_VOLT).build())
 				.docvalueFields(new FieldAndFormat.Builder().field(AVG_CURRENT).build())
@@ -314,6 +314,21 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 						new Aggregation.Builder()
 								.max(new MaxAggregation.Builder()
 										.field(TOTAL_REAL_POWER)
+										.build())
+								.build())
+				.sort(builder -> builder.field(new FieldSort.Builder()
+						.field(TIMESTAMP)
+						.order(SortOrder.Desc)
+						.build()));
+	}
+
+	public static SearchRequest.Builder getMaxEnergyConsumed() {
+		return getBaseBuilder(0, false)
+				.aggregations(
+						"max",
+						new Aggregation.Builder()
+								.max(new MaxAggregation.Builder()
+										.field(TOTAL_ENG_CONS)
 										.build())
 								.build())
 				.sort(builder -> builder.field(new FieldSort.Builder()

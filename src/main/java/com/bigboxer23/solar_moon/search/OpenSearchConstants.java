@@ -16,6 +16,8 @@ public interface OpenSearchConstants {
 
 	String MAX_CURRENT_SEARCH_TYPE = "maxCurrent";
 
+	String MAX_ENERGY_CONSUMED_SEARCH_TYPE = "maxEnergyConsumed";
+
 	String STACKED_TIME_SERIES_SEARCH_TYPE = "stackedTimeSeries";
 	String GROUPED_BAR_SEARCH_TYPE = "groupedBarGraph";
 
