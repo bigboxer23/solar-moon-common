@@ -403,26 +403,26 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data));
 		// add some historic data and test against it
 
-		//Test case where external factors shouldn't cause us to report OK
+		// Test case where external factors shouldn't cause us to report OK
 		data.setTotalRealPower(.01f);
 		data.setUVIndex(.2);
 		seedData(data);
 		assertFalse(IComponentRegistry.alarmComponent.isDeviceOK(data));
 
-		//Test Low UV factor
+		// Test Low UV factor
 		OSComponent.deleteByCustomerId(CUSTOMER_ID);
 		data.setUVIndex(.09);
 		seedData(data);
 		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data));
 
-		//Test daylight adjacent factor
+		// Test daylight adjacent factor
 		OSComponent.deleteByCustomerId(CUSTOMER_ID);
 		data.setUVIndex(.2);
 		data.setDaylight(false);
 		seedData(data);
 		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data));
 
-		//Test good power generation adjacent
+		// Test good power generation adjacent
 		OSComponent.deleteByCustomerId(CUSTOMER_ID);
 		data.setDaylight(true);
 		data.setTotalRealPower(0.11f);
