@@ -320,16 +320,15 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		TransactionUtil.addDeviceId(device.getId());
 		DeviceData data = IComponentRegistry.OSComponent.getLastDeviceEntry(
 				device.getId(), OpenSearchQueries.getDeviceIdQuery(device.getId()));
+		// Check disabled or new
 		if (data == null || device.isDisabled()) {
 			logger.debug("likely new device with no data (or disabled) " + device.getId());
 			return Optional.empty();
 		}
-		if (data.getDate().getTime() < new Date(System.currentTimeMillis() - TimeConstants.HOUR).getTime()) {
-			if (IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes()) {
-				logger.info(
-						"opensearch failures seen within last 30m so ignoring alerting while system" + " recovers.");
-				return Optional.empty();
-			}
+		// If stale and open search is healthy, fail
+		boolean isOpenSearchOk = !IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes();
+		if (data.getDate().getTime() < new Date(System.currentTimeMillis() - TimeConstants.HOUR).getTime()
+				&& isOpenSearchOk) {
 			return alarmConditionDetected(
 					data.getCustomerId(),
 					data.getDeviceId(),
@@ -337,30 +336,23 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 					"No data recently from device.  Last data: "
 							+ data.getDate().getTime());
 		}
-		return checkDeviceExistingData(data);
-	}
-
-	public Optional<Alarm> checkDeviceExistingData(DeviceData deviceData) {
-		if (isDeviceOK(deviceData)) {
-			return Optional.empty();
+		// Inspect device, weather, site data
+		if (!isDeviceOK(data, isOpenSearchOk)) {
+			return alarmConditionDetected(
+					data.getCustomerId(), data.getDeviceId(), data.getSiteId(), "Device not generating power");
 		}
-		return alarmConditionDetected(
-				deviceData.getCustomerId(),
-				deviceData.getDeviceId(),
-				deviceData.getSiteId(),
-				"Device not generating power");
+		return Optional.empty();
 	}
 
-	protected boolean isDeviceOK(DeviceData deviceData) {
+	protected boolean isDeviceOK(DeviceData deviceData, boolean isOpenSearchOK) {
 		if (!deviceData.isDayLight()) {
 			return true;
 		}
 		if (deviceData.getTotalRealPower() > 0.1) {
 			return true;
 		}
-		if (IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes()) {
-			logger.info(
-					"Opensearch failures seen within last 30m so ignoring alerting while system" + " recovers. (2)");
+		if (!isOpenSearchOK) {
+			logger.info("OpenSearch failures seen within last 30m so ignoring alerting while system" + " recovers.");
 			return true;
 		}
 		try {
