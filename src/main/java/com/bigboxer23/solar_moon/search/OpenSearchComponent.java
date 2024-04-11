@@ -21,6 +21,7 @@ import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.*;
 import org.opensearch.client.opensearch._types.aggregations.Aggregate;
 import org.opensearch.client.opensearch._types.aggregations.StringTermsBucket;
+import org.opensearch.client.opensearch._types.query_dsl.FieldAndFormat;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch._types.query_dsl.QueryBuilders;
 import org.opensearch.client.opensearch.core.*;
@@ -355,27 +356,34 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	}
 
 	private SearchRequest.Builder getSearchRequest(SearchJSON searchJSON) {
-		return switch (searchJSON.getType()) {
-			case TIME_SERIES_SEARCH_TYPE -> OpenSearchQueries.getTimeSeriesBuilder(
-					searchJSON.getTimeZone(), searchJSON.getBucketSize());
-			case TIME_SERIES_MAX_SEARCH_TYPE -> OpenSearchQueries.getTimeSeriesMaxBuilder(
-					searchJSON.getTimeZone(), searchJSON.getBucketSize());
-			case AVG_TOTAL_SEARCH_TYPE -> OpenSearchQueries.getAverageTotalBuilder(
-					searchJSON.getTimeZone(), searchJSON.getBucketSize());
-			case AVG_SEARCH_TYPE -> OpenSearchQueries.getAverageBuilder(
-					searchJSON.getTimeZone(), searchJSON.getBucketSize());
-			case TOTAL_SEARCH_TYPE -> OpenSearchQueries.getTotalBuilder(
-					searchJSON.getTimeZone(), searchJSON.getBucketSize());
-			case MAX_CURRENT_SEARCH_TYPE -> OpenSearchQueries.getMaxCurrentBuilder();
-			case MAX_ENERGY_CONSUMED_SEARCH_TYPE -> OpenSearchQueries.getMaxEnergyConsumed();
-			case STACKED_TIME_SERIES_SEARCH_TYPE, GROUPED_BAR_SEARCH_TYPE -> OpenSearchQueries
-					.getStackedTimeSeriesBuilder(searchJSON.getTimeZone(), searchJSON.getBucketSize());
-			case DATA_SEARCH_TYPE -> OpenSearchQueries.getDataSearch(
-					searchJSON.getOffset(), searchJSON.getSize(), searchJSON.isIncludeSource());
-			case TOTAL_ENERGY_CONSUMED_SEARCH_TYPE -> OpenSearchQueries.getTotalEnergyConsumedBuilder(
-					searchJSON.getTimeZone(), searchJSON.getBucketSize());
-			default -> null;
-		};
+		SearchRequest.Builder builder =
+				switch (searchJSON.getType()) {
+					case TIME_SERIES_SEARCH_TYPE -> OpenSearchQueries.getTimeSeriesBuilder(
+							searchJSON.getTimeZone(), searchJSON.getBucketSize());
+					case TIME_SERIES_MAX_SEARCH_TYPE -> OpenSearchQueries.getTimeSeriesMaxBuilder(
+							searchJSON.getTimeZone(), searchJSON.getBucketSize());
+					case AVG_TOTAL_SEARCH_TYPE -> OpenSearchQueries.getAverageTotalBuilder(
+							searchJSON.getTimeZone(), searchJSON.getBucketSize());
+					case AVG_SEARCH_TYPE -> OpenSearchQueries.getAverageBuilder(
+							searchJSON.getTimeZone(), searchJSON.getBucketSize());
+					case TOTAL_SEARCH_TYPE -> OpenSearchQueries.getTotalBuilder(
+							searchJSON.getTimeZone(), searchJSON.getBucketSize());
+					case MAX_CURRENT_SEARCH_TYPE -> OpenSearchQueries.getMaxCurrentBuilder();
+					case MAX_ENERGY_CONSUMED_SEARCH_TYPE -> OpenSearchQueries.getMaxEnergyConsumed();
+					case STACKED_TIME_SERIES_SEARCH_TYPE, GROUPED_BAR_SEARCH_TYPE -> OpenSearchQueries
+							.getStackedTimeSeriesBuilder(searchJSON.getTimeZone(), searchJSON.getBucketSize());
+					case DATA_SEARCH_TYPE -> OpenSearchQueries.getDataSearch(
+							searchJSON.getOffset(), searchJSON.getSize(), searchJSON.isIncludeSource());
+					case TOTAL_ENERGY_CONSUMED_SEARCH_TYPE -> OpenSearchQueries.getTotalEnergyConsumedBuilder(
+							searchJSON.getTimeZone(), searchJSON.getBucketSize());
+					default -> null;
+				};
+		if (builder != null && searchJSON.getAdditionalFields() != null) {
+			searchJSON.getAdditionalFields().forEach(field -> {
+				builder.docvalueFields(new FieldAndFormat.Builder().field(field).build());
+			});
+		}
+		return builder;
 	}
 
 	public List<StringTermsBucket> getWeatherFacets() throws IOException {
