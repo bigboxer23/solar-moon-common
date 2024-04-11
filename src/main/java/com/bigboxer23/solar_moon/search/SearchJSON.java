@@ -1,6 +1,7 @@
 package com.bigboxer23.solar_moon.search;
 
 import java.util.Date;
+import java.util.List;
 import lombok.Data;
 
 /** */
@@ -25,6 +26,8 @@ public class SearchJSON {
 	private boolean daylight;
 	private boolean includeSource = false;
 
+	private List<String> additionalFields;
+
 	public SearchJSON() {}
 
 	public SearchJSON(SearchJSON search) {
@@ -46,6 +49,7 @@ public class SearchJSON {
 		setOffset(search.getOffset());
 		setSiteId(search.getSiteId());
 		setIncludeSource(search.isIncludeSource());
+		setAdditionalFields(search.getAdditionalFields());
 	}
 
 	public SearchJSON(String customerId, String deviceId, long endDate, long startDate) {
