@@ -301,6 +301,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 						.flatMap(d2 -> {
 							TransactionUtil.updateCustomerId(d2.getClientId());
 							TransactionUtil.addDeviceId(d2.getId());
+							logger.warn("Quick check shows no updates for device in last 45 min.");
 							return alarmConditionDetected(
 									d2.getClientId(),
 									d2.getId(),
@@ -329,6 +330,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		boolean isOpenSearchOk = !IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes();
 		if (data.getDate().getTime() < new Date(System.currentTimeMillis() - TimeConstants.HOUR).getTime()
 				&& isOpenSearchOk) {
+			logger.warn("Check shows no updates for device in last 60 min.");
 			return alarmConditionDetected(
 					data.getCustomerId(),
 					data.getDeviceId(),
