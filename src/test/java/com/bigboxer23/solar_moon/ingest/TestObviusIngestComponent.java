@@ -5,10 +5,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.TestConstants;
 import com.bigboxer23.solar_moon.TestUtils;
+import com.bigboxer23.solar_moon.alarm.IAlarmConstants;
+import com.bigboxer23.solar_moon.data.Alarm;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import javax.xml.xpath.XPathExpressionException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -64,10 +67,23 @@ public class TestObviusIngestComponent implements TestConstants, IComponentRegis
 	}
 
 	@Test
+	public void getTimestampFromBody() throws XPathExpressionException {
+		assertTrue(obviousIngestComponent.getTimestampFromBody(device2XmlNull).isPresent());
+		assertFalse(
+				obviousIngestComponent.getTimestampFromBody(device2XmlBadDate).isPresent());
+		assertFalse(
+				obviousIngestComponent.getTimestampFromBody(device2XmlNoDate).isPresent());
+		assertFalse(obviousIngestComponent.getTimestampFromBody(device2XmlNoTZ).isPresent());
+	}
+
+	@Test
 	public void testParseDeviceInformation() {
 		DeviceData deviceData = obviousIngestComponent.parseDeviceInformation(
 				device2XmlNull, device.getSiteId(), TestConstants.deviceName, device.getClientId(), device.getId());
-		assertNull(deviceData);
+		assertNotNull(deviceData);
+		assertEquals(0, deviceData.getTotalRealPower());
+		assertEquals(0, deviceData.getAverageVoltage());
+		assertEquals(0, deviceData.getAverageCurrent());
 		deviceData = obviousIngestComponent.parseDeviceInformation(
 				device2Xml, device.getSiteId(), TestConstants.deviceName, device.getClientId(), device.getId());
 		assertNotNull(deviceData);
@@ -95,9 +111,14 @@ public class TestObviusIngestComponent implements TestConstants, IComponentRegis
 				deviceXML, TestConstants.CUSTOMER_ID + "invalid")); // No subscription
 		TestUtils.nukeCustomerId(TestConstants.CUSTOMER_ID + "invalid");
 		assertNull(obviousIngestComponent.handleDeviceBody(nonUpdateStatus, TestConstants.CUSTOMER_ID));
-		assertNull(obviousIngestComponent.handleDeviceBody(
-				TestUtils.getDeviceXML(device2XmlNull, TestConstants.deviceName + 0, null, -1),
-				TestConstants.CUSTOMER_ID));
+
+		assertNotNull(obviousIngestComponent.handleDeviceBody(
+				TestUtils.getDeviceXML(device2XmlNull, TestUtils.getDevice().getDeviceName(), new Date(), -1),
+				TestUtils.getDevice().getClientId()));
+		List<Alarm> alarms = alarmComponent.findAlarmsByDevice(TestUtils.getDevice().getClientId(), TestUtils.getDevice().getId());
+		assertFalse(alarms.isEmpty());
+		assertEquals(IAlarmConstants.ACTIVE, alarms.getFirst().getState());
+
 		assertNotNull(obviousIngestComponent.handleDeviceBody(deviceXML, TestConstants.CUSTOMER_ID));
 	}
 

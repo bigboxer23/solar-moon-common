@@ -4,6 +4,7 @@ import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
+import com.bigboxer23.solar_moon.util.TimeConstants;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -128,12 +129,18 @@ public class ObviusIngestComponent implements MeterConstants {
 			String body, String siteId, String name, String customerId, String deviceId) {
 		try {
 			logger.debug("parsing device info " + siteId + ":" + name + "\n" + body);
-			DeviceData deviceData = new DeviceData(siteId, customerId, deviceId);
 			if (!isOK(body)) {
-				IComponentRegistry.alarmComponent.faultDetected(
-						customerId, deviceData.getDeviceId(), deviceData.getSiteId(), findError(body));
-				return null;
+				IComponentRegistry.alarmComponent.faultDetected(customerId, deviceId, siteId, findError(body));
+				return getTimestampFromBody(body)
+						.map(date -> {
+							DeviceData deviceData = DeviceData.createEmpty(siteId, customerId, deviceId, date);
+							deviceData.setTotalEnergyConsumed(IComponentRegistry.OSComponent.getMaxTotalEnergyConsumed(
+									customerId, deviceId, 7 * TimeConstants.DAY));
+							return deviceData;
+						})
+						.orElse(null);
 			}
+			DeviceData deviceData = new DeviceData(siteId, customerId, deviceId);
 			getNodeListForPath(body, POINT_PATH).ifPresent(nodes -> {
 				Map<String, String> mappingFields = new HashMap<>(fields);
 				IComponentRegistry.mappingComponent
@@ -170,7 +177,7 @@ public class ObviusIngestComponent implements MeterConstants {
 				}
 			});
 			calculateTotalRealPower(deviceData);
-			calculateTime(deviceData, body);
+			getTimestampFromBody(body).ifPresent(deviceData::setDate);
 			return deviceData;
 		} catch (XPathExpressionException e) {
 			logger.error("parseDeviceInformation", e);
@@ -178,25 +185,26 @@ public class ObviusIngestComponent implements MeterConstants {
 		return null;
 	}
 
-	private void calculateTime(DeviceData deviceData, String body) throws XPathExpressionException {
-		getNodeListForPath(body, DATE_PATH).ifPresent(nodes -> {
+	protected Optional<Date> getTimestampFromBody(String body) throws XPathExpressionException {
+		return getNodeListForPath(body, DATE_PATH).map(nodes -> {
 			if (nodes.getLength() > 0) {
 				Node timeNode = nodes.item(0);
 				if (timeNode.getTextContent() == null
 						|| "NULL".equals(timeNode.getTextContent())
 						|| timeNode.getTextContent().isEmpty()
 						|| timeNode.getAttributes().getNamedItem(ZONE) == null) {
-					return;
+					return null;
 				}
 				SimpleDateFormat sdf = new SimpleDateFormat(DATE_PATTERN);
 				try {
-					deviceData.setDate(sdf.parse(timeNode.getTextContent()
+					return sdf.parse(timeNode.getTextContent()
 							+ " "
-							+ timeNode.getAttributes().getNamedItem(ZONE).getNodeValue()));
+							+ timeNode.getAttributes().getNamedItem(ZONE).getNodeValue());
 				} catch (ParseException e) {
 					logger.warn("cannot parse date string: " + body, e);
 				}
 			}
+			return null;
 		});
 	}
 
