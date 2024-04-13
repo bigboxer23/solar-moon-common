@@ -184,16 +184,11 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 	}
 
 	private DeviceData translateToDeviceData(SMADevice smaDevice) {
-		DeviceData data = new DeviceData(
+		DeviceData data = DeviceData.createEmpty(
 				smaDevice.getDevice().getSiteId(),
 				smaDevice.getCustomerId(),
-				smaDevice.getDevice().getId());
-		data.setDate(smaDevice.getTimestamp());
-		data.setPowerFactor(1);
-		data.setAverageCurrent(0);
-		data.setTotalEnergyConsumed(0);
-		data.setTotalRealPower(0);
-		data.setAverageVoltage(0);
+				smaDevice.getDevice().getId(),
+				smaDevice.getTimestamp());
 		smaDevice.getRecords().forEach(record -> {
 			switch (record.getAttributeName()) {
 				case TOTAL_YIELD:

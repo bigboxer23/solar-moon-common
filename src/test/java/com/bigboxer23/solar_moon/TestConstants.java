@@ -18,6 +18,8 @@ public interface TestConstants {
 
 	String SITE = "testSite";
 
+	String date = "2020-08-21 17:30:00";
+
 	String device1Name = "Test generator 1";
 	String device1Xml = "<DAS>\n"
 			+ "<mode>LOGFILEUPLOAD</mode>"
@@ -35,7 +37,9 @@ public interface TestConstants {
 			+ "<numpoints>26</numpoints>\n"
 			+ "<records>\n"
 			+ "<record>\n"
-			+ "<time zone=\"UTC\">2021-08-21 00:51:10</time>\n"
+			+ "<time zone=\"UTC\">"
+			+ date
+			+ "</time>\n"
 			+ "<age units=\"seconds\">1</age>\n"
 			+ "<error text=\"Ok\">0</error>\n"
 			+ "<point number=\"0\" name=\"Energy Consumption\" units=\"kWh\""
@@ -93,8 +97,6 @@ public interface TestConstants {
 			+ "</devices>\n"
 			+ "</DAS>";
 
-	String date = "2020-08-21 17:30:00";
-
 	String deviceError =
 			"""
 			<?xml version="1.0" encoding="UTF-8" ?>
@@ -111,7 +113,7 @@ public interface TestConstants {
 			<numpoints>59</numpoints>
 			<records>
 			<record>
-			<time zone="UTC">2023-12-07 01:00:16</time>
+			<time zone="UTC">2020-08-21 17:30:00</time>
 			<error text="Device Failed to Respond (the modbus device may be off or disconnected)">139</error>
 			<point number="0" name="Total Energy Consumption" units="kWh" value="NULL" />
 			</record>
@@ -247,7 +249,9 @@ public interface TestConstants {
 			+ "<numpoints>64</numpoints>\n"
 			+ "<records>\n"
 			+ "<record>\n"
-			+ "<time zone=\"UTC\">2023-08-23 18:22:25</time>\n"
+			+ "<time zone=\"UTC\">"
+			+ date
+			+ "</time>\n"
 			+ "<error text=\"Start log\">160</error>\n"
 			+ "<point number=\"0\" name=\"Vln a\" units=\"Volts\" value=\"NULL\" />\n"
 			+ "<point number=\"1\" name=\"Vln b\" units=\"Volts\" value=\"NULL\" />\n"

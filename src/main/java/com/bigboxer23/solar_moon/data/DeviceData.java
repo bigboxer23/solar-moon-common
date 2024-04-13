@@ -17,6 +17,13 @@ public class DeviceData {
 
 	private Date date;
 
+	public DeviceData(String siteId, String customerId, String deviceId) {
+		attributes = new HashMap<>();
+		attributes.put(SITE_ID, new DeviceAttribute(SITE_ID, "", siteId));
+		setCustomerId(customerId);
+		setDeviceId(deviceId);
+	}
+
 	public DeviceData(Map<String, Object> openSearchMap) {
 		this((String) openSearchMap.get(SITE_ID), (String) openSearchMap.get(CUSTOMER_ID_ATTRIBUTE), (String)
 				openSearchMap.get(DEVICE_ID));
@@ -44,6 +51,17 @@ public class DeviceData {
 		addIfExists("visibility", openSearchMap);
 		setUVIndex(openSearchMap.get(UV_INDEX));
 		addIfExists("precipIntensity", openSearchMap);
+	}
+
+	public static DeviceData createEmpty(String siteId, String customerId, String deviceId, Date timestamp) {
+		DeviceData data = new DeviceData(siteId, customerId, deviceId);
+		data.setDate(timestamp);
+		data.setPowerFactor(1);
+		data.setAverageCurrent(0);
+		data.setTotalEnergyConsumed(0);
+		data.setTotalRealPower(0);
+		data.setAverageVoltage(0);
+		return data;
 	}
 
 	private void addIfExists(String attributeName, Map<String, Object> openSearchMap) {
@@ -80,13 +98,6 @@ public class DeviceData {
 				.map(val -> (Double) val)
 				.map(Double::floatValue)
 				.orElse(null);
-	}
-
-	public DeviceData(String siteId, String customerId, String deviceId) {
-		attributes = new HashMap<>();
-		attributes.put(SITE_ID, new DeviceAttribute(SITE_ID, "", siteId));
-		setCustomerId(customerId);
-		setDeviceId(deviceId);
 	}
 
 	public void addAttribute(DeviceAttribute attr) {
