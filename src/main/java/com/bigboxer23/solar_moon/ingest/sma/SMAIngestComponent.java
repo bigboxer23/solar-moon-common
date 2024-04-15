@@ -82,7 +82,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 				TransactionUtil.addDeviceId(smaDevice.getDevice().getId());
 				DeviceData data = IComponentRegistry.generationComponent.handleDevice(
 						smaDevice.getDevice(), translateToDeviceData(smaDevice));
-				logger.info("successfully uploaded data: " + data.getDeviceId() + " : " + data.getDate());
+				logger.info("successfully uploaded data: " + data.getDate());
 			} catch (ResponseException e) {
 				logger.error("ingestXMLFile", e);
 			}
