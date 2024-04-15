@@ -5,6 +5,7 @@ import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.dynamodb.DynamoLockUtils;
 import com.bigboxer23.solar_moon.search.OpenSearchUtils;
+import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.util.*;
 import java.util.function.Function;
 import org.opensearch.client.ResponseException;
@@ -19,7 +20,7 @@ public class VirtualDeviceComponent {
 		if (!shouldAddVirtualDevice(device)) {
 			return;
 		}
-		logger.info("Trying to aquire lock " + device.getDeviceId());
+		logger.info("Trying to aquire lock");
 		DynamoLockUtils.doLockedCommand(
 				device.getSiteId() + "-" + device.getDate().getTime(), device.getDeviceId(), () -> {
 					Device virtualDevice =
@@ -33,6 +34,7 @@ public class VirtualDeviceComponent {
 						logger.warn("cannot find virtualDevice " + device.getCustomerId() + ":" + device.getSiteId());
 						return;
 					}
+					TransactionUtil.addDeviceId(virtualDevice.getId());
 					List<DeviceData> siteDevices = IComponentRegistry.OSComponent.getDevicesForSiteByTimePeriod(
 							device.getCustomerId(), device.getSiteId(), device.getDate());
 					DeviceData virtualDeviceData = new DeviceData(
@@ -42,22 +44,15 @@ public class VirtualDeviceComponent {
 						virtualDeviceData.setIsSite();
 					}
 					virtualDeviceData.setDate(device.getDate());
-					float totalEnergyConsumed =
-							getPushedDeviceValues(siteDevices, virtualDevice, DeviceData::getEnergyConsumed);
-					if (totalEnergyConsumed > -1) {
-						virtualDeviceData.setEnergyConsumed(
-								Math.max(0, virtualDeviceData.getTotalEnergyConsumed()) + totalEnergyConsumed);
-					}
-					float totalRealPower =
-							getPushedDeviceValues(siteDevices, virtualDevice, DeviceData::getTotalRealPower);
-					if (totalRealPower > -1) {
-						virtualDeviceData.setTotalRealPower(
-								Math.max(0, virtualDeviceData.getTotalRealPower()) + totalRealPower);
-					}
+					virtualDeviceData.setEnergyConsumed(Math.max(
+							0, getPushedDeviceValues(siteDevices, virtualDevice, DeviceData::getEnergyConsumed)));
+					virtualDeviceData.setTotalRealPower(Math.max(
+							0, getPushedDeviceValues(siteDevices, virtualDevice, DeviceData::getTotalRealPower)));
+					virtualDeviceData.setTotalEnergyConsumed(Math.max(
+							0, getPushedDeviceValues(siteDevices, virtualDevice, DeviceData::getTotalEnergyConsumed)));
 					IComponentRegistry.locationComponent.addLocationData(virtualDeviceData, virtualDevice);
 					IComponentRegistry.weatherComponent.addWeatherData(virtualDeviceData, virtualDevice);
-					logger.info(
-							"updating virtual device " + virtualDeviceData.getDeviceId() + " : " + device.getDate());
+					logger.info("updating virtual device: " + device.getDate());
 					try {
 						IComponentRegistry.OSComponent.logData(
 								virtualDeviceData.getDate(), Collections.singletonList(virtualDeviceData));

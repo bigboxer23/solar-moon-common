@@ -115,7 +115,8 @@ public class TestObviusIngestComponent implements TestConstants, IComponentRegis
 		assertNotNull(obviousIngestComponent.handleDeviceBody(
 				TestUtils.getDeviceXML(device2XmlNull, TestUtils.getDevice().getDeviceName(), new Date(), -1),
 				TestUtils.getDevice().getClientId()));
-		List<Alarm> alarms = alarmComponent.findAlarmsByDevice(TestUtils.getDevice().getClientId(), TestUtils.getDevice().getId());
+		List<Alarm> alarms = alarmComponent.findAlarmsByDevice(
+				TestUtils.getDevice().getClientId(), TestUtils.getDevice().getId());
 		assertFalse(alarms.isEmpty());
 		assertEquals(IAlarmConstants.ACTIVE, alarms.getFirst().getState());
 
