@@ -53,7 +53,13 @@ public interface MeterConstants {
 
 	String UV_INDEX = "uvIndex";
 
+	String PRECIPITATION_INTENSITY = "precipIntensity";
+
 	String WEATHER_SUMMARY = "weatherSummary";
+
+	String CLOUD_COVER = "cloudCover";
+
+	String VISIBILITY = "visibility";
 
 	String CUSTOMER_ID_ATTRIBUTE = "customer-id";
 

@@ -47,10 +47,10 @@ public class DeviceData {
 		}
 		setWeather(openSearchMap.get(WEATHER_SUMMARY));
 		setTemperature(openSearchMap.get(TEMPERATURE));
-		addIfExists("cloudCover", openSearchMap);
-		addIfExists("visibility", openSearchMap);
+		addIfExists(CLOUD_COVER, openSearchMap);
+		addIfExists(VISIBILITY, openSearchMap);
 		setUVIndex(openSearchMap.get(UV_INDEX));
-		addIfExists("precipIntensity", openSearchMap);
+		setPrecipitationIntensity(openSearchMap.get(PRECIPITATION_INTENSITY));
 	}
 
 	public static DeviceData createEmpty(String siteId, String customerId, String deviceId, Date timestamp) {
@@ -184,6 +184,18 @@ public class DeviceData {
 
 	public float getUVIndex() {
 		return (Float) Optional.ofNullable(attributes.get(UV_INDEX))
+				.map(DeviceAttribute::getValue)
+				.orElse(-1f);
+	}
+
+	public void setPrecipitationIntensity(Object precipitationIntensity) {
+		Optional.ofNullable(precipitationIntensity)
+				.map(this::doubleToFloat)
+				.ifPresent(t -> addAttribute(new DeviceAttribute(PRECIPITATION_INTENSITY, "", t)));
+	}
+
+	public float getPrecipitationIntensity() {
+		return (Float) Optional.ofNullable(attributes.get(PRECIPITATION_INTENSITY))
 				.map(DeviceAttribute::getValue)
 				.orElse(-1f);
 	}
