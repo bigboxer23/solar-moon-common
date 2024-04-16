@@ -390,11 +390,16 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			}
 			boolean hasRain = historicData.stream()
 					.anyMatch(data -> IWeatherConstants.RAIN.equalsIgnoreCase(data.getWeatherSummary()));
-			if (uvIndex <= 1 && hasRain) {
-				logger.info(
-						"average uv conditions are low, and there is rain recently, panel may" + " be OK " + uvIndex);
+			double precipIntensity = historicData.stream()
+					.map(DeviceData::getPrecipitationIntensity)
+					.mapToDouble(Double::valueOf)
+					.average()
+					.orElse(-1);
+			if (hasRain && precipIntensity > .01) {
+				logger.info("rain recently, panel may be OK " + precipIntensity);
 				return true;
 			}
+
 			logger.warn("Device not generating power "
 					+ historicData.size()
 					+ ": "
@@ -402,7 +407,9 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 					+ ": "
 					+ averageRealPower
 					+ ": "
-					+ uvIndex);
+					+ uvIndex
+					+ ": "
+					+ precipIntensity);
 			return false;
 		} catch (IOException e) {
 			logger.error("isDeviceGeneratingPower", e);

@@ -5,6 +5,7 @@ import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
+import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import com.bigboxer23.utils.command.RetryingCommand;
@@ -54,12 +55,13 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 			return;
 		}
 		getWeather(site.getLatitude(), site.getLongitude()).ifPresent(w -> {
-			deviceData.addAttribute(new DeviceAttribute("weatherSummary", "", w.getSummary()));
-			deviceData.addAttribute(new DeviceAttribute("temperature", "", w.getTemperature()));
-			deviceData.addAttribute(new DeviceAttribute("cloudCover", "", w.getCloudCover()));
-			deviceData.addAttribute(new DeviceAttribute("visibility", "", w.getVisibility()));
-			deviceData.addAttribute(new DeviceAttribute("uvIndex", "", w.getUvIndex()));
-			deviceData.addAttribute(new DeviceAttribute("precipIntensity", "", w.getPrecipIntensity()));
+			deviceData.addAttribute(new DeviceAttribute(MeterConstants.WEATHER_SUMMARY, "", w.getSummary()));
+			deviceData.addAttribute(new DeviceAttribute(MeterConstants.TEMPERATURE, "", w.getTemperature()));
+			deviceData.addAttribute(new DeviceAttribute(MeterConstants.CLOUD_COVER, "", w.getCloudCover()));
+			deviceData.addAttribute(new DeviceAttribute(MeterConstants.VISIBILITY, "", w.getVisibility()));
+			deviceData.addAttribute(new DeviceAttribute(MeterConstants.UV_INDEX, "", w.getUvIndex()));
+			deviceData.addAttribute(
+					new DeviceAttribute(MeterConstants.PRECIPITATION_INTENSITY, "", w.getPrecipIntensity()));
 		});
 	}
 
