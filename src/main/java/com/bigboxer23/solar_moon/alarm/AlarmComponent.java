@@ -8,6 +8,7 @@ import com.bigboxer23.solar_moon.notifications.ResolvedAlertEmailTemplateContent
 import com.bigboxer23.solar_moon.search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
+import com.bigboxer23.solar_moon.weather.IWeatherConstants;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.io.IOException;
 import java.util.*;
@@ -301,7 +302,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 						.flatMap(d2 -> {
 							TransactionUtil.updateCustomerId(d2.getClientId());
 							TransactionUtil.addDeviceId(d2.getId());
-							logger.warn("Quick check shows no updates for device in last 45 min.");
+							logger.warn("Quick check shows no updates for" + " device in last 45 min.");
 							return alarmConditionDetected(
 									d2.getClientId(),
 									d2.getId(),
@@ -383,8 +384,16 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 					.orElse(-1);
 			// Check for -1 as could be a site w/o location data set (or we could be missing weather
 			// data)
-			if (uvIndex != -1 && uvIndex <= 0.1) {
+			if (uvIndex != -1 && uvIndex <= 0.25) {
 				logger.info("average uv conditions are very low, panel may be OK " + uvIndex);
+				return true;
+			}
+			boolean hasRain = historicData.stream()
+					.anyMatch(data -> IWeatherConstants.RAIN.equalsIgnoreCase(data.getWeatherSummary()));
+			if (uvIndex <= 1 && hasRain) {
+				logger.info("average uv conditions are low, and there is rain recently, panel may"
+						+ " be OK "
+						+ uvIndex);
 				return true;
 			}
 			logger.warn("Device not generating power "
