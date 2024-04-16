@@ -78,6 +78,11 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		maybeAssignSite(customerId, devices);
 		addMissingDevices(customerId, devices);
 		devices.forEach((key, smaDevice) -> {
+			if (smaDevice.getDevice() == null) {
+				TransactionUtil.addDeviceId(null, null);
+				logger.warn("No device for " + smaDevice.getDeviceName() + ", not doing anything.");
+				return;
+			}
 			try {
 				TransactionUtil.addDeviceId(
 						smaDevice.getDevice().getId(), smaDevice.getDevice().getSiteId());
