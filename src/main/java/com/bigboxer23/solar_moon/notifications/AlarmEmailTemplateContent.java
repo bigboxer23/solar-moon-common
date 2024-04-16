@@ -36,7 +36,7 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 				.map(Optional::get)
 				.filter(d -> {
 					if (d.isNotificationsDisabled()) {
-						TransactionUtil.addDeviceId(d.getId());
+						TransactionUtil.addDeviceId(d.getId(), d.getSiteId());
 						logger.warn("New notification detected, but not sending email " + " as requested.");
 					}
 					return !d.isNotificationsDisabled();
@@ -61,7 +61,8 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 	}
 
 	protected void singleDevice() {
-		TransactionUtil.addDeviceId(devices.getFirst().getId());
+		TransactionUtil.addDeviceId(
+				devices.getFirst().getId(), devices.getFirst().getSiteId());
 		setDeviceId(devices.getFirst().getId());
 		setSubject("Potential issue with your solar energy device "
 				+ devices.getFirst().getDisplayName());
@@ -79,7 +80,7 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 	}
 
 	protected void multipleDevices() {
-		TransactionUtil.addDeviceId(null);
+		TransactionUtil.addDeviceId(null, null);
 		setSubject("Potential issue with your solar energy devices");
 		setLink("/alerts");
 		StringBuilder builder = new StringBuilder("There may be an issue with some of your devices:<br/>");

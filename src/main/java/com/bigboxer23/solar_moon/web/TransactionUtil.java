@@ -32,12 +32,18 @@ public class TransactionUtil {
 		MDC.clear();
 	}
 
-	public static void addDeviceId(String deviceId) {
+	public static void addDeviceId(String deviceId, String siteId) {
 		if (StringUtils.isBlank(deviceId)) {
 			MDC.remove("device.id");
+			MDC.remove("site.id");
 			return;
 		}
 		MDC.put("device.id", deviceId);
+		if (StringUtils.isBlank(siteId)) {
+			MDC.remove("site.id");
+			return;
+		}
+		MDC.put("site.id", siteId);
 	}
 
 	public static void newTransaction(LambdaRequest request) {
@@ -53,7 +59,7 @@ public class TransactionUtil {
 
 	public static void updateCustomerId(String customerId) {
 		MDC.put("customer.id", customerId);
-		TransactionUtil.addDeviceId(null);
+		TransactionUtil.addDeviceId(null, null);
 	}
 
 	public static void updateServiceCalled(String service) {

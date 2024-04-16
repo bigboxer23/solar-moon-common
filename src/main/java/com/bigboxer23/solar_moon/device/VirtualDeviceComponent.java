@@ -34,7 +34,7 @@ public class VirtualDeviceComponent {
 						logger.warn("cannot find virtualDevice " + device.getCustomerId() + ":" + device.getSiteId());
 						return;
 					}
-					TransactionUtil.addDeviceId(virtualDevice.getId());
+					TransactionUtil.addDeviceId(virtualDevice.getId(), virtualDevice.getSiteId());
 					List<DeviceData> siteDevices = IComponentRegistry.OSComponent.getDevicesForSiteByTimePeriod(
 							device.getCustomerId(), device.getSiteId(), device.getDate());
 					DeviceData virtualDeviceData = new DeviceData(

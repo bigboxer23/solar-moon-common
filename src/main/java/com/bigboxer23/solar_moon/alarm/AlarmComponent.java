@@ -301,7 +301,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 						.filter(d2 -> !d2.isDisabled())
 						.flatMap(d2 -> {
 							TransactionUtil.updateCustomerId(d2.getClientId());
-							TransactionUtil.addDeviceId(d2.getId());
+							TransactionUtil.addDeviceId(d2.getId(), d2.getSiteId());
 							logger.warn("Quick check shows no updates for" + " device in last 45 min.");
 							return alarmConditionDetected(
 									d2.getClientId(),
@@ -319,7 +319,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			return Optional.empty();
 		}
 		TransactionUtil.updateCustomerId(device.getClientId());
-		TransactionUtil.addDeviceId(device.getId());
+		TransactionUtil.addDeviceId(device.getId(), device.getSiteId());
 		DeviceData data = IComponentRegistry.OSComponent.getLastDeviceEntry(
 				device.getId(), OpenSearchQueries.getDeviceIdQuery(device.getId()));
 		// Check disabled or new
@@ -391,9 +391,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			boolean hasRain = historicData.stream()
 					.anyMatch(data -> IWeatherConstants.RAIN.equalsIgnoreCase(data.getWeatherSummary()));
 			if (uvIndex <= 1 && hasRain) {
-				logger.info("average uv conditions are low, and there is rain recently, panel may"
-						+ " be OK "
-						+ uvIndex);
+				logger.info(
+						"average uv conditions are low, and there is rain recently, panel may" + " be OK " + uvIndex);
 				return true;
 			}
 			logger.warn("Device not generating power "

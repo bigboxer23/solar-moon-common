@@ -79,7 +79,8 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		addMissingDevices(customerId, devices);
 		devices.forEach((key, smaDevice) -> {
 			try {
-				TransactionUtil.addDeviceId(smaDevice.getDevice().getId());
+				TransactionUtil.addDeviceId(
+						smaDevice.getDevice().getId(), smaDevice.getDevice().getSiteId());
 				DeviceData data = IComponentRegistry.generationComponent.handleDevice(
 						smaDevice.getDevice(), translateToDeviceData(smaDevice));
 				logger.info("successfully uploaded data: " + data.getDate());
