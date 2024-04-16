@@ -99,7 +99,7 @@ public class IngestComponent implements MeterConstants {
 							new Device(TokenGenerator.generateNewToken(), customerId, deviceName));
 				});
 		if (device != null) {
-			TransactionUtil.addDeviceId(device.getId());
+			TransactionUtil.addDeviceId(device.getId(), device.getSiteId());
 		}
 		return device;
 	}

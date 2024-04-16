@@ -20,7 +20,7 @@ import software.amazon.awssdk.utils.StringUtils;
 /** */
 public class SitesOverviewComponent implements IComponentRegistry {
 	public SitesSiteData getExtendedSiteOverviewData(String siteId, SearchJSON search) {
-		TransactionUtil.addDeviceId(siteId);
+		TransactionUtil.addDeviceId(siteId, siteId);
 		logger.info("Fetching site data");
 		return deviceComponent
 				.findDeviceById(siteId, search.getCustomerId())

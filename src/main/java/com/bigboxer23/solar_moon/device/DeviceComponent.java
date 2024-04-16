@@ -180,7 +180,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		if (device.getSite().equalsIgnoreCase(device.getDeviceName()) && device.getSiteId() == null) {
 			device.setSiteId(device.getId());
 		}
-		logAction("add", device.getId());
+		logAction("add", device.getId(), device.getSiteId());
 		getTable().putItem(device);
 		return device;
 	}
@@ -192,7 +192,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	public Optional<Device> updateDevice(Device device) {
-		logAction("update", device.getId());
+		logAction("update", device.getId(), device.getSiteId());
 		Optional<Device> dbDevice = findDeviceByDeviceName(device.getClientId(), device.getDeviceName());
 		if (dbDevice.isPresent() && !dbDevice.get().getId().equals(device.getId())) {
 			logger.warn(device.getClientId() + ":" + device.getDeviceName() + " exists, cannot update matching device");
@@ -212,7 +212,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	public void deleteDevice(String id, String customerId) {
-		logAction("delete", id);
+		logAction("delete", id, null);
 		Optional<Device> device = findDeviceById(id, customerId);
 		if (device.isEmpty()) {
 			return;
@@ -234,8 +234,8 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		getDevicesForCustomerId(customerId).forEach(device -> deleteDevice(device.getId(), customerId));
 	}
 
-	public void logAction(String action, String id) {
-		TransactionUtil.addDeviceId(id);
+	public void logAction(String action, String id, String siteId) {
+		TransactionUtil.addDeviceId(id, siteId);
 		logger.info("device " + action);
 	}
 
