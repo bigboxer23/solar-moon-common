@@ -417,6 +417,29 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		}
 	}
 
+	public void clearDisabledResolvedAlarms() {
+		getActiveAlarms().forEach(alarm -> IComponentRegistry.deviceComponent
+				.findDeviceById(alarm.getDeviceId(), alarm.getCustomerId())
+				.filter(Device::isDisabled)
+				.ifPresent(device -> {
+					TransactionUtil.addDeviceId(device.getId(), device.getSiteId());
+					logger.warn("resolving alarm for disabled device");
+					alarm.setState(RESOLVED);
+					alarm.setEmailed(RESOLVED_NOT_EMAILED);
+					alarm.setEndDate(new Date().getTime());
+					updateAlarm(alarm);
+				}));
+	}
+
+	public List<Alarm> getActiveAlarms() {
+		return getTable()
+				.index(Alarm.STATE_CUSTOMER_INDEX)
+				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(ACTIVE)))
+				.stream()
+				.flatMap(page -> page.items().stream())
+				.toList();
+	}
+
 	public void cleanupOldAlarms() {
 		long yearAgo = System.currentTimeMillis() - TimeConstants.YEAR;
 		deleteAlarmsByStateAndDate(RESOLVED, yearAgo);

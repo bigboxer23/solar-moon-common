@@ -549,4 +549,30 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 				.peek(alarm -> alarm.setSiteId(toDevice.get().getId()))
 				.forEach(alarmComponent::updateAlarm);
 	}
+
+	@Test
+	public void getActiveAlarms() {
+		List<Alarm> alarms = alarmComponent.getActiveAlarms();
+		Device device = TestUtils.getDevice();
+		Alarm alarm = alarmComponent.getNewAlarm(device.getClientId(), device.getId(), device.getSiteId(), null);
+		alarmComponent.updateAlarm(alarm);
+		assertTrue(alarmComponent.getActiveAlarms().size() > alarms.size());
+		alarm.setState(RESOLVED);
+		alarmComponent.updateAlarm(alarm);
+		assertEquals(alarmComponent.getActiveAlarms().size(), alarms.size());
+	}
+
+	@Test
+	public void clearDisabledResolvedAlarms() {
+		List<Alarm> alarms = alarmComponent.getActiveAlarms();
+		Device device = TestUtils.getDevice();
+		Alarm alarm = alarmComponent.getNewAlarm(device.getClientId(), device.getId(), device.getSiteId(), null);
+		alarmComponent.updateAlarm(alarm);
+		assertTrue(alarmComponent.getActiveAlarms().size() > alarms.size());
+
+		device.setDisabled(true);
+		deviceComponent.updateDevice(device);
+		alarmComponent.clearDisabledResolvedAlarms();
+		assertEquals(alarmComponent.getActiveAlarms().size(), alarms.size());
+	}
 }
