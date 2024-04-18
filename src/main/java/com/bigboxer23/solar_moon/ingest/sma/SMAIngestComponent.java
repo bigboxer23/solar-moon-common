@@ -172,6 +172,8 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 					.orElse(true);
 			IComponentRegistry.deviceComponent
 					.getDevicesBySiteId(customerId, donor.getDevice().getSiteId())
+					.stream()
+					.filter(d -> !d.isDisabled())
 					.forEach(d -> {
 						if (d.getDeviceName() != null && !devices.containsKey(d.getDeviceName())) {
 							if (isDay) {
