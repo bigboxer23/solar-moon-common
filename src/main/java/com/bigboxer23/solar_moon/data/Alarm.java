@@ -75,6 +75,8 @@ public class Alarm {
 
 	private String deviceName;
 
+	private boolean deviceDisabled;
+
 	private String deviceSite;
 
 	@DynamoDbIgnore
