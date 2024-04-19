@@ -184,6 +184,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 							SMADevice smaDevice = new SMADevice(customerId);
 							SMARecord record = new SMARecord(donor.getRecords().getFirst());
 							record.setDevice(d.getDeviceName());
+							record.setValue("0");
 							smaDevice.addRecord(record);
 							devices.put(d.getDeviceName(), smaDevice);
 						}
