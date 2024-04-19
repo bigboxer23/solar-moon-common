@@ -59,7 +59,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		NodeList nodelist = (NodeList) XPathFactory.newInstance()
 				.newXPath()
 				.compile(CURRENT_PUBLIC)
-				.evaluate(new InputSource(new StringReader(xml.substring(1))), XPathConstants.NODESET);
+				.evaluate(new InputSource(new StringReader(xml)), XPathConstants.NODESET);
 		Map<String, SMADevice> devices = new HashMap<>();
 		XMLUtil.iterableNodeList(nodelist).forEach(node -> {
 			SMARecord record = processChildNode(node);
@@ -69,7 +69,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		nodelist = (NodeList) XPathFactory.newInstance()
 				.newXPath()
 				.compile(MEAN_PUBLIC)
-				.evaluate(new InputSource(new StringReader(xml.substring(1))), XPathConstants.NODESET);
+				.evaluate(new InputSource(new StringReader(xml)), XPathConstants.NODESET);
 		XMLUtil.iterableNodeList(nodelist).forEach(node -> {
 			SMARecord record = processChildNode(node);
 			devices.computeIfAbsent(record.getDevice(), k -> new SMADevice(customerId))
@@ -77,6 +77,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		});
 		maybeAssignSite(customerId, devices);
 		addMissingDevices(customerId, devices);
+		checkForNewDevicesAndAssignSite(devices);
 		devices.forEach((key, smaDevice) -> {
 			if (smaDevice.getDevice() == null) {
 				TransactionUtil.addDeviceId(null, null);
@@ -141,11 +142,37 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 				.filter(device -> !site.getId().equals(device.getId()))
 				.filter(device -> DeviceComponent.NO_SITE.equalsIgnoreCase(device.getSiteId()))
 				.forEach(device -> {
+					TransactionUtil.addDeviceId(device.getId(), site.getId());
 					logger.warn("adjusting site for " + device.getDisplayName() + " " + site.getSite());
 					device.setSite(site.getDisplayName());
 					device.setSiteId(site.getId());
 					IComponentRegistry.deviceComponent.updateDevice(device);
 				}));
+	}
+
+	private void checkForNewDevicesAndAssignSite(Map<String, SMADevice> devices) {
+		Device donor = devices.values().stream()
+				.map(SMADevice::getDevice)
+				.filter(Objects::nonNull)
+				.filter(device -> !DeviceComponent.NO_SITE.equalsIgnoreCase(device.getSiteId()))
+				.findFirst()
+				.orElse(null);
+		if (donor == null) {
+			logger.error("cannot determine site.");
+			return;
+		}
+		devices.values().stream()
+				.map(SMADevice::getDevice)
+				.filter(Objects::nonNull)
+				.filter(device -> device.getSite().equalsIgnoreCase(DeviceComponent.NO_SITE))
+				.forEach(device -> {
+					TransactionUtil.addDeviceId(device.getId(), donor.getSiteId());
+					logger.warn("found unassigned device within site, assigning to site " + donor.getSite());
+					device.setSite(donor.getSite());
+					device.setSiteId(donor.getSiteId());
+					IComponentRegistry.deviceComponent.updateDevice(device);
+				});
+		TransactionUtil.addDeviceId(null, null);
 	}
 
 	/**
@@ -176,6 +203,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 					.filter(d -> !d.isDisabled())
 					.forEach(d -> {
 						if (d.getDeviceName() != null && !devices.containsKey(d.getDeviceName())) {
+							TransactionUtil.addDeviceId(d.getId(), d.getSiteId());
 							if (isDay) {
 								logger.info("adding ghost device " + d.getDeviceName());
 							} else {
@@ -190,6 +218,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 						}
 					});
 		});
+		TransactionUtil.addDeviceId(null, null);
 	}
 
 	private DeviceData translateToDeviceData(SMADevice smaDevice) {
