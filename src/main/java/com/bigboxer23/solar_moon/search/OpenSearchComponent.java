@@ -287,7 +287,19 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					.build();
 			return getClient().updateByQuery(request);
 		} catch (IOException e) {
-			logger.error("search " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
+			logger.error("updatebyquery " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
+		}
+		return null;
+	}
+
+	public DeleteByQueryResponse deleteByQuery(SearchJSON searchJSON) {
+		try {
+			DeleteByQueryRequest request = OpenSearchQueries.getDeleteRequestBuilder()
+					.query(getQuery(searchJSON))
+					.build();
+			return getClient().deleteByQuery(request);
+		} catch (IOException e) {
+			logger.error("deletebyquery " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
 		}
 		return null;
 	}
