@@ -212,11 +212,11 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	public void deleteDevice(String id, String customerId) {
-		logAction("delete", id, null);
 		Optional<Device> device = findDeviceById(id, customerId);
 		if (device.isEmpty()) {
 			return;
 		}
+		logAction("delete " + device.get().getDisplayName(), id, device.get().getSiteId());
 		if (device.get().isDeviceSite()) {
 			getDevicesBySiteId(customerId, device.get().getId()).forEach(childDevice -> {
 				childDevice.setSite(NO_SITE);
