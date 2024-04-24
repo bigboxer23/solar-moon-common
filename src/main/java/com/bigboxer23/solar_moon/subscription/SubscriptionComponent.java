@@ -3,6 +3,8 @@ package com.bigboxer23.solar_moon.subscription;
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Subscription;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
+import com.bigboxer23.solar_moon.util.TimeConstants;
+import java.util.Optional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
@@ -10,6 +12,12 @@ import software.amazon.awssdk.utils.StringUtils;
 public class SubscriptionComponent extends AbstractDynamodbComponent<Subscription> {
 
 	public static final int DEVICES_PER_SUBSCRIPTION = 20;
+
+	public static final int TRIAL_MODE = -1;
+
+	public static final int TRIAL_DEVICE_COUNT = 10;
+
+	public static final long TRIAL_LENGTH = TimeConstants.NINETY_DAYS;
 
 	@Override
 	protected String getTableName() {
@@ -21,34 +29,45 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 		return Subscription.class;
 	}
 
-	public int getSubscriptionPacks(String customerId) {
+	public Optional<Subscription> getSubscription(String customerId) {
 		return !StringUtils.isBlank(customerId)
 				? this.getTable()
 						.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(customerId)))
 						.stream()
 						.findFirst()
 						.flatMap((page) -> page.items().stream().findFirst())
-						.map(Subscription::getPacks)
-						.orElse(0)
-				: 0;
+				: Optional.empty();
 	}
 
 	public Subscription updateSubscription(String customerId, int seats) {
-		if (StringUtils.isBlank(customerId) || seats < 0) {
-			logger.warn("invalid customer passed, returning 0");
+		if (StringUtils.isBlank(customerId) || seats < -2) {
+			logger.warn("invalid customer passed " + seats);
 			return null;
 		}
+		long joinDate =
+				getSubscription(customerId).map(Subscription::getJoinDate).orElse(System.currentTimeMillis());
 		logger.warn("Updating subscription: " + customerId + " " + seats);
-		return getTable().updateItem(builder -> builder.item(new Subscription(customerId, seats)));
+		return getTable().updateItem(builder -> builder.item(new Subscription(customerId, seats, joinDate)));
 	}
 
 	public void deleteSubscription(String customerId) {
 		logger.warn("Deleting subscription: " + customerId);
-		getTable().deleteItem(new Subscription(customerId, -1));
+		getTable().deleteItem(new Subscription(customerId, 0, -1L));
+	}
+
+	public long getSubscriptionDevices(String customerId) {
+		Optional<Subscription> subscription = getSubscription(customerId);
+		int maxDevices = subscription.map(Subscription::getPacks).orElse(0) * DEVICES_PER_SUBSCRIPTION;
+		if (maxDevices < 0
+				&& subscription.map(Subscription::getJoinDate).orElse(-1L)
+						> (System.currentTimeMillis() - TRIAL_LENGTH)) { // Trial mode
+			return TRIAL_DEVICE_COUNT;
+		}
+		return maxDevices;
 	}
 
 	public boolean canAddAnotherDevice(String customerId) {
-		return getSubscriptionPacks(customerId) * DEVICES_PER_SUBSCRIPTION
+		return getSubscriptionDevices(customerId)
 				> IComponentRegistry.deviceComponent
 						.getDevicesForCustomerId(customerId)
 						.size();

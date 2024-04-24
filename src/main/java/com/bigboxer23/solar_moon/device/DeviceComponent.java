@@ -2,6 +2,7 @@ package com.bigboxer23.solar_moon.device;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Device;
+import com.bigboxer23.solar_moon.data.Subscription;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.subscription.SubscriptionComponent;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
@@ -162,7 +163,10 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	public Device addDevice(Device device) {
 		if (!IComponentRegistry.subscriptionComponent.canAddAnotherDevice(device.getClientId())) {
 			logger.warn("Cannot add new device, not enough devices in license: "
-					+ (IComponentRegistry.subscriptionComponent.getSubscriptionPacks(device.getClientId())
+					+ (IComponentRegistry.subscriptionComponent
+									.getSubscription(device.getClientId())
+									.map(Subscription::getPacks)
+									.orElse(0)
 							* SubscriptionComponent.DEVICES_PER_SUBSCRIPTION)
 					+ ":"
 					+ getDevicesForCustomerId(device.getClientId()).size());
