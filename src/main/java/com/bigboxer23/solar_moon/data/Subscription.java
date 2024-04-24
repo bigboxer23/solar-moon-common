@@ -17,11 +17,14 @@ public class Subscription {
 	@Schema(description = "Number of subscription packs customer has purchased")
 	private int packs = 0;
 
+	private long joinDate;
+
 	public Subscription() {}
 
-	public Subscription(String customerId, int packs) {
+	public Subscription(String customerId, int packs, long joinDate) {
 		setCustomerId(customerId);
 		setPacks(packs);
+		setJoinDate(joinDate);
 	}
 
 	@DynamoDbPartitionKey
