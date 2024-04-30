@@ -7,8 +7,8 @@ import lombok.Data;
 public class PirateWeatherData {
 	private long time;
 	private String summary;
-	private long nearestStormDistance;
-	private long nearestStormBearing;
+	private double nearestStormDistance;
+	private double nearestStormBearing;
 	private double precipIntensity;
 	private double precipProbability;
 	private double precipIntensityError;
