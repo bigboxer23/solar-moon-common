@@ -72,4 +72,11 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 						.getDevicesForCustomerId(customerId)
 						.size();
 	}
+
+	public boolean isTrialValid(String customerId) {
+		return getSubscription(customerId)
+				.map(Subscription::getJoinDate)
+				.map(joinDate -> joinDate > System.currentTimeMillis() - SubscriptionComponent.TRIAL_LENGTH)
+				.orElse(false);
+	}
 }

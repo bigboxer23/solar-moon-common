@@ -162,6 +162,18 @@ public class TestSubscriptionComponent extends AbstractDynamodbComponent<Subscri
 				deviceComponent.getDevicesForCustomerId(CUSTOMER_ID).size());
 	}
 
+	@Test
+	public void isTrialValid() {
+		assertTrue(subscriptionComponent.isTrialValid(CUSTOMER_ID));
+		// Manually create old subscription
+		getTable()
+				.updateItem(builder -> builder.item(new Subscription(
+						CUSTOMER_ID,
+						SubscriptionComponent.TRIAL_MODE,
+						System.currentTimeMillis() - (TimeConstants.NINETY_DAYS + 1000))));
+		assertFalse(subscriptionComponent.isTrialValid(CUSTOMER_ID));
+	}
+
 	@BeforeAll
 	public static void beforeAll() {
 		TestUtils.setupSite();
