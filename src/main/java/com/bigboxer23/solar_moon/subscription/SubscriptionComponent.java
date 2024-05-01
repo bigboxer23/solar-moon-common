@@ -79,4 +79,17 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 				.map(joinDate -> joinDate > System.currentTimeMillis() - SubscriptionComponent.TRIAL_LENGTH)
 				.orElse(false);
 	}
+
+	/**
+	 * Maybe trial, add the date. If more devices, obviously not a trial, don't worry about it
+	 *
+	 * @param data
+	 * @param customerId
+	 */
+	public void addTrialDate(IHasSubscriptionDate data, String customerId) {
+		if (data != null && data.getDevices().size() < SubscriptionComponent.TRIAL_DEVICE_COUNT) {
+			data.setTrialDate(
+					getSubscription(customerId).map(Subscription::getJoinDate).orElse(-1L));
+		}
+	}
 }

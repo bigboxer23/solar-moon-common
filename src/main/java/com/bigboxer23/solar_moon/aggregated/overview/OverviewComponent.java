@@ -24,7 +24,7 @@ public class OverviewComponent implements IComponentRegistry {
 										&& search.getEndDate() > alarm.getStartDate())
 								|| alarm.getState() == IAlarmConstants.ACTIVE)
 						.toList());
-
+		subscriptionComponent.addTrialDate(data, search.getCustomerId());
 		fillSiteInfo(data, search);
 		fillInOverallInfo(data, search);
 		return data;
