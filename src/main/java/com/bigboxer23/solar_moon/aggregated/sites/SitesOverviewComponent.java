@@ -22,11 +22,13 @@ public class SitesOverviewComponent implements IComponentRegistry {
 	public SitesSiteData getExtendedSiteOverviewData(String siteId, SearchJSON search) {
 		TransactionUtil.addDeviceId(siteId, siteId);
 		logger.info("Fetching site data");
-		return deviceComponent
+		SitesSiteData data = deviceComponent
 				.findDeviceById(siteId, search.getCustomerId())
 				.map(site -> getSiteOverviewData(site, search))
 				.map(siteOverview -> fillExtendedSiteOverviewData(siteOverview, search))
 				.orElse(null);
+		subscriptionComponent.addTrialDate(data, search.getCustomerId());
+		return data;
 	}
 
 	private SitesSiteData getSiteOverviewData(Device site, SearchJSON search) {

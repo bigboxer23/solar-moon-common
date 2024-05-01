@@ -47,7 +47,7 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			logger.warn("invalid customer passed, not updating");
 			return;
 		}
-		logAction("update", customer. getCustomerId());
+		logAction("update", customer.getCustomerId());
 		boolean newAccessKey =
 				customer.getAccessKey() == null || customer.getAccessKey().isBlank();
 		if (newAccessKey) {
