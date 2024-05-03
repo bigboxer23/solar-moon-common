@@ -24,6 +24,8 @@ import org.xml.sax.InputSource;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.utils.StringUtils;
@@ -313,7 +315,16 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 									.key(newAccessKey + "/")
 									.build(),
 							RequestBody.empty());
-			System.out.println(response);
+			logger.info("Created folder: " + response);
+		} else {
+			// Account deletion
+			logger.warn("Deleting folder for " + oldAccessKey);
+			DeleteObjectResponse response = getS3Client()
+					.deleteObject(DeleteObjectRequest.builder()
+							.bucket(PropertyUtils.getProperty("ftp.s3.bucket"))
+							.key(oldAccessKey)
+							.build());
+			logger.info("Deleted folder: " + response);
 		}
 	}
 }
