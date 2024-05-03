@@ -315,16 +315,16 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 									.key(newAccessKey + "/")
 									.build(),
 							RequestBody.empty());
-			logger.info("Created folder: " + response);
+			logger.info("Created folder: " + response.toString());
 		} else {
 			// Account deletion
 			logger.warn("Deleting folder for " + oldAccessKey);
 			DeleteObjectResponse response = getS3Client()
 					.deleteObject(DeleteObjectRequest.builder()
 							.bucket(PropertyUtils.getProperty("ftp.s3.bucket"))
-							.key(oldAccessKey)
+							.key(oldAccessKey + "/")
 							.build());
-			logger.info("Deleted folder: " + response);
+			logger.info("Deleted folder: " + response.toString());
 		}
 	}
 }
