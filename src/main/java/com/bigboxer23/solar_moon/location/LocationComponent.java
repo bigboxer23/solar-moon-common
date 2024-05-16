@@ -61,9 +61,9 @@ public class LocationComponent {
 
 	public Optional<Boolean> isDay(Date dateToCheck, double latitude, double longitude) {
 		SolarTime location = SolarTime.ofLocation(latitude, longitude);
-
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(dateToCheck);
+		getLocalTimeZone(latitude, longitude).ifPresent(tz -> calendar.setTimeZone(TimeZone.getTimeZone(tz)));
 		PlainDate plainDate = PlainDate.of(
 				calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DATE));
 		Optional<Moment> sunrise = plainDate.get(location.sunrise());
