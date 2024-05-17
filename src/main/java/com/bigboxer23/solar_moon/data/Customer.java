@@ -83,4 +83,8 @@ public class Customer {
 	public String getStripeCustomerId() {
 		return stripeCustomerId;
 	}
+
+	public boolean isAccessKeyChangeRequested() {
+		return getAccessKey() == null || getAccessKey().isBlank();
+	}
 }
