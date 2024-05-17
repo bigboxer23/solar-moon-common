@@ -10,9 +10,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class AlarmEmailTemplateContent extends EmailTemplateContent implements IComponentRegistry {
 	private String recipient;
