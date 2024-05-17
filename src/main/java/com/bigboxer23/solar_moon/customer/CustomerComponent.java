@@ -48,9 +48,7 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			return;
 		}
 		logAction("update", customer.getCustomerId());
-		boolean newAccessKey =
-				customer.getAccessKey() == null || customer.getAccessKey().isBlank();
-		if (newAccessKey) {
+		if (customer.isAccessKeyChangeRequested()) {
 			logger.info("generating new access key for " + customer.getCustomerId());
 			customer.setAccessKey(TokenGenerator.generateNewToken());
 		}
@@ -65,7 +63,7 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 		});
 		// TODO:validation
 		getTable().updateItem(builder -> builder.item(customer));
-		if (newAccessKey) {
+		if (customer.isAccessKeyChangeRequested()) {
 			IComponentRegistry.smaIngestComponent.handleAccessKeyChange(
 					findCustomerByCustomerId(customer.getCustomerId())
 							.map(Customer::getAccessKey)
