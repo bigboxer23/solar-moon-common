@@ -122,6 +122,10 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 
 	public Optional<Alarm> alarmConditionDetected(String customerId, String deviceId, String siteId, String content) {
 		logger.warn("Alarm condition detected: " + content);
+		if (IComponentRegistry.maintenanceComponent.isInMaintenanceMode()) {
+			logger.warn("Maintenance mode activated, not flagging alarm condition.");
+			return Optional.empty();
+		}
 		Alarm alarm = findAlarmsByDevice(customerId, deviceId).stream()
 				.filter(a -> a.getState() == ACTIVE)
 				.findAny()
