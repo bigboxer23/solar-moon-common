@@ -344,14 +344,14 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 							+ data.getDate().getTime());
 		}
 		// Inspect device, weather, site data
-		if (!isDeviceOK(data, isOpenSearchOk)) {
+		if (!isDeviceOK(device, data, isOpenSearchOk)) {
 			return alarmConditionDetected(
 					data.getCustomerId(), data.getDeviceId(), data.getSiteId(), "Device not generating power");
 		}
 		return Optional.empty();
 	}
 
-	protected boolean isDeviceOK(DeviceData deviceData, boolean isOpenSearchOK) {
+	protected boolean isDeviceOK(Device device, DeviceData deviceData, boolean isOpenSearchOK) {
 		if (!deviceData.isDayLight()) {
 			return true;
 		}
@@ -369,6 +369,17 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			boolean isDarkAdjacent = historicData.stream().anyMatch(d -> !d.isDayLight());
 			if (isDarkAdjacent) {
 				logger.debug("dark detected in the recent data, device is assumed to be OK");
+				return true;
+			}
+			if (device != null
+					&& deviceData.getDate() != null
+					&& !IComponentRegistry.locationComponent
+							.isDay(
+									new Date(deviceData.getDate().getTime() + TimeConstants.HOUR * 2),
+									device.getLatitude(),
+									device.getLongitude())
+							.orElse(true)) {
+				logger.info("close to sunset, device is assumed to be OK");
 				return true;
 			}
 			double averageRealPower = historicData.stream()
