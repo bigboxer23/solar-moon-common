@@ -379,7 +379,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 									device.getLatitude(),
 									device.getLongitude())
 							.orElse(true)) {
-				logger.info("close to sunset, device is assumed to be OK");
+				logger.debug("close to sunset, device is assumed to be OK");
 				return true;
 			}
 			double averageRealPower = historicData.stream()
