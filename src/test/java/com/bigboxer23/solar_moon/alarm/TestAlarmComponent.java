@@ -397,41 +397,41 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 				TestUtils.getDevice().getId());
 
 		data.setDaylight(false);
-		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data, true));
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, true));
 		data.setDaylight(true);
 		data.setTotalRealPower(1);
-		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data, true));
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, true));
 		// add some historic data and test against it
 
 		// Test case where external factors shouldn't cause us to report OK
 		data.setTotalRealPower(.01f);
-		data.setUVIndex(.2);
+		data.setUVIndex(.26);
 		seedData(data);
-		assertFalse(IComponentRegistry.alarmComponent.isDeviceOK(data, true));
-		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data, false));
+		assertFalse(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, true));
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, false));
 
 		// Test Low UV factor
 		OSComponent.deleteByCustomerId(CUSTOMER_ID);
 		data.setUVIndex(.09);
 		seedData(data);
-		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data, true));
-		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data, false));
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, true));
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, false));
 
 		// Test daylight adjacent factor
 		OSComponent.deleteByCustomerId(CUSTOMER_ID);
 		data.setUVIndex(.2);
 		data.setDaylight(false);
 		seedData(data);
-		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data, true));
-		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data, false));
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, true));
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, false));
 
 		// Test good power generation adjacent
 		OSComponent.deleteByCustomerId(CUSTOMER_ID);
 		data.setDaylight(true);
 		data.setTotalRealPower(0.11f);
 		seedData(data);
-		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data, true));
-		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(data, false));
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, true));
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, false));
 	}
 
 	private void seedData(DeviceData seed) throws ResponseException, InterruptedException {

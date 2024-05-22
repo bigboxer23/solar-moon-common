@@ -60,6 +60,9 @@ public class LocationComponent {
 	}
 
 	public Optional<Boolean> isDay(Date dateToCheck, double latitude, double longitude) {
+		if (!isValidLatLong(latitude, longitude)) {
+			return Optional.empty();
+		}
 		SolarTime location = SolarTime.ofLocation(latitude, longitude);
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(dateToCheck);
@@ -86,15 +89,7 @@ public class LocationComponent {
 	}
 
 	public Optional<String> getLocalTimeZone(double latitude, double longitude) {
-		if (latitude == -1 && longitude == -1) {
-			return Optional.empty();
-		}
-		if (latitude > 90 || latitude < -90) {
-			logger.error("latitude is not valid " + latitude);
-			return Optional.empty();
-		}
-		if (longitude > 180 || longitude < -180) {
-			logger.error("longitude is not valid " + latitude);
+		if (!isValidLatLong(latitude, longitude)) {
 			return Optional.empty();
 		}
 		String TZString = TimezoneMapper.latLngToTimezoneString(latitude, longitude);
@@ -103,5 +98,15 @@ public class LocationComponent {
 			return Optional.empty();
 		}
 		return Optional.of(TZString);
+	}
+
+	private boolean isValidLatLong(double latitude, double longitude) {
+		if ((latitude == -1 && longitude == -1)
+				|| (latitude > 90 || latitude < -90)
+				|| (longitude > 180 || longitude < -180)) {
+			logger.error("latitude or longitude is not valid " + latitude + "," + longitude);
+			return false;
+		}
+		return true;
 	}
 }

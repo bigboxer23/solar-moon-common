@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /** */
@@ -33,6 +34,9 @@ public class TestLocationComponent implements IComponentRegistry, TestConstants 
 	@Test
 	public void isDay() throws Exception {
 		LocalDateTime time = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS).withHour(1);
+		Optional<Boolean> isDay = locationComponent.isDay(
+				Date.from(time.atZone(ZoneId.of("America/Chicago")).toInstant()), -1, -1);
+		assertFalse(isDay.isPresent());
 		assertFalse(locationComponent
 				.isDay(Date.from(time.atZone(ZoneId.of("America/Chicago")).toInstant()), testLatitude, testLongitude)
 				.orElse(true));
