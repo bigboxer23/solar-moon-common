@@ -132,7 +132,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 
 	public Optional<Device> findDeviceById(String id, String customerId) {
 		if (StringUtils.isBlank(id) || StringUtils.isBlank(customerId)) {
-			return null;
+			return Optional.empty();
 		}
 		return Optional.ofNullable(getTable().getItem(new Device(id, customerId)));
 	}
@@ -144,6 +144,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	private void maybeUpdateLocationData(Device device) {
+		// If site, maybe fetch new location, update children
 		if (device.isDeviceSite()
 				&& device.getLongitude() == -1
 				&& device.getLatitude() == -1
@@ -156,7 +157,30 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 						List<Double> points = location.place().geometry().point();
 						device.setLatitude(points.get(1));
 						device.setLongitude(points.get(0));
+						getDevicesBySiteId(device.getClientId(), device.getSiteId()).stream()
+								.filter(d -> !d.isDeviceSite())
+								.forEach(d -> {
+									d.setLatitude(device.getLatitude());
+									d.setLongitude(device.getLongitude());
+									updateDevice(d);
+								});
 					});
+		}
+		// If device, remove or set lat/long based on site status
+		if (!device.isDeviceSite()) {
+			Optional<Device> dbDevice = findDeviceById(device.getId(), device.getClientId());
+			if (device.getSiteId() == null || NO_SITE.equalsIgnoreCase(device.getSiteId())) {
+				device.setLatitude(-1);
+				device.setLongitude(-1);
+			} else if ((dbDevice.isEmpty() && device.getSiteId() != null)
+					|| (dbDevice.isPresent()
+							&& !device.getSiteId()
+									.equalsIgnoreCase(dbDevice.get().getSiteId()))) {
+				findDeviceById(device.getSiteId(), device.getClientId()).ifPresent(site -> {
+					device.setLatitude(site.getLatitude());
+					device.setLongitude(site.getLongitude());
+				});
+			}
 		}
 	}
 
@@ -211,6 +235,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 				});
 			}
 		}
+		// TODO: could more efficiently update child devices?
 		maybeUpdateLocationData(device);
 		return Optional.ofNullable(getTable().updateItem(builder -> builder.item(device)));
 	}
