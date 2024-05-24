@@ -61,8 +61,10 @@ public class IngestComponent implements MeterConstants {
 		Float previousTotalEnergyConsumed =
 				IComponentRegistry.OSComponent.getTotalEnergyConsumed(deviceData.getDeviceId());
 		if (previousTotalEnergyConsumed != null) {
-			deviceData.setEnergyConsumed(maybeCorrectForRollover(previousTotalEnergyConsumed, totalEnergyConsumption)
-					- previousTotalEnergyConsumed);
+			deviceData.setEnergyConsumed(Math.max(
+					0,
+					maybeCorrectForRollover(previousTotalEnergyConsumed, totalEnergyConsumption)
+							- previousTotalEnergyConsumed));
 		}
 	}
 
