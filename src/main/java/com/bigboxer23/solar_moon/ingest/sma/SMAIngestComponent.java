@@ -153,6 +153,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 	}
 
 	private void checkForNewDevicesAndAssignSite(Map<String, SMADevice> devices) {
+		logger.debug("checking for new devices");
 		Device donor = devices.values().stream()
 				.map(SMADevice::getDevice)
 				.filter(Objects::nonNull)

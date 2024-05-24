@@ -133,18 +133,45 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 		device2.setDeviceName(device.getDeviceName());
 		device2.setDeviceName(device.getName());
 		assertFalse(deviceComponent.updateDevice(device2).isPresent());
+
+		assertEquals(testLatitude, device.getLatitude());
+		assertEquals(testLongitude, device.getLongitude());
+
+		//test unassigning from a site
+		device.setSiteId(DeviceComponent.NO_SITE);
+		device.setSite(DeviceComponent.NO_SITE);
+		device = deviceComponent.updateDevice(device).orElse(null);
+		assertNotNull(device);
+		assertEquals(-1, device.getLatitude());
+		assertEquals(-1, device.getLongitude());
+
+		//Create new site, reassign
+		Device newSite = new Device();
+		newSite.setClientId(CUSTOMER_ID);
+		newSite.setSite("tacoSite");
+		newSite = deviceComponent
+				.findDeviceById(
+						TestUtils.addDevice(TestConstants.SITE, newSite, true, null).getId(), CUSTOMER_ID)
+				.get();
+		newSite.setCountry("usa");
+		newSite.setCity("minneapolis");
+		newSite.setState("mn");
+		newSite = deviceComponent.updateDevice(newSite).orElse(null);
+		assertNotNull(newSite);
+		assertNotEquals(-1, newSite.getLatitude());
+		assertNotEquals(-1, newSite.getLongitude());
+
+		device.setSite(newSite.getDisplayName());
+		device.setSiteId(newSite.getId());
+		device = deviceComponent.updateDevice(device).orElse(null);
+		assertNotNull(device);
+		assertEquals(newSite.getLatitude(), device.getLatitude());
+		assertEquals(newSite.getLongitude(), device.getLongitude());
 	}
 
 	@Test
 	public void testSiteDelete() {
-		Device testSite =
-				deviceComponent
-						.getDevicesBySiteId(
-								TestConstants.CUSTOMER_ID, TestUtils.getSite().getSiteId())
-						.stream()
-						.filter(Device::isDeviceSite)
-						.findFirst()
-						.orElse(null);
+		Device testSite = TestUtils.getSite();
 		assertNotNull(testSite);
 		assertTrue(deviceComponent
 				.getDevicesBySiteId(testSite.getClientId(), DeviceComponent.NO_SITE)
@@ -159,19 +186,14 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 		updatedDevices.forEach(device -> {
 			assertEquals(device.getSite(), DeviceComponent.NO_SITE);
 			assertEquals(device.getSiteId(), DeviceComponent.NO_SITE);
+			assertEquals(-1, device.getLatitude());
+			assertEquals(-1, device.getLongitude());
 		});
 	}
 
 	@Test
 	public void testSiteUpdate() {
-		Device testSite =
-				deviceComponent
-						.getDevicesBySiteId(
-								TestConstants.CUSTOMER_ID, TestUtils.getSite().getSiteId())
-						.stream()
-						.filter(Device::isDeviceSite)
-						.findFirst()
-						.orElse(null);
+		Device testSite = TestUtils.getSite();
 		assertNotNull(testSite);
 		List<Device> originalDevices = deviceComponent.getDevicesBySiteId(testSite.getClientId(), testSite.getSiteId());
 		testSite.setName(TestConstants.SITE + 2);
@@ -180,7 +202,21 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 		List<Device> updatedDevices = deviceComponent.getDevicesBySiteId(testSite.getClientId(), testSite.getSiteId());
 		assertEquals(originalDevices.size(), updatedDevices.size());
 		assertFalse(updatedDevices.isEmpty());
-		updatedDevices.forEach(device -> assertEquals(device.getSite(), testSite.getSite()));
+		updatedDevices.stream().filter(d -> !d.isDeviceSite()).forEach(device -> {
+			assertEquals(testSite.getSite(), device.getSite());
+			assertEquals(testSite.getLatitude(), device.getLatitude());
+			assertEquals(testSite.getLongitude(), device.getLongitude());
+			assertNotEquals(testSite.getCity(), device.getCity());
+		});
+
+		testSite.setLongitude(-1);
+		testSite.setLatitude(-1);
+		testSite.setCity("minneapolis");
+		Device updatedTestSite = deviceComponent.updateDevice(testSite).orElse(null);
+		assertNotNull(updatedTestSite);
+		deviceComponent.getDevicesBySiteId(testSite.getClientId(), testSite.getSiteId()).stream()
+				.filter(d -> !d.isDeviceSite())
+				.forEach(device -> assertEquals(updatedTestSite.getLongitude(), device.getLongitude()));
 	}
 
 	@Test

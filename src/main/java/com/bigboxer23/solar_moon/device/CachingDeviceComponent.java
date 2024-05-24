@@ -51,20 +51,28 @@ public class CachingDeviceComponent extends DeviceComponent {
 	@Override
 	public Device addDevice(Device device) {
 		Device d = super.addDevice(device);
-		deviceCache.invalidate(device.getClientId() + ":" + device.getId());
+		invalidate(device.getClientId(), device.getId(), device.getSiteId());
 		return d;
 	}
 
 	@Override
 	public void deleteDevice(String id, String customerId) {
-		deviceCache.invalidate(customerId + ":" + id);
+		String siteId = findDeviceById(id, customerId).map(Device::getSiteId).orElse(null);
+		invalidate(customerId, id, siteId);
 		super.deleteDevice(id, customerId);
+		invalidate(customerId, id, siteId);
 	}
 
 	@Override
 	public Optional<Device> updateDevice(Device device) {
+		invalidate(device.getClientId(), device.getId(), device.getSiteId());
 		Optional<Device> d = super.updateDevice(device);
-		deviceCache.invalidate(device.getClientId() + ":" + device.getId());
+		invalidate(device.getClientId(), device.getId(), device.getSiteId());
 		return d;
+	}
+
+	private void invalidate(String customerId, String deviceId, String siteId) {
+		deviceCache.invalidate(customerId + ":" + deviceId);
+		devicesBySiteIdCache.invalidate(customerId + ":" + siteId);
 	}
 }

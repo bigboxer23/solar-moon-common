@@ -113,6 +113,12 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 				.findDeviceById(
 						addDevice(TestConstants.SITE, testDevice, true, null).getId(), customerId)
 				.get();
+		site.setLatitude(testLatitude);
+		site.setLongitude(testLongitude);
+		site.setCountry("usa");
+		site.setCity("gv");
+		site.setState("mn");
+		site = deviceComponent.updateDevice(site).orElse(null);
 		device = deviceComponent
 				.findDeviceById(
 						addDevice(TestConstants.deviceName + 0, testDevice, false, testDevice.getSiteId())
