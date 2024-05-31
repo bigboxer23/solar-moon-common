@@ -2,6 +2,7 @@ package com.bigboxer23.solar_moon.alarm;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.*;
+import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.notifications.AlarmEmailTemplateContent;
 import com.bigboxer23.solar_moon.notifications.ResolvedAlertEmailTemplateContent;
@@ -364,7 +365,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		}
 		try {
 			List<DeviceData> historicData = IComponentRegistry.OSComponent.getRecentDeviceData(
-					deviceData.getCustomerId(), deviceData.getDeviceId(), TimeConstants.HOUR * 2);
+					device.getClientId(), device.getId(), TimeConstants.HOUR * 2);
 
 			boolean isDarkAdjacent = historicData.stream().anyMatch(d -> !d.isDayLight());
 			if (isDarkAdjacent) {
@@ -414,7 +415,10 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				logger.info("rain recently, panel may be OK " + precipIntensity);
 				return true;
 			}
-
+			if (!anySiteDevicesHealthy(device)) {
+				logger.info("site devices all report low power, panel may be OK ");
+				return true;
+			}
 			logger.warn("Device not generating power "
 					+ historicData.size()
 					+ ": "
@@ -430,6 +434,48 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			logger.error("isDeviceGeneratingPower", e);
 			return true;
 		}
+	}
+
+	/**
+	 * Parse other site devices to see if they're producing power or not. If they are not, device
+	 * may be ok.
+	 *
+	 * @param device
+	 * @return true if site or device is not within a site or if any site devices report power > .1
+	 *     W
+	 */
+	private boolean anySiteDevicesHealthy(Device device) {
+		if (device == null
+				|| device.isDeviceSite()
+				|| StringUtils.isEmpty(device.getSiteId())
+				|| DeviceComponent.NO_SITE.equalsIgnoreCase(device.getSiteId())) {
+			logger.info("no site attached to device or is site. Won't include in OK check.");
+			return true;
+		}
+		List<Device> siteDevices =
+				IComponentRegistry.deviceComponent.getDevicesBySiteId(device.getClientId(), device.getSiteId());
+		boolean hasValidSiteDeviceData = false;
+		for (Device siteDevice : siteDevices) {
+			if (!device.getId().equalsIgnoreCase(siteDevice.getId()) && !siteDevice.isDeviceSite()) {
+				DeviceData siteDeviceData = IComponentRegistry.OSComponent.getLastDeviceEntry(
+						siteDevice.getId(), OpenSearchQueries.getDeviceIdQuery(siteDevice.getId()));
+				hasValidSiteDeviceData = hasValidSiteDeviceData || siteDeviceData != null;
+				if (siteDeviceData != null && siteDeviceData.getTotalRealPower() > 0.1) {
+					logger.info("average production over .1kW detected on site device"
+							+ siteDevice.getId()
+							+ " : "
+							+ siteDeviceData.getTotalRealPower()
+							+ " : "
+							+ siteDeviceData.getDate());
+					return true;
+				}
+			}
+		}
+		if (!hasValidSiteDeviceData) {
+			logger.warn("no other valid site data exists to check, returning true");
+			return true;
+		}
+		return false;
 	}
 
 	public void clearDisabledResolvedAlarms() {

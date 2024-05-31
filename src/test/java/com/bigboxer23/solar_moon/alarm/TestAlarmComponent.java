@@ -8,6 +8,7 @@ import com.bigboxer23.solar_moon.TestUtils;
 import com.bigboxer23.solar_moon.data.Alarm;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
+import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.search.OpenSearchUtils;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TimeUtils;
@@ -432,6 +433,53 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		seedData(data);
 		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, true));
 		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, false));
+
+		// Test site device not using the healthy site nodes check
+		data.setDeviceId(TestUtils.getSite().getId());
+		data.setTotalRealPower(.01f);
+		data.setUVIndex(.26);
+		OSComponent.deleteByCustomerId(CUSTOMER_ID);
+		seedData(data);
+		assertFalse(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getSite(), data, true));
+
+		// Test device w/o site not using the healthy site nodes check
+		Device noSite = new Device();
+		noSite.setSite(DeviceComponent.NO_SITE);
+		noSite.setClientId(TestUtils.getDevice().getClientId());
+		noSite = TestUtils.addDevice("no site", noSite, false, DeviceComponent.NO_SITE);
+
+		data.setDeviceId(noSite.getId());
+		seedData(data);
+		assertFalse(IComponentRegistry.alarmComponent.isDeviceOK(noSite, data, true));
+
+		// Validate current device state returns non ok status
+		data.setDeviceId(TestUtils.getDevice().getId());
+		seedData(data);
+		assertFalse(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, true));
+
+		// Test adding dead data on another site node and validate check returns properly
+		Device otherSiteDevice = IComponentRegistry.deviceComponent
+				.getDevicesBySiteId(
+						TestUtils.getDevice().getClientId(),
+						TestUtils.getDevice().getSiteId())
+				.stream()
+				.filter(Device::isDeviceSite)
+				.filter(d -> !d.getId().equalsIgnoreCase(TestUtils.getDevice().getId()))
+				.findAny()
+				.orElse(null);
+		assertNotNull(otherSiteDevice);
+		data.setDeviceId(otherSiteDevice.getId());
+		data.setTotalRealPower(0);
+		seedData(data);
+		data.setDeviceId(TestUtils.getDevice().getId());
+		assertFalse(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, true));
+
+		// Test adding non-dead data on another site node and validate check returns properly
+		data.setDeviceId(otherSiteDevice.getId());
+		data.setTotalRealPower(.25f);
+		seedData(data);
+		data.setDeviceId(TestUtils.getDevice().getId());
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, true));
 	}
 
 	private void seedData(DeviceData seed) throws ResponseException, InterruptedException {
