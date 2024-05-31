@@ -137,7 +137,7 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 		assertEquals(testLatitude, device.getLatitude());
 		assertEquals(testLongitude, device.getLongitude());
 
-		//test unassigning from a site
+		// test unassigning from a site
 		device.setSiteId(DeviceComponent.NO_SITE);
 		device.setSite(DeviceComponent.NO_SITE);
 		device = deviceComponent.updateDevice(device).orElse(null);
@@ -145,13 +145,15 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 		assertEquals(-1, device.getLatitude());
 		assertEquals(-1, device.getLongitude());
 
-		//Create new site, reassign
+		// Create new site, reassign
 		Device newSite = new Device();
 		newSite.setClientId(CUSTOMER_ID);
 		newSite.setSite("tacoSite");
 		newSite = deviceComponent
 				.findDeviceById(
-						TestUtils.addDevice(TestConstants.SITE, newSite, true, null).getId(), CUSTOMER_ID)
+						TestUtils.addDevice(TestConstants.SITE, newSite, true, null)
+								.getId(),
+						CUSTOMER_ID)
 				.get();
 		newSite.setCountry("usa");
 		newSite.setCity("minneapolis");
