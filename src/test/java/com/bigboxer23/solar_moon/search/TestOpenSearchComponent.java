@@ -26,7 +26,6 @@ import org.opensearch.client.opensearch._types.aggregations.Aggregate;
 import org.opensearch.client.opensearch._types.aggregations.DateHistogramBucket;
 import org.opensearch.client.opensearch._types.aggregations.StringTermsBucket;
 import org.opensearch.client.opensearch.core.SearchResponse;
-import org.opensearch.client.opensearch.core.search.Hit;
 
 /** */
 public class TestOpenSearchComponent implements IComponentRegistry, TestConstants {
@@ -192,13 +191,11 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 						.getTime());
 		json.setType(TIME_SERIES_SEARCH_TYPE);
 		json.setTimeZone(ZonedDateTime.now().getZone().getId());
-		SearchResponse response = OSComponent.search(json);
+		SearchResponse<DeviceData> response = OSComponent.search(json);
 		assertNotNull(response.aggregations().get("2"));
-		assertNotNull(((Aggregate) response.aggregations().get("2"))._get());
-		List<DateHistogramBucket> buckets = ((Aggregate) response.aggregations().get("2"))
-				.dateHistogram()
-				.buckets()
-				.array();
+		assertNotNull(response.aggregations().get("2")._get());
+		List<DateHistogramBucket> buckets =
+				response.aggregations().get("2").dateHistogram().buckets().array();
 		for (int ai = 0; ai < buckets.size() - 1; ai++) {
 			System.out.println(buckets.get(ai).aggregations().get("1").avg().value()
 					+ " "
@@ -221,24 +218,25 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 						.getTime());
 		json.setType(STACKED_TIME_SERIES_SEARCH_TYPE);
 		json.setTimeZone(ZonedDateTime.now().getZone().getId());
-		SearchResponse response = OSComponent.search(json);
+		SearchResponse<DeviceData> response = OSComponent.search(json);
 		assertNotNull(response.aggregations().get("2"));
-		assertNotNull(((Aggregate) response.aggregations().get("2"))._get());
+		assertNotNull(response.aggregations().get("2")._get());
 		List<DateHistogramBucket> buckets = ((Aggregate) response.aggregations().get("2"))
 				.dateHistogram()
 				.buckets()
 				.array();
 		assertFalse(buckets.isEmpty());
 		for (int ai = 0; ai < buckets.size() - 1; ai++) {
-			assertNotNull(buckets.get(0).aggregations().get("terms"));
-			assertNotNull(buckets.get(0).aggregations().get("terms").sterms().buckets());
-			assertNotNull(buckets.get(0)
+			assertNotNull(buckets.getFirst().aggregations().get("terms"));
+			assertNotNull(
+					buckets.getFirst().aggregations().get("terms").sterms().buckets());
+			assertNotNull(buckets.getFirst()
 					.aggregations()
 					.get("terms")
 					.sterms()
 					.buckets()
 					.array()
-					.get(0)
+					.getFirst()
 					.aggregations()
 					.get("1"));
 			assertTrue(buckets.get(ai)
@@ -247,7 +245,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 							.sterms()
 							.buckets()
 							.array()
-							.get(0)
+							.getFirst()
 							.aggregations()
 							.get("1")
 							.avg()
@@ -258,7 +256,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 							.sterms()
 							.buckets()
 							.array()
-							.get(0)
+							.getFirst()
 							.aggregations()
 							.get("1")
 							.avg()
@@ -279,13 +277,15 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 						.getTime());
 		json.setType(MAX_CURRENT_SEARCH_TYPE);
 		json.setTimeZone(ZonedDateTime.now().getZone().getId());
-		SearchResponse response = OSComponent.search(json);
+		SearchResponse<DeviceData> response = OSComponent.search(json);
 		assertEquals(
 				40.0, ((Aggregate) response.aggregations().get("max")).max().value());
 		assertFalse(response.hits().hits().isEmpty());
 		assertEquals(
 				"[0.0]",
-				((Hit) response.hits().hits().get(0))
+				response.hits()
+						.hits()
+						.getFirst()
 						.fields()
 						.get(MeterConstants.TOTAL_REAL_POWER)
 						.toString());
@@ -294,12 +294,13 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		json.setDeviceName(null);
 		json.setDeviceId(TestUtils.getDevice().getId());
 		response = OSComponent.search(json);
-		assertEquals(
-				40.0, ((Aggregate) response.aggregations().get("max")).max().value());
+		assertEquals(40.0, response.aggregations().get("max").max().value());
 		assertFalse(response.hits().hits().isEmpty());
 		assertEquals(
 				"[0.0]",
-				((Hit) response.hits().hits().get(0))
+				response.hits()
+						.hits()
+						.getFirst()
 						.fields()
 						.get(MeterConstants.TOTAL_REAL_POWER)
 						.toString());
@@ -319,11 +320,10 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 						.getTime());
 		json.setType(AVG_TOTAL_SEARCH_TYPE);
 		json.setTimeZone(ZonedDateTime.now().getZone().getId());
-		SearchResponse response = OSComponent.search(json);
+		SearchResponse<DeviceData> response = OSComponent.search(json);
 		assertEquals(2, response.aggregations().size());
-		assertEquals(
-				150, ((Aggregate) response.aggregations().get("total")).sum().value());
-		assertEquals(20, ((Aggregate) response.aggregations().get("avg")).avg().value());
+		assertEquals(150, response.aggregations().get("total").sum().value());
+		assertEquals(20, response.aggregations().get("avg").avg().value());
 
 		json.setDeviceName(null);
 		json.setDeviceId(TestUtils.getDevice().getId());

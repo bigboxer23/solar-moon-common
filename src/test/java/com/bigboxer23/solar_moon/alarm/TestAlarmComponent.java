@@ -15,7 +15,6 @@ import com.bigboxer23.solar_moon.util.TimeUtils;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.stream.Collectors;
 import javax.xml.xpath.XPathExpressionException;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
@@ -53,18 +52,21 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 				null);
 		Optional<Alarm> dbAlarm = alarmComponent.updateAlarm(alarm);
 		assertTrue(dbAlarm.isPresent());
-		assertEquals(TEST_ALARM_ID, dbAlarm.get().getAlarmId());
-		assertTrue(alarmComponent.findAlarmByAlarmId(TEST_ALARM_ID, CUSTOMER_ID).isPresent());
-		assertNull(dbAlarm.get().getSiteId());
+		assertEquals(alarm.getAlarmId(), dbAlarm.get().getAlarmId());
+		assertTrue(alarmComponent
+				.findAlarmByAlarmId(alarm.getAlarmId(), CUSTOMER_ID)
+				.isPresent());
+		assertEquals(TestUtils.getDevice().getSiteId(), dbAlarm.get().getSiteId());
 		alarm.setState(ACTIVE);
 		alarm.setSiteId(SITE);
 		dbAlarm = alarmComponent.updateAlarm(alarm);
 		assertTrue(dbAlarm.isPresent());
 		assertEquals(SITE, dbAlarm.get().getSiteId());
 		assertEquals(ACTIVE, dbAlarm.get().getState());
-		alarmComponent.deleteAlarm(TEST_ALARM_ID, CUSTOMER_ID);
-		assertFalse(
-				alarmComponent.findAlarmByAlarmId(TEST_ALARM_ID, CUSTOMER_ID).isPresent());
+		alarmComponent.deleteAlarm(alarm.getAlarmId(), CUSTOMER_ID);
+		assertFalse(alarmComponent
+				.findAlarmByAlarmId(alarm.getAlarmId(), CUSTOMER_ID)
+				.isPresent());
 	}
 
 	@Test
@@ -207,8 +209,8 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 
 		// This is junk to have different results depending on the time of day, but that's the real
 		// world
-		assertEquals(deviceData.isDayLight() ? RESOLVED : ACTIVE, alarm.get().getState());
-		if (deviceData.isDayLight()) {
+		assertEquals(deviceData.isDaylight() ? RESOLVED : ACTIVE, alarm.get().getState());
+		if (deviceData.isDaylight()) {
 			assertTrue(alarm.get().getEndDate() > 0);
 		}
 
@@ -226,7 +228,7 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		checkedAlarm = alarmComponent.checkDevice(device.get());
 		assertTrue(checkedAlarm.isPresent());
 		assertEquals(ACTIVE, checkedAlarm.get().getState());
-		if (deviceData.isDayLight()) {
+		if (deviceData.isDaylight()) {
 			assertNotEquals(alarm.get().getAlarmId(), checkedAlarm.get().getAlarmId());
 		} else {
 			assertEquals(alarm.get().getAlarmId(), checkedAlarm.get().getAlarmId());
@@ -251,13 +253,19 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 	public void quickCheckDevices() {
 		Device device = TestUtils.getDevice();
 		assertEquals(0, alarmComponent.getAlarms(CUSTOMER_ID).size());
-		assertEquals(0, alarmComponent.quickCheckDevices().size());
+		assertEquals(0, quickCheckTestDevices().size());
 		deviceUpdateComponent.update(
 				device.getId(), System.currentTimeMillis() - AlarmComponent.QUICK_CHECK_THRESHOLD + 2000);
-		assertEquals(0, alarmComponent.quickCheckDevices().size());
+		assertEquals(0, quickCheckTestDevices().size());
 		Thread.sleep(2000);
-		assertEquals(1, alarmComponent.quickCheckDevices().size());
+		assertEquals(1, quickCheckTestDevices().size());
 		alarmComponent.deleteAlarmsByCustomerId(CUSTOMER_ID);
+	}
+
+	private List<Alarm> quickCheckTestDevices() {
+		return alarmComponent.quickCheckDevices().stream()
+				.filter(a -> CUSTOMER_ID.equals(a.getCustomerId()))
+				.toList();
 	}
 
 	@SneakyThrows
@@ -406,21 +414,21 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 
 		// Test case where external factors shouldn't cause us to report OK
 		data.setTotalRealPower(.01f);
-		data.setUVIndex(.26);
+		data.setUVIndex(.26f);
 		seedData(data);
 		assertFalse(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, true));
 		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, false));
 
 		// Test Low UV factor
 		OSComponent.deleteByCustomerId(CUSTOMER_ID);
-		data.setUVIndex(.09);
+		data.setUVIndex(.09f);
 		seedData(data);
 		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, true));
 		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, false));
 
 		// Test daylight adjacent factor
 		OSComponent.deleteByCustomerId(CUSTOMER_ID);
-		data.setUVIndex(.2);
+		data.setUVIndex(.2f);
 		data.setDaylight(false);
 		seedData(data);
 		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, true));
@@ -437,7 +445,7 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		// Test site device not using the healthy site nodes check
 		data.setDeviceId(TestUtils.getSite().getId());
 		data.setTotalRealPower(.01f);
-		data.setUVIndex(.26);
+		data.setUVIndex(.26f);
 		OSComponent.deleteByCustomerId(CUSTOMER_ID);
 		seedData(data);
 		assertFalse(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getSite(), data, true));
@@ -487,9 +495,7 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 				LocalDateTime.ofInstant(TimeUtils.get15mRoundedDate().toInstant(), ZoneId.systemDefault());
 		List<DeviceData> datas = new ArrayList<>();
 		for (int ai = 0; ai < 8; ai++) {
-			DeviceData deviceData = new DeviceData(seed.getAttributes().entrySet().stream()
-					.collect(Collectors.toMap(
-							Map.Entry::getKey, e -> e.getValue().getValue())));
+			DeviceData deviceData = new DeviceData(seed);
 			deviceData.setDate(Date.from(
 					ldt.minusMinutes(15 * ai).atZone(ZoneId.systemDefault()).toInstant()));
 			datas.add(deviceData);

@@ -1,27 +1,28 @@
 package com.bigboxer23.solar_moon.aggregated.overview;
 
 import com.bigboxer23.solar_moon.aggregated.sites.SiteWeatherData;
+import com.bigboxer23.solar_moon.data.DeviceData;
 import lombok.Data;
 import org.opensearch.client.opensearch.core.SearchResponse;
 
 /** */
 @Data
 public class OverviewSiteData {
-	private SearchResponse totalAvg;
+	private SearchResponse<DeviceData> totalAvg;
 
-	private SearchResponse total;
+	private SearchResponse<DeviceData> total;
 
-	private SearchResponse avg;
+	private SearchResponse<DeviceData> avg;
 
-	private SearchResponse timeSeries;
+	private SearchResponse<DeviceData> timeSeries;
 
-	private SearchResponse timeSeriesMax;
+	private SearchResponse<DeviceData> timeSeriesMax;
 
-	private SearchResponse dailyEnergyConsumedTotal;
+	private SearchResponse<DeviceData> dailyEnergyConsumedTotal;
 
 	private double dailyEnergyConsumedAverage;
 
-	private SearchResponse weeklyMaxPower;
+	private SearchResponse<DeviceData> weeklyMaxPower;
 
 	private SiteWeatherData weather;
 }

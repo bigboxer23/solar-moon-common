@@ -30,7 +30,7 @@ public class IngestComponent implements MeterConstants {
 		Optional<Device> site =
 				IComponentRegistry.deviceComponent.findDeviceById(device.getSiteId(), device.getClientId());
 		if (device.isDeviceSite()) {
-			deviceData.setIsSite();
+			deviceData.setSite(true);
 		}
 		calculateTotalEnergyConsumed(deviceData);
 		IComponentRegistry.locationComponent.addLocationData(deviceData, site.orElse(null));

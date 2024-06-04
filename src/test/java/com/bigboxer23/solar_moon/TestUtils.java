@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.data.Device;
-import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import com.bigboxer23.solar_moon.search.OpenSearchUtils;
@@ -271,24 +270,12 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		for (int week = 1; week < numberOfWeeks; week++) {
 			search.setStartDate(new Date().getTime() - TimeConstants.DAY * (7L * week));
 			search.setEndDate(new Date().getTime() - TimeConstants.DAY * (7L * (week - 1)));
-			SearchResponse<Map> response = OSComponent.search(search);
+			SearchResponse<DeviceData> response = OSComponent.search(search);
 			List<DeviceData> datas = response.hits().hits().stream()
 					.map(h -> {
-						DeviceData data = OpenSearchUtils.getDeviceDataFromFields("", h.source());
+						DeviceData data = new DeviceData(h.source());
 						if (data != null) {
-							if (data.getTotalEnergyConsumed() == -1) {
-								data.getAttributes().remove(TOTAL_ENG_CONS);
-							}
-							if (data.getAverageVoltage() == -1) {
-								data.getAttributes().remove(AVG_VOLT);
-							}
-							if (data.getAverageCurrent() == -1) {
-								data.getAttributes().remove(AVG_CURRENT);
-							}
-							if (data.getPowerFactor() == -1) {
-								data.getAttributes().remove(TOTAL_PF);
-							}
-							data.getAttributes().put(SITE_ID, new DeviceAttribute(SITE_ID, "", site.getId()));
+							data.setSiteId(site.getId());
 							data.setCustomerId(customerId);
 							Optional<Device> srcDevice = Optional.ofNullable(devices.get(data.getDeviceId()));
 							data.setDeviceId(srcDevice.map(Device::getId).orElse(null));

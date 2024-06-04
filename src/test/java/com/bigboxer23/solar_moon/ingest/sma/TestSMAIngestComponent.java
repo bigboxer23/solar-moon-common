@@ -144,7 +144,7 @@ public class TestSMAIngestComponent implements TestConstants, IComponentRegistry
 		TestUtils.setupSite();
 
 		TimeZone nativeZone = new SimpleDateFormat().getTimeZone();
-		String testCustomerDefaultTZ = "America/New_York";
+		String testCustomerDefaultTZ = "America/Chicago";
 		String testSiteTZ = "America/Anchorage";
 
 		assertEquals(nativeZone, SMAIngestComponent.getDateFormatter(null).getTimeZone());
@@ -167,6 +167,8 @@ public class TestSMAIngestComponent implements TestConstants, IComponentRegistry
 		site.setCity("Anchorage");
 		site.setState("AK");
 		site.setCountry("USA");
+		site.setLatitude(-1);
+		site.setLongitude(-1);
 		deviceComponent.updateDevice(site);
 		assertEquals(
 				testSiteTZ,

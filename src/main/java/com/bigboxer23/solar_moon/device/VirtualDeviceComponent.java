@@ -39,9 +39,9 @@ public class VirtualDeviceComponent {
 							device.getCustomerId(), device.getSiteId(), device.getDate());
 					DeviceData virtualDeviceData = new DeviceData(
 							virtualDevice.getSiteId(), virtualDevice.getClientId(), virtualDevice.getId());
-					virtualDeviceData.setIsVirtual();
+					virtualDeviceData.setVirtual(true);
 					if (virtualDevice.isDeviceSite()) {
-						virtualDeviceData.setIsSite();
+						virtualDeviceData.setSite(true);
 					}
 					virtualDeviceData.setDate(device.getDate());
 					virtualDeviceData.setEnergyConsumed(Math.max(

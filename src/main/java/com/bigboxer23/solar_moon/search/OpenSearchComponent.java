@@ -1,8 +1,6 @@
 package com.bigboxer23.solar_moon.search;
 
-import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
-import com.bigboxer23.solar_moon.data.OpenSearchDTO;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TimeUtils;
@@ -27,6 +25,7 @@ import org.opensearch.client.opensearch._types.query_dsl.QueryBuilders;
 import org.opensearch.client.opensearch.core.*;
 import org.opensearch.client.opensearch.core.bulk.BulkOperation;
 import org.opensearch.client.opensearch.core.bulk.IndexOperation;
+import org.opensearch.client.opensearch.core.search.Hit;
 import org.opensearch.client.opensearch.core.search.SourceConfig;
 import org.opensearch.client.opensearch.core.search.SourceFilter;
 import org.opensearch.client.transport.rest_client.RestClientTransport;
@@ -53,20 +52,15 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		pass = PropertyUtils.getProperty("opensearch.pw");
 	}
 
-	public void logData(Date fetchDate, List<DeviceData> deviceData) throws ResponseException {
+	public void logData(Date fetchDate, List<DeviceData> deviceDatas) throws ResponseException {
 		logger.debug("sending to opensearch component");
 		BulkRequest.Builder bulkRequest = new BulkRequest.Builder().index(INDEX_NAME);
-		deviceData.forEach(device -> {
-			device.addAttribute(
-					new DeviceAttribute(TIMESTAMP, null, device.getDate() == null ? fetchDate : device.getDate()));
+		deviceDatas.forEach(data -> {
+			data.setDate(data.getDate() == null ? fetchDate : data.getDate());
 			bulkRequest.operations(new BulkOperation.Builder()
-					.index(new IndexOperation.Builder<OpenSearchDTO>()
-							.id(device.getDeviceId()
-									+ ":"
-									+ (device.getDate() != null
-											? device.getDate().getTime()
-											: System.currentTimeMillis()))
-							.document(new OpenSearchDTO(device))
+					.index(new IndexOperation.Builder<DeviceData>()
+							.id(data.getDeviceId() + ":" + data.getDate().getTime())
+							.document(data)
 							.build())
 					.build());
 		});
@@ -101,22 +95,17 @@ public class OpenSearchComponent implements OpenSearchConstants {
 									.build())
 							.build())
 					.build();
-			SearchResponse<Map> response = getClient().search(request, Map.class);
+			SearchResponse<DeviceData> response = getClient().search(request, DeviceData.class);
 			if (response.hits().hits().isEmpty()) {
 				logger.warn("couldn't find previous value for " + deviceId);
 				return null;
 			}
-			Map<String, Object> fields = response.hits().hits().get(0).source();
-			if (fields == null) {
-				logger.warn("No fields associated with result for " + deviceId);
+			DeviceData data = response.hits().hits().getFirst().source();
+			if (data == null) {
+				logger.warn("No data associated with result for " + deviceId);
 				return null;
 			}
-			return Optional.ofNullable((Double) fields.get(MeterConstants.TOTAL_ENG_CONS))
-					.map(Double::floatValue)
-					.orElseGet(() -> {
-						logger.debug("null/empty value stored in OS");
-						return null;
-					});
+			return data.getTotalEnergyConsumed();
 		} catch (IOException e) {
 			logger.error("getTotalEnergyConsumed", e);
 			return null;
@@ -134,17 +123,16 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	public DeviceData getLastDeviceEntry(String deviceId, Query query, Query... queries) {
 		try {
 			SearchRequest request = OpenSearchQueries.getSearchRequestBuilder()
-					.query(QueryBuilders.bool().filter(query, queries).build()._toQuery())
+					.query(QueryBuilders.bool().filter(query, queries).build().toQuery())
 					.sort(OpenSearchQueries.sortByTimeStampDesc())
 					.size(1)
 					.build();
-			SearchResponse<Map> response = getClient().search(request, Map.class);
+			SearchResponse<DeviceData> response = getClient().search(request, DeviceData.class);
 			if (response.hits().hits().isEmpty()) {
 				logger.debug("couldn't find previous value for " + deviceId);
 				return null;
 			}
-			return OpenSearchUtils.getDeviceDataFromFields(
-					deviceId, response.hits().hits().get(0).source());
+			return response.hits().hits().getFirst().source();
 		} catch (IOException e) {
 			logger.error("getLastDeviceEntry:", e);
 			return null;
@@ -171,7 +159,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 											OpenSearchQueries.getCustomerIdQuery(customerId),
 											OpenSearchQueries.getSiteIdQuery(siteId))
 									.build()
-									._toQuery())
+									.toQuery())
 							.build());
 		} catch (IOException e) {
 			logger.error("deleteByCustomerId: ", e);
@@ -187,7 +175,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 											OpenSearchQueries.getCustomerIdQuery(customerId),
 											OpenSearchQueries.getDeviceIdQuery(deviceId))
 									.build()
-									._toQuery())
+									.toQuery())
 							.build());
 		} catch (IOException e) {
 			logger.error("deleteByCustomerId: ", e);
@@ -212,9 +200,9 @@ public class OpenSearchComponent implements OpenSearchConstants {
 									OpenSearchQueries.getDeviceIdQuery(deviceId),
 									OpenSearchQueries.getDateRangeQuery(date))
 							.build()
-							._toQuery())
+							.toQuery())
 					.build();
-			SearchResponse<Map> response = getClient().search(request, Map.class);
+			SearchResponse<DeviceData> response = getClient().search(request, DeviceData.class);
 			if (response.hits().hits().isEmpty()) {
 				logger.debug("Couldn't find previous value for " + deviceId);
 				return null;
@@ -223,8 +211,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 				throw new IOException(
 						"too many device results: " + response.hits().hits().size());
 			}
-			return OpenSearchUtils.getDeviceDataFromFields(
-					deviceId, response.hits().hits().get(0).source());
+			return response.hits().hits().getFirst().source();
 		} catch (IOException e) {
 			logger.error("getDeviceByTimePeriod", e);
 			return null;
@@ -240,10 +227,11 @@ public class OpenSearchComponent implements OpenSearchConstants {
 									OpenSearchQueries.getSiteIdQuery(siteId),
 									OpenSearchQueries.getDateRangeQuery(date))
 							.build()
-							._toQuery())
+							.toQuery())
 					.build();
-			return OpenSearchUtils.getDeviceDataFromResults(
-					getClient().search(request, Map.class).hits().hits());
+			return getClient().search(request, DeviceData.class).hits().hits().stream()
+					.map(Hit::source)
+					.toList();
 		} catch (IOException e) {
 			logger.error("getDeviceCountByTimePeriod", e);
 			return Collections.emptyList();
@@ -259,7 +247,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 									OpenSearchQueries.getSiteIdQuery(siteId),
 									OpenSearchQueries.getDateRangeQuery(date))
 							.build()
-							._toQuery())
+							.toQuery())
 					.build();
 			return getClient().search(request, Map.class).hits().hits().size();
 		} catch (IOException e) {
@@ -268,11 +256,14 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		}
 	}
 
-	public SearchResponse search(SearchJSON searchJSON) {
+	public SearchResponse<DeviceData> search(SearchJSON searchJSON) {
 		try {
-			SearchRequest request =
-					getSearchRequest(searchJSON).query(getQuery(searchJSON)).build();
-			return getClient().search(request, Map.class);
+			return getClient()
+					.search(
+							getSearchRequest(searchJSON)
+									.query(getQuery(searchJSON))
+									.build(),
+							DeviceData.class);
 		} catch (IOException e) {
 			logger.error("search " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
 		}
@@ -324,7 +315,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 				.filter(getFiltersByType(searchJSON))
 				.mustNot(getMustNotByType(searchJSON))
 				.build()
-				._toQuery();
+				.toQuery();
 	}
 
 	private List<Query> getMustNotByType(SearchJSON searchJSON) {
@@ -428,14 +419,17 @@ public class OpenSearchComponent implements OpenSearchConstants {
 				new SearchJSON(customerId, deviceId, System.currentTimeMillis(), System.currentTimeMillis() - offset);
 		searchJSON.setSize(Double.valueOf(maxRecordCount).intValue());
 
-		return OpenSearchUtils.getDeviceDataFromResults(getClient()
+		return getClient()
 				.search(
 						OpenSearchQueries.getSearchRequestBuilder()
 								.query(getQuery(searchJSON))
 								.build(),
-						Map.class)
+						DeviceData.class)
 				.hits()
-				.hits());
+				.hits()
+				.stream()
+				.map(Hit::source)
+				.toList();
 	}
 
 	public float getMaxTotalEnergyConsumed(String customerId, String deviceId, long offset) {
@@ -447,9 +441,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		search.setDeviceId(deviceId);
 		search.setEndDate(end.getTime());
 		search.setStartDate(end.getTime() - offset);
-		SearchResponse response = search(search);
-		return Double.valueOf(
-						((Aggregate) response.aggregations().get("max")).max().value())
+		return Double.valueOf(search(search).aggregations().get("max").max().value())
 				.floatValue();
 	}
 

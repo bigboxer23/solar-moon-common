@@ -51,7 +51,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		if (maybeAlarm.isEmpty()) {
 			return;
 		}
-		if (!deviceData.isDayLight()) {
+		if (!deviceData.isDaylight()) {
 			logger.debug("not resolving alarm, not daylight " + maybeAlarm.get().getAlarmId());
 			return;
 		}
@@ -353,7 +353,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	}
 
 	protected boolean isDeviceOK(Device device, DeviceData deviceData, boolean isOpenSearchOK) {
-		if (!deviceData.isDayLight()) {
+		if (!deviceData.isDaylight()) {
 			return true;
 		}
 		if (deviceData.getTotalRealPower() > 0.1) {
@@ -367,13 +367,12 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			List<DeviceData> historicData = IComponentRegistry.OSComponent.getRecentDeviceData(
 					device.getClientId(), device.getId(), TimeConstants.HOUR * 2);
 
-			boolean isDarkAdjacent = historicData.stream().anyMatch(d -> !d.isDayLight());
+			boolean isDarkAdjacent = historicData.stream().anyMatch(d -> !d.isDaylight());
 			if (isDarkAdjacent) {
 				logger.debug("dark detected in the recent data, device is assumed to be OK");
 				return true;
 			}
-			if (device != null
-					&& deviceData.getDate() != null
+			if (deviceData.getDate() != null
 					&& !IComponentRegistry.locationComponent
 							.isDay(
 									new Date(deviceData.getDate().getTime() + TimeConstants.HOUR * 2),

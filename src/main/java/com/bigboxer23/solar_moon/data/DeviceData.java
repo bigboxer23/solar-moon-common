@@ -1,56 +1,102 @@
 package com.bigboxer23.solar_moon.data;
 
 import static com.bigboxer23.solar_moon.ingest.MeterConstants.*;
+import static com.bigboxer23.solar_moon.search.OpenSearchConstants.TIMESTAMP;
 
-import com.bigboxer23.solar_moon.search.OpenSearchConstants;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import lombok.Data;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 @Data
 public class DeviceData {
-
-	private Map<String, DeviceAttribute> attributes;
-
+	@JsonProperty(TIMESTAMP)
 	private Date date;
 
+	@JsonProperty(SITE_ID)
+	private String siteId;
+
+	@JsonProperty(CUSTOMER_ID_ATTRIBUTE)
+	private String customerId;
+
+	@JsonProperty(DEVICE_ID)
+	private String deviceId;
+
+	@JsonProperty(TOTAL_REAL_POWER)
+	private float totalRealPower = 0;
+
+	@JsonProperty(TOTAL_ENG_CONS)
+	private float totalEnergyConsumed = 0;
+
+	@JsonProperty(ENG_CONS)
+	private float energyConsumed = 0;
+
+	@JsonProperty(VIRTUAL)
+	private boolean isVirtual = false;
+
+	@JsonProperty(IS_SITE)
+	private boolean isSite = false;
+
+	@JsonProperty(DAYLIGHT)
+	private boolean daylight = false;
+
+	@JsonProperty(TEMPERATURE)
+	private float temperature = -1;
+
+	@JsonProperty(UV_INDEX)
+	private float uVIndex = -1;
+
+	@JsonProperty(PRECIPITATION_INTENSITY)
+	private float precipitationIntensity = 0;
+
+	@JsonProperty(WEATHER_SUMMARY)
+	private String weatherSummary = "";
+
+	@JsonProperty(AVG_VOLT)
+	private float averageVoltage = 0;
+
+	@JsonProperty(AVG_CURRENT)
+	private float averageCurrent = 0;
+
+	@JsonProperty(TOTAL_PF)
+	private float powerFactor = 0;
+
+	@JsonProperty(VISIBILITY)
+	private float visibility = 0;
+
+	@JsonProperty(CLOUD_COVER)
+	private float cloudCover = 0;
+
+	public DeviceData() {}
+
 	public DeviceData(String siteId, String customerId, String deviceId) {
-		attributes = new HashMap<>();
-		attributes.put(SITE_ID, new DeviceAttribute(SITE_ID, "", siteId));
+		setSiteId(siteId);
 		setCustomerId(customerId);
 		setDeviceId(deviceId);
 	}
 
-	public DeviceData(Map<String, Object> openSearchMap) {
-		this((String) openSearchMap.get(SITE_ID), (String) openSearchMap.get(CUSTOMER_ID_ATTRIBUTE), (String)
-				openSearchMap.get(DEVICE_ID));
-		setTotalRealPower(doubleToFloat(openSearchMap.get(TOTAL_REAL_POWER)));
-		setEnergyConsumed(doubleToFloat(openSearchMap.get(ENG_CONS)));
-		setPowerFactor(doubleToFloat(openSearchMap.get(TOTAL_PF)));
-		setAverageVoltage(doubleToFloat(openSearchMap.get(AVG_VOLT)));
-		setAverageCurrent(doubleToFloat(openSearchMap.get(AVG_CURRENT)));
-		setTotalEnergyConsumed(doubleToFloat(openSearchMap.get(TOTAL_ENG_CONS)));
-		if (openSearchMap.containsKey(OpenSearchConstants.TIMESTAMP)) {
-			setDate(new Date((Long) openSearchMap.get(OpenSearchConstants.TIMESTAMP)));
-		}
-		if (openSearchMap.get(VIRTUAL) != null && (Boolean) openSearchMap.get(VIRTUAL)) {
-			setIsVirtual();
-		}
-		if (openSearchMap.get(IS_SITE) != null && (Boolean) openSearchMap.get(IS_SITE)) {
-			setIsSite();
-		}
-		if (openSearchMap.containsKey(DAYLIGHT)) {
-			setDaylight((Boolean) openSearchMap.get(DAYLIGHT));
-		}
-		setWeather(openSearchMap.get(WEATHER_SUMMARY));
-		setTemperature(openSearchMap.get(TEMPERATURE));
-		addIfExists(CLOUD_COVER, openSearchMap);
-		addIfExists(VISIBILITY, openSearchMap);
-		setUVIndex(openSearchMap.get(UV_INDEX));
-		setPrecipitationIntensity(openSearchMap.get(PRECIPITATION_INTENSITY));
+	public DeviceData(DeviceData deviceData) {
+		this(deviceData.getSiteId(), deviceData.getCustomerId(), deviceData.getDeviceId());
+		setTotalRealPower(deviceData.getTotalRealPower());
+		setEnergyConsumed(deviceData.getEnergyConsumed());
+		setPowerFactor(deviceData.getPowerFactor());
+		setAverageVoltage(deviceData.getAverageVoltage());
+		setAverageCurrent(deviceData.getAverageCurrent());
+		setTotalEnergyConsumed(deviceData.getTotalEnergyConsumed());
+		setDate(deviceData.getDate());
+		setVirtual(deviceData.isVirtual());
+		setSite(deviceData.isSite());
+		setDaylight(deviceData.isDaylight());
+		setWeatherSummary(deviceData.getWeatherSummary());
+		setTemperature(deviceData.getTemperature());
+		setVisibility(deviceData.getVisibility());
+		setCloudCover(deviceData.getCloudCover());
+		setUVIndex(deviceData.getUVIndex());
+		setPrecipitationIntensity(deviceData.getPrecipitationIntensity());
 	}
 
 	public static DeviceData createEmpty(String siteId, String customerId, String deviceId, Date timestamp) {
@@ -64,14 +110,74 @@ public class DeviceData {
 		return data;
 	}
 
-	private void addIfExists(String attributeName, Map<String, Object> openSearchMap) {
-		if (openSearchMap.containsKey(attributeName)) {
-			addAttribute(new DeviceAttribute(attributeName, "", openSearchMap.get(attributeName)));
+	public void addAttribute(String key, Object value) {
+		switch (key) {
+			case TOTAL_REAL_POWER:
+				setTotalRealPower(doubleToFloat(value));
+				break;
+			case TOTAL_ENG_CONS:
+				setTotalEnergyConsumed(doubleToFloat(value));
+				break;
+			case ENG_CONS:
+				setEnergyConsumed(doubleToFloat(value));
+				break;
+			case VIRTUAL:
+				setVirtual((Boolean) value);
+				break;
+			case IS_SITE:
+				setSite((Boolean) value);
+				break;
+			case DAYLIGHT:
+				setDaylight((Boolean) value);
+				break;
+			case TEMPERATURE:
+				setTemperature(doubleToFloat(value));
+				break;
+			case UV_INDEX:
+				setUVIndex(doubleToFloat(value));
+				break;
+			case PRECIPITATION_INTENSITY:
+				setPrecipitationIntensity(doubleToFloat(value));
+				break;
+			case WEATHER_SUMMARY:
+				setWeatherSummary((String) value);
+				break;
+			case SITE_ID:
+				setSiteId((String) value);
+				break;
+			case CUSTOMER_ID_ATTRIBUTE:
+				setCustomerId((String) value);
+				break;
+			case DEVICE_ID:
+				setDeviceId((String) value);
+				break;
+			case AVG_VOLT:
+				setAverageVoltage(doubleToFloat(value));
+				break;
+			case AVG_CURRENT:
+				setAverageCurrent(doubleToFloat(value));
+				break;
+			case TOTAL_PF:
+				setPowerFactor(doubleToFloat(value));
+				break;
+			case VISIBILITY:
+				setVisibility(doubleToFloat(value));
+				break;
+			case CLOUD_COVER:
+				setCloudCover(doubleToFloat(value));
+				break;
+			default:
+				LoggerFactory.getLogger(DeviceData.class).error("unknown field: " + key);
+				throw new RuntimeException("unknown field: " + key);
 		}
 	}
 
+	@JsonIgnore
 	public boolean isValid() {
-		if (getAttributes().size() <= 4) {
+		if (StringUtils.isEmpty(siteId)
+				|| StringUtils.isEmpty(customerId)
+				|| StringUtils.isEmpty(deviceId)
+				|| getDate() == null) {
 			return false;
 		}
 		if (isVirtual()) {
@@ -85,186 +191,14 @@ public class DeviceData {
 	}
 
 	private float doubleToFloat(Object value) {
-		if (value == null) {
-			return -1;
-		}
-		if (value instanceof Integer) {
-			return (Integer) value;
-		}
-		if (value instanceof Float) {
-			return (Float) value;
-		}
-		return Optional.of(value)
-				.map(val -> (Double) val)
-				.map(Double::floatValue)
-				.orElse(null);
-	}
-
-	public void addAttribute(DeviceAttribute attr) {
-		attributes.put(attr.getName(), attr);
-	}
-
-	public float getTotalRealPower() {
-		return (Float) Optional.ofNullable(attributes.get(TOTAL_REAL_POWER))
-				.map(DeviceAttribute::getValue)
-				.orElse(-1f);
-	}
-
-	public void setTotalRealPower(float totalRealPower) {
-		addAttribute(new DeviceAttribute(TOTAL_REAL_POWER, getTotalEnergyConsumedUnit(), totalRealPower));
-	}
-
-	public float getTotalEnergyConsumed() {
-		return (Float) Optional.ofNullable(attributes.get(TOTAL_ENG_CONS))
-				.map(DeviceAttribute::getValue)
-				.orElse(-1f);
-	}
-
-	public void setTotalEnergyConsumed(float totalEnergyConsumed) {
-		addAttribute(new DeviceAttribute(TOTAL_ENG_CONS, getTotalEnergyConsumedUnit(), totalEnergyConsumed));
-	}
-
-	public float getEnergyConsumed() {
-		return (Float) Optional.ofNullable(attributes.get(ENG_CONS))
-				.map(DeviceAttribute::getValue)
-				.orElse(-1f);
-	}
-
-	public void setEnergyConsumed(float energyConsumed) {
-		addAttribute(new DeviceAttribute(ENG_CONS, getTotalEnergyConsumedUnit(), energyConsumed));
-	}
-
-	public void setIsVirtual() {
-		addAttribute(new DeviceAttribute(VIRTUAL, "", true));
-	}
-
-	public boolean isVirtual() {
-		return (Boolean) Optional.ofNullable(attributes.get(VIRTUAL))
-				.map(DeviceAttribute::getValue)
-				.orElse(false);
-	}
-
-	public void setIsSite() {
-		addAttribute(new DeviceAttribute(IS_SITE, "", true));
-	}
-
-	public boolean isSite() {
-		return (Boolean) Optional.ofNullable(attributes.get(IS_SITE))
-				.map(DeviceAttribute::getValue)
-				.orElse(false);
-	}
-
-	public void setDaylight(boolean isDaylight) {
-		addAttribute(new DeviceAttribute(DAYLIGHT, "boolean", isDaylight));
-	}
-
-	public boolean isDayLight() {
-		return (Boolean) Optional.ofNullable(attributes.get(DAYLIGHT))
-				.map(DeviceAttribute::getValue)
-				.orElse(false);
-	}
-
-	public void setTemperature(Object temperature) {
-		Optional.ofNullable(temperature)
-				.map(this::doubleToFloat)
-				.ifPresent(t -> addAttribute(new DeviceAttribute(TEMPERATURE, "", t)));
-	}
-
-	public float getTemperature() {
-		return (Float) Optional.ofNullable(attributes.get(TEMPERATURE))
-				.map(DeviceAttribute::getValue)
-				.orElse(-1f);
-	}
-
-	public void setUVIndex(Object uvIndex) {
-		Optional.ofNullable(uvIndex)
-				.map(this::doubleToFloat)
-				.ifPresent(t -> addAttribute(new DeviceAttribute(UV_INDEX, "", t)));
-	}
-
-	public float getUVIndex() {
-		return (Float) Optional.ofNullable(attributes.get(UV_INDEX))
-				.map(DeviceAttribute::getValue)
-				.orElse(-1f);
-	}
-
-	public void setPrecipitationIntensity(Object precipitationIntensity) {
-		Optional.ofNullable(precipitationIntensity)
-				.map(this::doubleToFloat)
-				.ifPresent(t -> addAttribute(new DeviceAttribute(PRECIPITATION_INTENSITY, "", t)));
-	}
-
-	public float getPrecipitationIntensity() {
-		return (Float) Optional.ofNullable(attributes.get(PRECIPITATION_INTENSITY))
-				.map(DeviceAttribute::getValue)
-				.orElse(-1f);
-	}
-
-	public void setWeather(Object weatherSummary) {
-		Optional.ofNullable(weatherSummary)
-				.map(s -> (String) s)
-				.ifPresent(summary -> addAttribute(new DeviceAttribute(WEATHER_SUMMARY, "", summary)));
-	}
-
-	public String getWeatherSummary() {
-		return (String) Optional.ofNullable(attributes.get(WEATHER_SUMMARY))
-				.map(DeviceAttribute::getValue)
-				.orElse("");
-	}
-
-	public String getTotalEnergyConsumedUnit() {
-		return Optional.ofNullable(attributes.get(TOTAL_ENG_CONS))
-				.map(DeviceAttribute::getUnit)
-				.orElse(null);
-	}
-
-	public String getSiteId() {
-		return (String) attributes.get(SITE_ID).getValue();
-	}
-
-	public String getCustomerId() {
-		return (String) attributes.get(CUSTOMER_ID_ATTRIBUTE).getValue();
-	}
-
-	public void setCustomerId(String customerId) {
-		attributes.put(CUSTOMER_ID_ATTRIBUTE, new DeviceAttribute(CUSTOMER_ID_ATTRIBUTE, "", customerId));
-	}
-
-	public String getDeviceId() {
-		return (String) attributes.get(DEVICE_ID).getValue();
-	}
-
-	public void setDeviceId(String deviceId) {
-		attributes.put(DEVICE_ID, new DeviceAttribute(DEVICE_ID, "", deviceId));
-	}
-
-	public float getAverageVoltage() {
-		return (float) Optional.ofNullable(getAttributes().get(AVG_VOLT))
-				.map(DeviceAttribute::getValue)
-				.orElse(-1f);
-	}
-
-	public void setAverageVoltage(float voltage) {
-		addAttribute(new DeviceAttribute(AVG_VOLT, "", voltage));
-	}
-
-	public float getAverageCurrent() {
-		return (float) Optional.ofNullable(getAttributes().get(AVG_CURRENT))
-				.map(DeviceAttribute::getValue)
-				.orElse(-1f);
-	}
-
-	public void setAverageCurrent(float current) {
-		addAttribute(new DeviceAttribute(AVG_CURRENT, "", current));
-	}
-
-	public float getPowerFactor() {
-		return (float) Optional.ofNullable(getAttributes().get(TOTAL_PF))
-				.map(DeviceAttribute::getValue)
-				.orElse(-1f);
-	}
-
-	public void setPowerFactor(float powerFactor) {
-		addAttribute(new DeviceAttribute(TOTAL_PF, "", powerFactor));
+		return switch (value) {
+			case null -> -1;
+			case Integer aI -> aI;
+			case Float aV -> aV;
+			default -> Optional.of(value)
+					.map(val -> (Double) val)
+					.map(Double::floatValue)
+					.orElse(null);
+		};
 	}
 }
