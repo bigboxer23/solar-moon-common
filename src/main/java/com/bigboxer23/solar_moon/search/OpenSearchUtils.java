@@ -5,8 +5,6 @@ import java.io.StringWriter;
 import lombok.SneakyThrows;
 import org.opensearch.client.json.JsonpSerializable;
 import org.opensearch.client.json.jsonb.JsonbJsonpMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** */
 public class OpenSearchUtils {

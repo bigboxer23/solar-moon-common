@@ -441,7 +441,8 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		search.setDeviceId(deviceId);
 		search.setEndDate(end.getTime());
 		search.setStartDate(end.getTime() - offset);
-		return Double.valueOf(search(search).aggregations().get("max").max().value()).floatValue();
+		return Double.valueOf(search(search).aggregations().get("max").max().value())
+				.floatValue();
 	}
 
 	public boolean isOpenSearchAvailable() {
