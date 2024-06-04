@@ -3,6 +3,7 @@ package com.bigboxer23.solar_moon.aggregated.sites;
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.alarm.IAlarmConstants;
 import com.bigboxer23.solar_moon.data.Device;
+import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.search.OpenSearchConstants;
 import com.bigboxer23.solar_moon.search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.search.SearchJSON;
@@ -74,7 +75,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		siteData.setAvg(OSComponent.search(searchJSON));
 	}
 
-	public SearchResponse getMaxInformation(String deviceId, String customerId) {
+	public SearchResponse<DeviceData> getMaxInformation(String deviceId, String customerId) {
 		SearchJSON search = new SearchJSON();
 		search.setCustomerId(customerId);
 		search.setType(OpenSearchConstants.MAX_CURRENT_SEARCH_TYPE);
@@ -146,7 +147,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 			SearchJSON search,
 			boolean daylight,
 			String type,
-			Map<String, SearchResponse> map) {
+			Map<String, SearchResponse<DeviceData>> map) {
 		SearchJSON searchJson = new SearchJSON(search);
 		searchJson.setSiteId(null);
 		searchJson.setDaylight(daylight);

@@ -2,6 +2,7 @@ package com.bigboxer23.solar_moon.aggregated.sites;
 
 import com.bigboxer23.solar_moon.data.Alarm;
 import com.bigboxer23.solar_moon.data.Device;
+import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.subscription.IHasSubscriptionDate;
 import java.util.List;
 import java.util.Map;
@@ -13,11 +14,11 @@ import org.opensearch.client.opensearch.core.SearchResponse;
 public class SitesSiteData implements IHasSubscriptionDate {
 	private Device site;
 
-	private SearchResponse weeklyMaxPower;
+	private SearchResponse<DeviceData> weeklyMaxPower;
 
-	private SearchResponse avg;
+	private SearchResponse<DeviceData> avg;
 
-	private SearchResponse total;
+	private SearchResponse<DeviceData> total;
 
 	private SiteWeatherData weather;
 
@@ -27,15 +28,15 @@ public class SitesSiteData implements IHasSubscriptionDate {
 
 	private List<Alarm> alarms;
 
-	private SearchResponse timeSeries;
+	private SearchResponse<DeviceData> timeSeries;
 
-	private Map<String, SearchResponse> deviceAvg;
+	private Map<String, SearchResponse<DeviceData>> deviceAvg;
 
-	private Map<String, SearchResponse> deviceTotals;
+	private Map<String, SearchResponse<DeviceData>> deviceTotals;
 
-	private Map<String, SearchResponse> deviceTimeSeries;
+	private Map<String, SearchResponse<DeviceData>> deviceTimeSeries;
 
-	private Map<String, SearchResponse> deviceWeeklyMaxPower;
+	private Map<String, SearchResponse<DeviceData>> deviceWeeklyMaxPower;
 
 	private long trialDate = -1;
 }

@@ -2,7 +2,6 @@ package com.bigboxer23.solar_moon.ingest;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Device;
-import com.bigboxer23.solar_moon.data.DeviceAttribute;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import java.io.StringReader;
@@ -155,13 +154,7 @@ public class ObviusIngestComponent implements MeterConstants {
 									.getAttributes()
 									.getNamedItem("value")
 									.getNodeValue());
-							deviceData.addAttribute(new DeviceAttribute(
-									mappingFields.get(attributeName),
-									nodes.item(i)
-											.getAttributes()
-											.getNamedItem("units")
-											.getNodeValue(),
-									value));
+							deviceData.addAttribute(mappingFields.get(attributeName), value);
 						} catch (NumberFormatException nfe) {
 							logger.warn("bad value retrieved from xml " + attributeName + "\n" + body, nfe);
 							String value = nodes.item(i)

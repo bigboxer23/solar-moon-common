@@ -24,11 +24,11 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.field(getKeywordField(DEVICE_NAME))
 				.query(builder -> builder.stringValue(deviceName))
 				.build()
-				._toQuery();
+				.toQuery();
 	}
 
 	public static Query getNotVirtual() {
-		return QueryBuilders.exists().field(VIRTUAL).build()._toQuery();
+		return QueryBuilders.exists().field(VIRTUAL).build().toQuery();
 	}
 
 	public static Query getIsVirtual() {
@@ -36,11 +36,11 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.field(VIRTUAL)
 				.query(builder -> builder.booleanValue(true))
 				.build()
-				._toQuery();
+				.toQuery();
 	}
 
 	public static Query getNotIsSite() {
-		return QueryBuilders.exists().field(IS_SITE).build()._toQuery();
+		return QueryBuilders.exists().field(IS_SITE).build().toQuery();
 	}
 
 	public static Query getIsSite() {
@@ -48,7 +48,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.field(IS_SITE)
 				.query(builder -> builder.booleanValue(true))
 				.build()
-				._toQuery();
+				.toQuery();
 	}
 
 	public static Query getIsDaylight() {
@@ -56,7 +56,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.field(DAYLIGHT)
 				.query(builder -> builder.booleanValue(true))
 				.build()
-				._toQuery();
+				.toQuery();
 	}
 
 	public static Query getDeviceIdQuery(String id) {
@@ -64,7 +64,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.field(getKeywordField(DEVICE_ID))
 				.query(builder -> builder.stringValue(id))
 				.build()
-				._toQuery();
+				.toQuery();
 	}
 
 	public static Query getCustomerIdQuery(String customerId) {
@@ -72,7 +72,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.field(getKeywordField(CUSTOMER_ID_ATTRIBUTE))
 				.query(builder -> builder.stringValue(customerId))
 				.build()
-				._toQuery();
+				.toQuery();
 	}
 
 	public static Query getSiteQuery(String site) {
@@ -80,7 +80,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.field(getKeywordField(SITE))
 				.query(builder -> builder.stringValue(site))
 				.build()
-				._toQuery();
+				.toQuery();
 	}
 
 	public static Query getSiteIdQuery(String siteId) {
@@ -88,7 +88,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.field(getKeywordField(SITE_ID))
 				.query(builder -> builder.stringValue(siteId))
 				.build()
-				._toQuery();
+				.toQuery();
 	}
 
 	public static Query getDateRangeQuery(Date date) {
@@ -100,7 +100,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.lte(JsonData.of(Date.from(
 						ldt.plusMinutes(5).atZone(ZoneId.systemDefault()).toInstant())))
 				.build()
-				._toQuery();
+				.toQuery();
 	}
 
 	public static Query getDateRangeQuery(Date startDate, Date endDate) {
@@ -110,7 +110,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.lte(JsonData.of(endDate.toInstant().toString()))
 				.format("strict_date_optional_time")
 				.build()
-				._toQuery();
+				.toQuery();
 	}
 
 	public static Query getLast15MinQuery() {
@@ -119,7 +119,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.gte(JsonData.of("now-15m"))
 				.lte(JsonData.of("now"))
 				.build()
-				._toQuery();
+				.toQuery();
 	}
 
 	public static Script getUpdateScript(String field, Object value) {
