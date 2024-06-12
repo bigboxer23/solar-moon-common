@@ -415,7 +415,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				return true;
 			}
 			if (!anySiteDevicesHealthy(device)) {
-				logger.info("site devices all report low power, panel may be OK ");
+				logger.info("site devices all report low power, panel(s) may be OK");
 				return true;
 			}
 			logger.warn("Device not generating power "
@@ -459,8 +459,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				DeviceData siteDeviceData = IComponentRegistry.OSComponent.getLastDeviceEntry(
 						siteDevice.getId(), OpenSearchQueries.getDeviceIdQuery(siteDevice.getId()));
 				hasValidSiteDeviceData = hasValidSiteDeviceData || siteDeviceData != null;
-				if (siteDeviceData != null && siteDeviceData.getTotalRealPower() > 0.1) {
-					logger.info("average production over .1kW detected on site device"
+				if (siteDeviceData != null && siteDeviceData.getTotalRealPower() > 0.25) {
+					logger.info("average production over .25kW detected on site device"
 							+ siteDevice.getId()
 							+ " : "
 							+ siteDeviceData.getTotalRealPower()
