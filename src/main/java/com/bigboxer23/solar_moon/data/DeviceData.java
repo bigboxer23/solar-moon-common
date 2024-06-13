@@ -27,13 +27,13 @@ public class DeviceData {
 	private String deviceId;
 
 	@JsonProperty(TOTAL_REAL_POWER)
-	private float totalRealPower = 0;
+	private float totalRealPower = -1;
 
 	@JsonProperty(TOTAL_ENG_CONS)
-	private float totalEnergyConsumed = 0;
+	private float totalEnergyConsumed = -1;
 
 	@JsonProperty(ENG_CONS)
-	private float energyConsumed = 0;
+	private float energyConsumed = -1;
 
 	@JsonProperty(VIRTUAL)
 	private boolean isVirtual = false;
@@ -57,13 +57,13 @@ public class DeviceData {
 	private String weatherSummary = "";
 
 	@JsonProperty(AVG_VOLT)
-	private float averageVoltage = 0;
+	private float averageVoltage = -1;
 
 	@JsonProperty(AVG_CURRENT)
-	private float averageCurrent = 0;
+	private float averageCurrent = -1;
 
 	@JsonProperty(TOTAL_PF)
-	private float powerFactor = 0;
+	private float powerFactor = -1;
 
 	@JsonProperty(VISIBILITY)
 	private float visibility = 0;
