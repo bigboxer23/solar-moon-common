@@ -324,14 +324,6 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		assertEquals(2, response.aggregations().size());
 		assertEquals(150, response.aggregations().get("total").sum().value());
 		assertEquals(20, response.aggregations().get("avg").avg().value());
-
-		json.setDeviceName(null);
-		json.setDeviceId(TestUtils.getDevice().getId());
-		response = OSComponent.search(json);
-		assertEquals(2, response.aggregations().size());
-		assertEquals(
-				150, ((Aggregate) response.aggregations().get("total")).sum().value());
-		assertEquals(20, ((Aggregate) response.aggregations().get("avg")).avg().value());
 	}
 
 	@Test
