@@ -12,9 +12,12 @@ public class SiteWeatherData {
 
 	private float uvIndex;
 
+	private float precipitationIntensity;
+
 	public SiteWeatherData(DeviceData data) {
 		setWeatherSummary(data.getWeatherSummary());
 		setUvIndex(data.getUVIndex());
 		setTemperature(data.getTemperature());
+		setPrecipitationIntensity(data.getPrecipitationIntensity());
 	}
 }
