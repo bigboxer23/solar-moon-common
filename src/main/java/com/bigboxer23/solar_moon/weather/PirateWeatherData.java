@@ -25,4 +25,14 @@ public class PirateWeatherData {
 	private double uvIndex;
 	private double visibility;
 	private double ozone;
+
+	/**
+	 * Pirate weather occasionally returns some whack data. Normalize it, so we don't write
+	 * incorrect data.
+	 *
+	 * @return
+	 */
+	public double getUvIndex() {
+		return Math.min(20, Math.max(0, uvIndex));
+	}
 }
