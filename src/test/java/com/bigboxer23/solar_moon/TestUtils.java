@@ -211,30 +211,6 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		device.setName(deviceName);
 	}
 
-	@Test
-	public void tmp() {
-		List<Device> srcDevices = deviceComponent.getDevicesBySiteId(
-				"98719340-c001-70f5-6f96-64d758660b24", "wvVCjYxEsuOXd6mWRPEqXlVtk-1jVjcJ");
-		Integer[] count = {0};
-
-		deviceComponent
-				.getDevicesBySiteId("d8011320-8071-709f-880e-68025a05d648", "eQSjlsKUjfhan36LewvSsOcpgp9py5t3")
-				.forEach(mock -> {
-					if ("NO_MOCK".equalsIgnoreCase(mock.getMock())) {
-						srcDevices.stream()
-								.filter(d -> mock.getDisplayName().equalsIgnoreCase(d.getDisplayName())
-										|| mock.getDeviceName().equalsIgnoreCase(d.getDeviceName()))
-								.findAny()
-								.ifPresent(srcDevice -> {
-									mock.setMock(srcDevice.getDeviceName());
-									deviceComponent.updateDevice(mock);
-									count[0] = count[0] + 1;
-								});
-					}
-				});
-		System.out.println("found count: " + count[0]);
-	}
-
 	public static void cloneUser(String customerId, String srcCustomerId, String deviceFilter, int numberOfWeeks)
 			throws ResponseException {
 		Map<String, Device> devices = new HashMap<>();
