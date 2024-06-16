@@ -50,6 +50,9 @@ public class DeviceData {
 	@JsonProperty(UV_INDEX)
 	private float uVIndex = -1;
 
+	@JsonProperty(PRECIP_INTENSITY)
+	private float precipIntensity = 0;
+
 	@JsonProperty(PRECIPITATION_INTENSITY)
 	private float precipitationIntensity = 0;
 
@@ -136,7 +139,7 @@ public class DeviceData {
 			case UV_INDEX:
 				setUVIndex(doubleToFloat(value));
 				break;
-			case PRECIPITATION_INTENSITY:
+			case PRECIPITATION_INTENSITY, PRECIP_INTENSITY:
 				setPrecipitationIntensity(doubleToFloat(value));
 				break;
 			case WEATHER_SUMMARY:
