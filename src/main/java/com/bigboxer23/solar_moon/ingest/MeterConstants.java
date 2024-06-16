@@ -53,7 +53,9 @@ public interface MeterConstants {
 
 	String UV_INDEX = "uvIndex";
 
-	String PRECIPITATION_INTENSITY = "precipIntensity";
+	String PRECIPITATION_INTENSITY = "precipitationIntensity";
+
+	String PRECIP_INTENSITY = "precipIntensity";
 
 	String WEATHER_SUMMARY = "weatherSummary";
 
