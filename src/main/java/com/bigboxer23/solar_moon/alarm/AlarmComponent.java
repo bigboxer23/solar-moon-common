@@ -399,7 +399,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 					.orElse(-1);
 			// Check for -1 as could be a site w/o location data set (or we could be missing weather
 			// data)
-			if (uvIndex != -1 && uvIndex <= 0.25) {
+			if (uvIndex != -1 && uvIndex <= 0.4) {
 				logger.info("average uv conditions are very low, panel may be OK " + uvIndex);
 				return true;
 			}

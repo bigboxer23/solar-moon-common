@@ -414,7 +414,7 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 
 		// Test case where external factors shouldn't cause us to report OK
 		data.setTotalRealPower(.01f);
-		data.setUVIndex(.26f);
+		data.setUVIndex(.41f);
 		seedData(data);
 		assertFalse(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, true));
 		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getDevice(), data, false));
@@ -445,7 +445,7 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		// Test site device not using the healthy site nodes check
 		data.setDeviceId(TestUtils.getSite().getId());
 		data.setTotalRealPower(.01f);
-		data.setUVIndex(.26f);
+		data.setUVIndex(.41f);
 		OSComponent.deleteByCustomerId(CUSTOMER_ID);
 		seedData(data);
 		assertFalse(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getSite(), data, true));
