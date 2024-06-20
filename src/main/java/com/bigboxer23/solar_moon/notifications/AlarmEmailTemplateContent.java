@@ -73,7 +73,7 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 				+ devices.getFirst().getDisplayName()
 				+ "</b>");
 		if (!StringUtils.isEmpty(devices.getFirst().getSiteId())) {
-			builder.append(" within site ").append(devices.getFirst().getSite());
+			builder.append(" (").append(devices.getFirst().getSite()).append(")");
 		}
 		builder.append(". <br/><br/>Our monitoring system has indicated that your device has stopped"
 				+ " responding or is not generating power as expected. Please click the link"
@@ -89,7 +89,7 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 		devices.forEach(d -> {
 			builder.append("<br/><b>").append(d.getDisplayName()).append("</b>");
 			if (!StringUtils.isEmpty(d.getSiteId())) {
-				builder.append(" within site ").append(d.getSite());
+				builder.append(" (").append(d.getSite()).append(")");
 			}
 		});
 		builder.append("<br/><br/>Our monitoring system has indicated that your devices have stopped"

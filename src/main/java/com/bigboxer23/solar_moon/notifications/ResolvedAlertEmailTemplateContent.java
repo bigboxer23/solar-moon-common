@@ -21,7 +21,7 @@ public class ResolvedAlertEmailTemplateContent extends AlarmEmailTemplateContent
 		StringBuilder builder = new StringBuilder(
 				"Alerts for your device, <b>" + devices.getFirst().getDisplayName() + "</b>");
 		if (!StringUtils.isEmpty(devices.getFirst().getSiteId())) {
-			builder.append(" within site ").append(devices.getFirst().getSite());
+			builder.append(" (").append(devices.getFirst().getSite()).append(")");
 		}
 		builder.append(", have been resolved! <br/><br/>Our monitoring system has indicates that your"
 				+ " device has resumed responding and is generating power as expected. Please"
@@ -37,7 +37,7 @@ public class ResolvedAlertEmailTemplateContent extends AlarmEmailTemplateContent
 		devices.forEach(d -> {
 			builder.append("<br/><b>").append(d.getDisplayName()).append("</b>");
 			if (!StringUtils.isEmpty(d.getSiteId())) {
-				builder.append(" within site ").append(d.getSite());
+				builder.append(" (").append(d.getSite()).append(")");
 			}
 		});
 		builder.append(" <br/><br/>Our monitoring system indicates that your devices have resumed"
