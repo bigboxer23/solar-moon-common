@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import javax.xml.xpath.XPathExpressionException;
-import org.junit.jupiter.api.Test;
 import org.opensearch.client.ResponseException;
 import org.opensearch.client.opensearch.core.SearchResponse;
 import software.amazon.awssdk.regions.Region;
