@@ -66,7 +66,7 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 		TransactionUtil.addDeviceId(
 				devices.getFirst().getId(), devices.getFirst().getSiteId());
 		setDeviceId(devices.getFirst().getId());
-		setSubject("Potential issue with your solar energy device "
+		setSubject("🚨 ALERT: issue with your solar energy device "
 				+ devices.getFirst().getDisplayName());
 		setLink("/alerts?deviceId=" + URLEncoder.encode(devices.getFirst().getId(), StandardCharsets.UTF_8));
 		StringBuilder builder = new StringBuilder("There may be an issue with your device, <b>"
@@ -83,7 +83,7 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 
 	protected void multipleDevices() {
 		TransactionUtil.addDeviceId(null, null);
-		setSubject("Potential issue with your solar energy devices");
+		setSubject("🚨 ALERT: issue with " + devices.size() + " of your solar energy devices");
 		setLink("/alerts");
 		StringBuilder builder = new StringBuilder("There may be an issue with some of your devices:<br/>");
 		devices.forEach(d -> {
