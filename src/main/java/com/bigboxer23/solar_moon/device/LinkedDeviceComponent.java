@@ -1,0 +1,58 @@
+package com.bigboxer23.solar_moon.device;
+
+import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.data.LinkedDevice;
+import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
+import java.util.Optional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.utils.StringUtils;
+
+/** */
+public class LinkedDeviceComponent extends AbstractDynamodbComponent<LinkedDevice> {
+	public void update(LinkedDevice device) {
+		if (device == null || StringUtils.isBlank(device.getId()) || StringUtils.isBlank(device.getCustomerId())) {
+			logger.warn("invalid linked device, not updating");
+			return;
+		}
+		getTable().updateItem(builder -> builder.item(device));
+	}
+
+	public void delete(String serialNumber, String customerId) {
+		if (StringUtils.isBlank(serialNumber) || StringUtils.isBlank(customerId)) {
+			logger.warn("invalid delete query");
+			return;
+		}
+		getTable()
+				.deleteItem(builder -> builder.key(
+						builder2 -> builder2.partitionValue(serialNumber).sortValue(customerId)));
+	}
+
+	public void deleteByCustomerId(String customerId) {
+		IComponentRegistry.deviceComponent.getDevicesForCustomerId(customerId).stream()
+				.filter(d -> !StringUtils.isEmpty(d.getSerialNumber()))
+				.forEach(d -> delete(d.getSerialNumber(), d.getClientId()));
+	}
+
+	public Optional<LinkedDevice> queryBySerialNumber(String serialNumber, String customerId) {
+		if (StringUtils.isBlank(serialNumber) || StringUtils.isBlank(customerId)) {
+			logger.warn("invalid query");
+			return Optional.empty();
+		}
+		return getTable()
+				.query(QueryConditional.keyEqualTo(
+						builder -> builder.partitionValue(serialNumber).sortValue(customerId)))
+				.items()
+				.stream()
+				.findAny();
+	}
+
+	@Override
+	protected String getTableName() {
+		return "linked_devices";
+	}
+
+	@Override
+	protected Class<LinkedDevice> getObjectClass() {
+		return LinkedDevice.class;
+	}
+}

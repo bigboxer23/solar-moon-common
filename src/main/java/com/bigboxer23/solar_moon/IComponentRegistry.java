@@ -4,10 +4,7 @@ import com.bigboxer23.solar_moon.aggregated.overview.OverviewComponent;
 import com.bigboxer23.solar_moon.aggregated.sites.SitesOverviewComponent;
 import com.bigboxer23.solar_moon.alarm.AlarmComponent;
 import com.bigboxer23.solar_moon.customer.CustomerComponent;
-import com.bigboxer23.solar_moon.device.CachingDeviceComponent;
-import com.bigboxer23.solar_moon.device.DeviceComponent;
-import com.bigboxer23.solar_moon.device.DeviceUpdateComponent;
-import com.bigboxer23.solar_moon.device.VirtualDeviceComponent;
+import com.bigboxer23.solar_moon.device.*;
 import com.bigboxer23.solar_moon.download.DownloadComponent;
 import com.bigboxer23.solar_moon.gson.SearchResponseAdapter;
 import com.bigboxer23.solar_moon.ingest.IngestComponent;
@@ -74,6 +71,8 @@ public interface IComponentRegistry {
 	SitesOverviewComponent sitesOverviewComponent = new SitesOverviewComponent();
 
 	DownloadComponent downloadComponent = new DownloadComponent();
+
+	LinkedDeviceComponent linkedDeviceComponent = new LinkedDeviceComponent();
 
 	Logger logger = LoggerFactory.getLogger(IComponentRegistry.class);
 }

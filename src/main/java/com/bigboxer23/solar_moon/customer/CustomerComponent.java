@@ -89,11 +89,14 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 	public void deleteCustomerByCustomerId(String customerId) {
 		findCustomerByCustomerId(customerId).ifPresent(c -> {
 			logAction("delete by customer id", c.getCustomerId());
+			IComponentRegistry.deviceUpdateComponent.deleteByCustomerId(customerId);
+			IComponentRegistry.linkedDeviceComponent.deleteByCustomerId(customerId);
 			IComponentRegistry.subscriptionComponent.deleteSubscription(customerId);
 			IComponentRegistry.deviceComponent.deleteDevicesByCustomerId(customerId);
 			IComponentRegistry.mappingComponent.deleteMapping(customerId);
 			IComponentRegistry.OSComponent.deleteByCustomerId(customerId);
 			IComponentRegistry.smaIngestComponent.handleAccessKeyChange(c.getAccessKey(), null);
+
 			getTable().deleteItem(c);
 		});
 	}

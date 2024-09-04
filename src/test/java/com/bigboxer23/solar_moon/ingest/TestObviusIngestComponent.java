@@ -1,5 +1,7 @@
 package com.bigboxer23.solar_moon.ingest;
 
+import static com.bigboxer23.solar_moon.ingest.MeterConstants.CRITICAL_ALARMS;
+import static com.bigboxer23.solar_moon.ingest.MeterConstants.INFORMATIVE_ALARMS;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
@@ -43,6 +45,16 @@ public class TestObviusIngestComponent implements TestConstants, IComponentRegis
 			return;
 		}
 		fail();
+	}
+
+	@Test
+	public void testIsLinkedDevice() throws XPathExpressionException {
+		assertFalse(obviousIngestComponent.isLinkedDevice(device1Xml));
+		assertTrue(obviousIngestComponent.isLinkedDevice(LINKED_DEVICE_XML));
+		assertTrue(obviousIngestComponent.isLinkedDevice(LINKED_DEVICE_XML.replace(CRITICAL_ALARMS, "xxx")));
+		assertTrue(obviousIngestComponent.isLinkedDevice(LINKED_DEVICE_XML.replace(INFORMATIVE_ALARMS, "xxx")));
+		assertFalse(obviousIngestComponent.isLinkedDevice(
+				LINKED_DEVICE_XML.replace(CRITICAL_ALARMS, "xxx").replace(INFORMATIVE_ALARMS, "yyy")));
 	}
 
 	@Test

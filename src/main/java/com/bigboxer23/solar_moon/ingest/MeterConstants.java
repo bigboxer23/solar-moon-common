@@ -67,4 +67,8 @@ public interface MeterConstants {
 
 	float OBVIOUS_ROLLOVER = 10000000;
 	float OBVIOUS_ROLLOVER_MARGIN = 1000;
+
+	String CRITICAL_ALARMS = "Critical Alarms";
+
+	String INFORMATIVE_ALARMS = "Informative Alarms";
 }
