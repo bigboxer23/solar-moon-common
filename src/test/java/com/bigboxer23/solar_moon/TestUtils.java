@@ -91,6 +91,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 	}
 
 	public static void nukeCustomerId(String customerId) {
+		linkedDeviceComponent.deleteByCustomerId(customerId);
 		deviceComponent.deleteDevicesByCustomerId(customerId);
 		subscriptionComponent.updateSubscription(customerId, 0);
 		OSComponent.deleteByCustomerId(customerId);
@@ -107,6 +108,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		Device testDevice = new Device();
 		testDevice.setClientId(customerId);
 		testDevice.setSite(TestConstants.SITE);
+		testDevice.setSerialNumber(TestConstants.serialNumber);
 		site = deviceComponent
 				.findDeviceById(
 						addDevice(TestConstants.SITE, testDevice, true, null).getId(), customerId)

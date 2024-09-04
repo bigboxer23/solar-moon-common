@@ -95,6 +95,8 @@ public class Device {
 
 	private double longitude = -1;
 
+	private String serialNumber;
+
 	public Device() {
 		setVirtual(false);
 	}
