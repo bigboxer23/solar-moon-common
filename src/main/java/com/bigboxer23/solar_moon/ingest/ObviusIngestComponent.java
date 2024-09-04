@@ -59,6 +59,10 @@ public class ObviusIngestComponent implements MeterConstants {
 			logger.error("no body, not doing anything.");
 			return null;
 		}
+		if (isLinkedDevice(body)) {
+			handleLinkedBody(body, customerId);
+			return null;
+		}
 		Device device =
 				IComponentRegistry.generationComponent.findDeviceFromDeviceName(customerId, findDeviceName(body));
 		if (device == null) {
@@ -73,6 +77,25 @@ public class ObviusIngestComponent implements MeterConstants {
 								body, server.getSiteId(), server.getDisplayName(), customerId, server.getId()))
 						.filter(DeviceData::isValid)
 						.orElse(null));
+	}
+
+	public boolean isLinkedDevice(String body) throws XPathExpressionException {
+		Boolean[] isLinkedDevice = {false};
+		getNodeListForPath(body, POINT_PATH).ifPresent(nodes -> {
+			for (int i = 0; !isLinkedDevice[0] && i < nodes.getLength(); i++) {
+				String attributeName =
+						nodes.item(i).getAttributes().getNamedItem("name").getNodeValue();
+				if (CRITICAL_ALARMS.equals(attributeName) || INFORMATIVE_ALARMS.equals(attributeName)) {
+					isLinkedDevice[0] = true;
+				}
+			}
+		});
+		return isLinkedDevice[0];
+	}
+
+	public void handleLinkedBody(String body, String customerId) {
+		logger.info("handling linked device");
+		//TODO:
 	}
 
 	public boolean isUpdateEvent(String body) throws XPathExpressionException {

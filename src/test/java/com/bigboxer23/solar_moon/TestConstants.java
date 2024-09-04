@@ -21,10 +21,70 @@ public interface TestConstants {
 	String date = "2020-08-21 17:30:00";
 
 	String device1Name = "Test generator 1";
+
+	String serialNumber = "xx1xx6xxxxxx";
+
+	String LINKED_DEVICE_XML =
+			"""
+			<?xml version="1.0" encoding="UTF-8" ?>
+			<DAS>
+			<mode>LOGFILEUPLOAD</mode>
+			<name>"""
+					+ serialNumber
+					+ """
+			A1</name>
+			<serial>"""
+					+ serialNumber
+					+ """
+			</serial>
+			<devices>
+			<device>
+			<name>"""
+					+ device1Name
+					+ """
+			</name>
+			<address>1</address>
+			<type>xxxxxx</type>
+			<class>4000</class>
+			<numpoints>17</numpoints>
+			<records>
+			<record>
+			<time zone="UTC">"""
+					+ date
+					+ """
+			</time>
+			<error text="Ok">0</error>
+			<point number="0" name="DC Voltage" units="V" value="367.970" />
+			<point number="1" name="Real AC Power" units="W" value="51113.281" />
+			<point number="2" name="AC Grid Frequency" units="Hz" value="59.961" />
+			<point number="3" name="AC Power Stage Current" units="A" value="154.741" />
+			<point number="4" name="L1-to-L2 AC Voltage" units="V" value="500.978" />
+			<point number="5" name="L2-to-L3 AC Voltage" units="V" value="502.736" />
+			<point number="6" name="L1-to-L3 AC Voltage" units="V" value="502.150" />
+			<point number="7" name="Phase Sequence" units="" value="1.000" />
+			<point number="8" name="Ac Energy/MSW" units="KWh" value="227.000" />
+			<point number="9" name="AC Energy/LSW" units="" value="5433.500" />
+			<point number="10" name="On-grid Hours MSW" units="Hrs" value="0" />
+			<point number="11" name="On-Grid Hours LSW" units="" value="47366.000" />
+			<point number="12" name="Fan on-time Hours" units="Hrs" value="34822.000" />
+			<point number="13" name="AC Contactors Cycles" units="" value="24311.000" />
+			<point number="14" name="Slave ID" units="" value="1.000" />
+			<point number="15" name="Critical Alarms" units="" value="0" />
+			<point number="16" name="Informative Alarms" units="" value="0" />
+			</record>
+			</records>
+			</device>
+			</devices>
+			</DAS>""";
+
 	String device1Xml = "<DAS>\n"
 			+ "<mode>LOGFILEUPLOAD</mode>"
-			+ "<name>xx1xx6xxxxxx</name>\n"
-			+ "<serial>xx1xx6xxxxxx</serial>\n"
+			+ "<name>"
+			+ serialNumber
+			+ " A1</name>\n"
+			+ "<serial>"
+			+ serialNumber
+			+ "</serial>\n"
 			+ "<devices>\n"
 			+ "<device>\n"
 			+ "<name>"
