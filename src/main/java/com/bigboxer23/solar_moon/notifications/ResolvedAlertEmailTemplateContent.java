@@ -17,7 +17,7 @@ public class ResolvedAlertEmailTemplateContent extends AlarmEmailTemplateContent
 	@Override
 	protected void singleDevice() {
 		super.singleDevice();
-		setSubject("Alerts for " + devices.getFirst().getDisplayName() + " have been resolved");
+		setSubject("🟢 RESOLVED: " + devices.getFirst().getDisplayName() + " no longer has active alerts");
 		StringBuilder builder = new StringBuilder(
 				"Alerts for your device, <b>" + devices.getFirst().getDisplayName() + "</b>");
 		if (!StringUtils.isEmpty(devices.getFirst().getSiteId())) {
@@ -32,7 +32,7 @@ public class ResolvedAlertEmailTemplateContent extends AlarmEmailTemplateContent
 	@Override
 	protected void multipleDevices() {
 		super.multipleDevices();
-		setSubject("Alerts for your solar energy devices have resolved");
+		setSubject("🟢 RESOLVED: Alerts for your solar energy devices have resolved");
 		StringBuilder builder = new StringBuilder("Alerts for the following devices have resolved:<br/>");
 		devices.forEach(d -> {
 			builder.append("<br/><b>").append(d.getDisplayName()).append("</b>");
