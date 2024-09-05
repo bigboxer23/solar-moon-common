@@ -112,7 +112,8 @@ public class TestLinkedDeviceComponent implements IComponentRegistry {
 		altDevice.setSerialNumber("xxxx");
 		deviceComponent.updateDevice(altDevice);
 
-		LinkedDevice altLinkedDevice = new LinkedDevice(altDevice.getSerialNumber(), CUSTOMER_ID, "0", "0", System.currentTimeMillis());
+		LinkedDevice altLinkedDevice =
+				new LinkedDevice(altDevice.getSerialNumber(), CUSTOMER_ID, "0", "0", System.currentTimeMillis());
 		linkedDeviceComponent.update(altLinkedDevice);
 
 		assertTrue(linkedDeviceComponent

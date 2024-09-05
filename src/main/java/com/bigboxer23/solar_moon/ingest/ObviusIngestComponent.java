@@ -69,6 +69,7 @@ public class ObviusIngestComponent implements MeterConstants {
 			logger.error("error getting device for device name " + findDeviceName(body));
 			return null;
 		}
+		handleSerialNumber(device, body);
 		logger.debug("parsing device body: " + body);
 		return IComponentRegistry.generationComponent.handleDevice(
 				device,
@@ -77,6 +78,18 @@ public class ObviusIngestComponent implements MeterConstants {
 								body, server.getSiteId(), server.getDisplayName(), customerId, server.getId()))
 						.filter(DeviceData::isValid)
 						.orElse(null));
+	}
+
+	public void handleSerialNumber(Device device, String body) throws XPathExpressionException {
+		if (device == null || StringUtils.isBlank(body) || StringUtils.isNotBlank(device.getSerialNumber())) {
+			return;
+		}
+		getNodeListForPath(body, SERIAL_PATH).ifPresent(nodes -> {
+			if (nodes.getLength() > 0 && StringUtils.isNotBlank(nodes.item(0).getTextContent())) {
+				device.setSerialNumber(nodes.item(0).getTextContent());
+				IComponentRegistry.deviceComponent.updateDevice(device);
+			}
+		});
 	}
 
 	public boolean isLinkedDevice(String body) throws XPathExpressionException {
@@ -95,7 +108,7 @@ public class ObviusIngestComponent implements MeterConstants {
 
 	public void handleLinkedBody(String body, String customerId) {
 		logger.info("handling linked device");
-		//TODO:
+		// TODO:
 	}
 
 	public boolean isUpdateEvent(String body) throws XPathExpressionException {

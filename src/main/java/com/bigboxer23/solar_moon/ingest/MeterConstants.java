@@ -71,4 +71,6 @@ public interface MeterConstants {
 	String CRITICAL_ALARMS = "Critical Alarms";
 
 	String INFORMATIVE_ALARMS = "Informative Alarms";
+
+	String SERIAL_PATH = "/DAS/serial";
 }
