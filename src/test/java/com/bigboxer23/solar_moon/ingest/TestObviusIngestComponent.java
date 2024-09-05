@@ -14,6 +14,7 @@ import com.bigboxer23.solar_moon.data.DeviceData;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import javax.xml.xpath.XPathExpressionException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,6 +56,32 @@ public class TestObviusIngestComponent implements TestConstants, IComponentRegis
 		assertTrue(obviousIngestComponent.isLinkedDevice(LINKED_DEVICE_XML.replace(INFORMATIVE_ALARMS, "xxx")));
 		assertFalse(obviousIngestComponent.isLinkedDevice(
 				LINKED_DEVICE_XML.replace(CRITICAL_ALARMS, "xxx").replace(INFORMATIVE_ALARMS, "yyy")));
+	}
+
+	@Test
+	public void handleSerialNumber() throws XPathExpressionException {
+		assertNotNull(TestUtils.getDevice().getSerialNumber());
+		TestUtils.getDevice().setSerialNumber(null);
+		deviceComponent.updateDevice(TestUtils.getDevice());
+		Optional<Device> dbDevice =
+				deviceComponent.findDeviceById(TestUtils.getDevice().getId(), CUSTOMER_ID);
+		assertTrue(dbDevice.isPresent());
+		assertNull(dbDevice.get().getSerialNumber());
+
+		obviousIngestComponent.handleSerialNumber(device, null);
+		dbDevice = deviceComponent.findDeviceById(TestUtils.getDevice().getId(), CUSTOMER_ID);
+		assertTrue(dbDevice.isPresent());
+		assertNull(dbDevice.get().getSerialNumber());
+		obviousIngestComponent.handleSerialNumber(device, device1Xml);
+		dbDevice = deviceComponent.findDeviceById(TestUtils.getDevice().getId(), CUSTOMER_ID);
+		assertTrue(dbDevice.isPresent());
+		assertEquals(TestConstants.serialNumber, dbDevice.get().getSerialNumber());
+
+		obviousIngestComponent.handleSerialNumber(
+				device, device1Xml.replace(TestConstants.serialNumber, "testingSerial"));
+		dbDevice = deviceComponent.findDeviceById(TestUtils.getDevice().getId(), CUSTOMER_ID);
+		assertTrue(dbDevice.isPresent());
+		assertEquals(TestConstants.serialNumber, dbDevice.get().getSerialNumber());
 	}
 
 	@Test
