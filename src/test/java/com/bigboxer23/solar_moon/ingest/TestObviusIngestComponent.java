@@ -59,6 +59,62 @@ public class TestObviusIngestComponent implements TestConstants, IComponentRegis
 	}
 
 	@Test
+	public void handleLinkedBody() throws XPathExpressionException {
+		linkedDeviceComponent.delete(serialNumber, CUSTOMER_ID);
+		assertFalse(linkedDeviceComponent
+				.queryBySerialNumber(serialNumber, CUSTOMER_ID)
+				.isPresent());
+
+		obviousIngestComponent.handleLinkedBody(null, CUSTOMER_ID);
+		assertFalse(linkedDeviceComponent
+				.queryBySerialNumber(serialNumber, CUSTOMER_ID)
+				.isPresent());
+		obviousIngestComponent.handleLinkedBody(
+				LINKED_DEVICE_XML.replace("<serial>", "<ss>").replace("</serial>", "</ss>"), CUSTOMER_ID);
+		assertFalse(linkedDeviceComponent
+				.queryBySerialNumber(serialNumber, CUSTOMER_ID)
+				.isPresent());
+
+		obviousIngestComponent.handleLinkedBody(LINKED_DEVICE_XML, null);
+		assertFalse(linkedDeviceComponent
+				.queryBySerialNumber(serialNumber, CUSTOMER_ID)
+				.isPresent());
+
+		obviousIngestComponent.handleLinkedBody(LINKED_DEVICE_XML.replace(date, "garbage date"), CUSTOMER_ID);
+		assertFalse(linkedDeviceComponent
+				.queryBySerialNumber(serialNumber, CUSTOMER_ID)
+				.isPresent());
+
+		obviousIngestComponent.handleLinkedBody(LINKED_DEVICE_XML, CUSTOMER_ID);
+		assertTrue(linkedDeviceComponent
+				.queryBySerialNumber(serialNumber, CUSTOMER_ID)
+				.isPresent());
+	}
+
+	@Test
+	public void findSerialNumber() throws XPathExpressionException {
+		try {
+			obviousIngestComponent.findSerialNumber(serialNumber);
+			fail();
+		} catch (XPathExpressionException ignored) {
+
+		}
+		assertFalse(obviousIngestComponent.findSerialNumber(null).isPresent());
+		assertFalse(obviousIngestComponent.findSerialNumber("").isPresent());
+
+		Optional<String> serial = obviousIngestComponent.findSerialNumber(
+				LINKED_DEVICE_XML.replace("<serial>", "<ss>").replace("</serial>", "</ss>"));
+		assertFalse(serial.isPresent());
+
+		serial = obviousIngestComponent.findSerialNumber(LINKED_DEVICE_XML);
+		assertTrue(serial.isPresent());
+		assertEquals(serialNumber, serial.get());
+		serial = obviousIngestComponent.findSerialNumber(device1Xml);
+		assertTrue(serial.isPresent());
+		assertEquals(serialNumber, serial.get());
+	}
+
+	@Test
 	public void handleSerialNumber() throws XPathExpressionException {
 		assertNotNull(TestUtils.getDevice().getSerialNumber());
 		TestUtils.getDevice().setSerialNumber(null);

@@ -28,9 +28,13 @@ public class LinkedDevice {
 
 	public LinkedDevice() {}
 
-	public LinkedDevice(String id, String customerId, String criticalAlarm, String informativeAlarm, long date) {
+	public LinkedDevice(String id, String customerId) {
 		setId(id);
 		setCustomerId(customerId);
+	}
+
+	public LinkedDevice(String id, String customerId, String criticalAlarm, String informativeAlarm, long date) {
+		this(id, customerId);
 		setCriticalAlarm(criticalAlarm);
 		setInformativeAlarm(informativeAlarm);
 		setDate(date);
