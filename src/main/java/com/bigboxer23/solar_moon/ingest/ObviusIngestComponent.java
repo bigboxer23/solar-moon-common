@@ -135,17 +135,19 @@ public class ObviusIngestComponent implements MeterConstants {
 		}
 		getNodeListForPath(body, POINT_PATH).ifPresent(nodes -> {
 			for (int i = 0;
-					StringUtils.isEmpty(linkedDevice.getCriticalAlarm())
-							&& StringUtils.isEmpty(linkedDevice.getInformativeAlarm())
+					(StringUtils.isEmpty(linkedDevice.getCriticalAlarm())
+									|| StringUtils.isEmpty(linkedDevice.getInformativeAlarm()))
 							&& i < nodes.getLength();
 					i++) {
 				String attributeName =
 						nodes.item(i).getAttributes().getNamedItem("name").getNodeValue();
 				if (CRITICAL_ALARMS.equals(attributeName)) {
-					linkedDevice.setCriticalAlarm(nodes.item(i).getTextContent());
+					linkedDevice.setCriticalAlarm(
+							nodes.item(i).getAttributes().getNamedItem("value").getNodeValue());
 				}
 				if (INFORMATIVE_ALARMS.equals(attributeName)) {
-					linkedDevice.setInformativeAlarm(nodes.item(i).getTextContent());
+					linkedDevice.setInformativeAlarm(
+							nodes.item(i).getAttributes().getNamedItem("value").getNodeValue());
 				}
 			}
 		});

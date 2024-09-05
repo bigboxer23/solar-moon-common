@@ -11,6 +11,7 @@ import com.bigboxer23.solar_moon.alarm.IAlarmConstants;
 import com.bigboxer23.solar_moon.data.Alarm;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
+import com.bigboxer23.solar_moon.data.LinkedDevice;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -86,9 +87,10 @@ public class TestObviusIngestComponent implements TestConstants, IComponentRegis
 				.isPresent());
 
 		obviousIngestComponent.handleLinkedBody(LINKED_DEVICE_XML, CUSTOMER_ID);
-		assertTrue(linkedDeviceComponent
-				.queryBySerialNumber(serialNumber, CUSTOMER_ID)
-				.isPresent());
+		Optional<LinkedDevice> linkedDevice = linkedDeviceComponent.queryBySerialNumber(serialNumber, CUSTOMER_ID);
+		assertTrue(linkedDevice.isPresent());
+		assertEquals("0", linkedDevice.get().getCriticalAlarm());
+		assertEquals("0", linkedDevice.get().getInformativeAlarm());
 	}
 
 	@Test
