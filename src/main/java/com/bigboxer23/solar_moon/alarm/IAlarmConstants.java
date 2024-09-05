@@ -11,4 +11,6 @@ public interface IAlarmConstants {
 	int RESOLVED = 0;
 
 	int ACTIVE = 1;
+
+	String FAN_OVER_40K_HOURS = "2028.000";
 }
