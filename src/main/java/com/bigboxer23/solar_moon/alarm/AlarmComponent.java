@@ -62,6 +62,9 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 					+ maybeAlarm.get().getAlarmId());
 			return;
 		}
+		if (isLinkedDeviceErrored(deviceData, null).isPresent()) {
+			return;
+		}
 		maybeAlarm.ifPresent(alarm -> {
 			logger.warn("Resolving alarm for "
 					+ alarm.getAlarmId()
@@ -81,6 +84,48 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		});
 		// TODO: inspect data to see if looks "normal"
 
+	}
+
+	/**
+	 * Return the linked device if error state is detected
+	 *
+	 * @param deviceData
+	 * @param device
+	 * @return
+	 */
+	protected Optional<LinkedDevice> isLinkedDeviceErrored(DeviceData deviceData, Device device) {
+		if (deviceData == null) {
+			logger.debug("device data empty, linked device is normal.");
+			return Optional.empty();
+		}
+		Optional<Device> optionalDevice = device != null
+				? Optional.of(device)
+				: IComponentRegistry.deviceComponent.findDeviceById(
+						deviceData.getDeviceId(), deviceData.getCustomerId());
+		if (optionalDevice.isEmpty() || StringUtils.isBlank(optionalDevice.get().getSerialNumber())) {
+			logger.debug("no device or no serial number found, linked device is normal.");
+			return Optional.empty();
+		}
+		Optional<LinkedDevice> linkedDevice = IComponentRegistry.linkedDeviceComponent.queryBySerialNumber(
+				optionalDevice.get().getSerialNumber(), deviceData.getCustomerId());
+		if (linkedDevice.isEmpty()) {
+			logger.debug("no linked device. " + optionalDevice.get().getSerialNumber());
+			return Optional.empty();
+		}
+		if ((StringUtils.isBlank(linkedDevice.get().getCriticalAlarm())
+						|| "0".equals(linkedDevice.get().getCriticalAlarm()))
+				&& (StringUtils.isBlank(linkedDevice.get().getInformativeAlarm())
+						|| "0".equals(linkedDevice.get().getInformativeAlarm()))) {
+			logger.debug("Linked device looks normal. " + optionalDevice.get().getSerialNumber());
+			return Optional.empty();
+		}
+		logger.warn("Linked device is in error state. "
+				+ optionalDevice.get().getSerialNumber()
+				+ " "
+				+ linkedDevice.get().getCriticalAlarm()
+				+ " "
+				+ linkedDevice.get().getInformativeAlarm());
+		return linkedDevice;
 	}
 
 	protected Alarm getNewAlarm(String customerId, String deviceId, String siteId, String content) {
@@ -348,6 +393,17 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		if (!isDeviceOK(device, data, isOpenSearchOk)) {
 			return alarmConditionDetected(
 					data.getCustomerId(), data.getDeviceId(), data.getSiteId(), "Device not generating power");
+		}
+		Optional<LinkedDevice> linkedDevice = isLinkedDeviceErrored(data, device);
+		if (linkedDevice.isPresent()) {
+			return alarmConditionDetected(
+					data.getCustomerId(),
+					data.getDeviceId(),
+					data.getSiteId(),
+					"Linked device has error(s): "
+							+ linkedDevice.get().getCriticalAlarm()
+							+ " "
+							+ linkedDevice.get().getInformativeAlarm());
 		}
 		return Optional.empty();
 	}

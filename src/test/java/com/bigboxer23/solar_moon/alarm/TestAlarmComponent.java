@@ -8,6 +8,7 @@ import com.bigboxer23.solar_moon.TestUtils;
 import com.bigboxer23.solar_moon.data.Alarm;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
+import com.bigboxer23.solar_moon.data.LinkedDevice;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.search.OpenSearchUtils;
 import com.bigboxer23.solar_moon.util.TimeConstants;
@@ -628,5 +629,51 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		deviceComponent.updateDevice(device);
 		alarmComponent.clearDisabledResolvedAlarms();
 		assertEquals(alarmComponent.getActiveAlarms().size(), alarms.size());
+	}
+
+	@Test
+	public void isLinkedDeviceErrored() {
+
+		assertFalse(linkedDeviceComponent
+				.queryBySerialNumber(TestUtils.getDevice().getSerialNumber(), CUSTOMER_ID)
+				.isPresent());
+		LinkedDevice linkedDevice = new LinkedDevice(TestUtils.getDevice().getSerialNumber(), CUSTOMER_ID);
+		linkedDevice.setDate(System.currentTimeMillis());
+		linkedDevice.setCriticalAlarm("1");
+		linkedDevice.setInformativeAlarm("1");
+		linkedDeviceComponent.update(linkedDevice);
+		assertTrue(linkedDeviceComponent
+				.queryBySerialNumber(TestUtils.getDevice().getSerialNumber(), CUSTOMER_ID)
+				.isPresent());
+		DeviceData deviceData = new DeviceData(
+				TestUtils.getDevice().getSiteId(),
+				CUSTOMER_ID,
+				TestUtils.getDevice().getId());
+
+		assertTrue(alarmComponent.isLinkedDeviceErrored(deviceData, null).isPresent());
+
+		Device device = new Device(TestUtils.getDevice().getId(), CUSTOMER_ID);
+
+		assertFalse(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent()); // No serial number
+		device.setSerialNumber(TestUtils.getDevice().getSerialNumber());
+		assertTrue(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent());
+
+		assertFalse(alarmComponent.isLinkedDeviceErrored(null, null).isPresent()); // null props
+
+		deviceData.setDeviceId("bad id");
+		assertFalse(alarmComponent.isLinkedDeviceErrored(deviceData, null).isPresent()); // Test no device, bad id
+		deviceData.setDeviceId(TestUtils.getDevice().getId());
+
+		// Test normal values
+		linkedDevice.setCriticalAlarm("0");
+		linkedDeviceComponent.update(linkedDevice);
+		assertTrue(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent());
+		linkedDevice.setInformativeAlarm("0");
+		linkedDeviceComponent.update(linkedDevice);
+		assertFalse(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent());
+
+		// test no linked device
+		linkedDeviceComponent.delete(linkedDevice.getId(), linkedDevice.getCustomerId());
+		assertFalse(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent());
 	}
 }
