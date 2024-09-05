@@ -115,7 +115,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		if ((StringUtils.isBlank(linkedDevice.get().getCriticalAlarm())
 						|| "0".equals(linkedDevice.get().getCriticalAlarm()))
 				&& (StringUtils.isBlank(linkedDevice.get().getInformativeAlarm())
-						|| "0".equals(linkedDevice.get().getInformativeAlarm()))) {
+						|| "0".equals(linkedDevice.get().getInformativeAlarm())
+						|| FAN_OVER_40K_HOURS.equals(linkedDevice.get().getInformativeAlarm()))) {
 			logger.debug("Linked device looks normal. " + optionalDevice.get().getSerialNumber());
 			return Optional.empty();
 		}

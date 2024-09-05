@@ -672,6 +672,15 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		linkedDeviceComponent.update(linkedDevice);
 		assertFalse(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent());
 
+		// Test FAN_OVER_40K_HOURS
+		linkedDevice.setCriticalAlarm("1");
+		linkedDevice.setInformativeAlarm(FAN_OVER_40K_HOURS);
+		linkedDeviceComponent.update(linkedDevice);
+		assertTrue(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent());
+		linkedDevice.setCriticalAlarm("0");
+		linkedDeviceComponent.update(linkedDevice);
+		assertFalse(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent());
+
 		// test no linked device
 		linkedDeviceComponent.delete(linkedDevice.getId(), linkedDevice.getCustomerId());
 		assertFalse(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent());
