@@ -3,6 +3,7 @@ package com.bigboxer23.solar_moon.ingest;
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
+import com.bigboxer23.solar_moon.data.LinkedDevice;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import java.io.StringReader;
 import java.math.BigDecimal;
@@ -82,13 +83,22 @@ public class ObviusIngestComponent implements MeterConstants {
 
 	public void handleSerialNumber(Device device, String body) throws XPathExpressionException {
 		if (device == null || StringUtils.isBlank(body) || StringUtils.isNotBlank(device.getSerialNumber())) {
+			logger.debug("not handling serial number, bad body, device or already exists on device");
 			return;
 		}
-		getNodeListForPath(body, SERIAL_PATH).ifPresent(nodes -> {
+		findSerialNumber(body).ifPresent(serialNumber -> {
+			logger.info("adding serial number " + device.getSerialNumber());
+			device.setSerialNumber(serialNumber);
+			IComponentRegistry.deviceComponent.updateDevice(device);
+		});
+	}
+
+	protected Optional<String> findSerialNumber(String body) throws XPathExpressionException {
+		return getNodeListForPath(body, SERIAL_PATH).map(nodes -> {
 			if (nodes.getLength() > 0 && StringUtils.isNotBlank(nodes.item(0).getTextContent())) {
-				device.setSerialNumber(nodes.item(0).getTextContent());
-				IComponentRegistry.deviceComponent.updateDevice(device);
+				return nodes.item(0).getTextContent();
 			}
+			return null;
 		});
 	}
 
@@ -106,9 +116,40 @@ public class ObviusIngestComponent implements MeterConstants {
 		return isLinkedDevice[0];
 	}
 
-	public void handleLinkedBody(String body, String customerId) {
-		logger.info("handling linked device");
-		// TODO:
+	public void handleLinkedBody(String body, String customerId) throws XPathExpressionException {
+		if (StringUtils.isBlank(body) || StringUtils.isBlank(customerId)) {
+			logger.error("Customer id or body is invalid, cannot handle linked body");
+			return;
+		}
+		Optional<String> serial = findSerialNumber(body);
+		if (serial.isEmpty()) {
+			logger.error("Can't find serial number, cannot handle linked body");
+			return;
+		}
+		logger.info("handling linked device " + serial.get());
+		LinkedDevice linkedDevice = new LinkedDevice(serial.get(), customerId);
+		getTimestampFromBody(body).map(Date::getTime).ifPresent(linkedDevice::setDate);
+		if (linkedDevice.getDate() <= 0) {
+			logger.error(linkedDevice.getId() + " Can't find date, cannot handle linked body");
+			return;
+		}
+		getNodeListForPath(body, POINT_PATH).ifPresent(nodes -> {
+			for (int i = 0;
+					StringUtils.isEmpty(linkedDevice.getCriticalAlarm())
+							&& StringUtils.isEmpty(linkedDevice.getInformativeAlarm())
+							&& i < nodes.getLength();
+					i++) {
+				String attributeName =
+						nodes.item(i).getAttributes().getNamedItem("name").getNodeValue();
+				if (CRITICAL_ALARMS.equals(attributeName)) {
+					linkedDevice.setCriticalAlarm(nodes.item(i).getTextContent());
+				}
+				if (INFORMATIVE_ALARMS.equals(attributeName)) {
+					linkedDevice.setInformativeAlarm(nodes.item(i).getTextContent());
+				}
+			}
+		});
+		IComponentRegistry.linkedDeviceComponent.update(linkedDevice);
 	}
 
 	public boolean isUpdateEvent(String body) throws XPathExpressionException {
