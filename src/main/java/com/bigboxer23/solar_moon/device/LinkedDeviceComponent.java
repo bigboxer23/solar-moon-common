@@ -1,6 +1,8 @@
 package com.bigboxer23.solar_moon.device;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.data.Device;
+import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.data.LinkedDevice;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import java.util.Optional;
@@ -54,5 +56,20 @@ public class LinkedDeviceComponent extends AbstractDynamodbComponent<LinkedDevic
 	@Override
 	protected Class<LinkedDevice> getObjectClass() {
 		return LinkedDevice.class;
+	}
+
+	public void addLinkedDeviceData(Device device, DeviceData deviceData) {
+		if (device == null
+				|| deviceData == null
+				|| StringUtils.isBlank(device.getSerialNumber())
+				|| StringUtils.isBlank(device.getClientId())) {
+			return;
+		}
+		Optional<LinkedDevice> linkedDevice = queryBySerialNumber(device.getSerialNumber(), deviceData.getCustomerId());
+		if (linkedDevice.isEmpty()) {
+			return;
+		}
+		deviceData.setCriticalError(linkedDevice.get().getCriticalAlarm());
+		deviceData.setInformationalError(linkedDevice.get().getInformativeAlarm());
 	}
 }

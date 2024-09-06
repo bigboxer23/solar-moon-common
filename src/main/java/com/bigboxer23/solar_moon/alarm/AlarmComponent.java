@@ -403,9 +403,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 					data.getDeviceId(),
 					data.getSiteId(),
 					"Linked device has error(s): "
-							+ linkedDevice.get().getCriticalAlarm()
-							+ " "
-							+ linkedDevice.get().getInformativeAlarm());
+							+ SolectriaErrorOracle.translateError(
+									linkedDevice.get().getCriticalAlarm(), true));
 		}
 		return Optional.empty();
 	}

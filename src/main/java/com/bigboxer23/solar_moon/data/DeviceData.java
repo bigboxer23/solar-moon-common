@@ -74,6 +74,12 @@ public class DeviceData {
 	@JsonProperty(CLOUD_COVER)
 	private float cloudCover = 0;
 
+	@JsonProperty(CRITICAL_ERROR)
+	private int criticalError = -1;
+
+	@JsonProperty(INFORMATIONAL_ERROR)
+	private int informationalError = -1;
+
 	public DeviceData() {}
 
 	public DeviceData(String siteId, String customerId, String deviceId) {
@@ -100,6 +106,8 @@ public class DeviceData {
 		setCloudCover(deviceData.getCloudCover());
 		setUVIndex(deviceData.getUVIndex());
 		setPrecipitationIntensity(deviceData.getPrecipitationIntensity());
+		setInformationalError(deviceData.getInformationalError());
+		setCriticalError(deviceData.getCriticalError());
 	}
 
 	public static DeviceData createEmpty(String siteId, String customerId, String deviceId, Date timestamp) {
@@ -168,6 +176,12 @@ public class DeviceData {
 				break;
 			case CLOUD_COVER:
 				setCloudCover(doubleToFloat(value));
+				break;
+			case CRITICAL_ERROR:
+				setCriticalError(Math.round(doubleToFloat(value)));
+				break;
+			case INFORMATIONAL_ERROR:
+				setInformationalError(Math.round(doubleToFloat(value)));
 				break;
 			default:
 				LoggerFactory.getLogger(DeviceData.class).error("unknown field: " + key);
