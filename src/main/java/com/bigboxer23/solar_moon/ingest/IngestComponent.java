@@ -36,6 +36,7 @@ public class IngestComponent implements MeterConstants {
 		IComponentRegistry.locationComponent.addLocationData(deviceData, site.orElse(null));
 		IComponentRegistry.weatherComponent.addWeatherData(deviceData, site.orElse(null));
 		IComponentRegistry.alarmComponent.resolveActiveAlarms(deviceData);
+		IComponentRegistry.linkedDeviceComponent.addLinkedDeviceData(device, deviceData);
 		IComponentRegistry.OSComponent.logData(
 				deviceData.getDate() != null ? deviceData.getDate() : new Date(),
 				Collections.singletonList(deviceData));

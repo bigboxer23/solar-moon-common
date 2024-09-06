@@ -25,7 +25,11 @@ public class TestLinkedDeviceComponent implements IComponentRegistry {
 				.queryBySerialNumber(TestUtils.getDevice().getSerialNumber(), CUSTOMER_ID)
 				.isPresent());
 		LinkedDevice linkedDevice = new LinkedDevice(
-				TestUtils.getDevice().getSerialNumber(), CUSTOMER_ID, ISolectriaConstants.NOMINAL, ISolectriaConstants.NOMINAL, System.currentTimeMillis());
+				TestUtils.getDevice().getSerialNumber(),
+				CUSTOMER_ID,
+				ISolectriaConstants.NOMINAL,
+				ISolectriaConstants.NOMINAL,
+				System.currentTimeMillis());
 		linkedDeviceComponent.update(linkedDevice);
 	}
 
@@ -113,8 +117,12 @@ public class TestLinkedDeviceComponent implements IComponentRegistry {
 		altDevice.setSerialNumber("xxxx");
 		deviceComponent.updateDevice(altDevice);
 
-		LinkedDevice altLinkedDevice =
-				new LinkedDevice(altDevice.getSerialNumber(), CUSTOMER_ID, ISolectriaConstants.NOMINAL, ISolectriaConstants.NOMINAL, System.currentTimeMillis());
+		LinkedDevice altLinkedDevice = new LinkedDevice(
+				altDevice.getSerialNumber(),
+				CUSTOMER_ID,
+				ISolectriaConstants.NOMINAL,
+				ISolectriaConstants.NOMINAL,
+				System.currentTimeMillis());
 		linkedDeviceComponent.update(altLinkedDevice);
 
 		assertTrue(linkedDeviceComponent

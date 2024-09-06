@@ -63,6 +63,10 @@ public interface MeterConstants {
 
 	String VISIBILITY = "visibility";
 
+	String CRITICAL_ERROR = "criticalError";
+
+	String INFORMATIONAL_ERROR = "informationalError";
+
 	String CUSTOMER_ID_ATTRIBUTE = "customer-id";
 
 	float OBVIOUS_ROLLOVER = 10000000;
