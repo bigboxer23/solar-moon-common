@@ -5,6 +5,7 @@ import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.data.LinkedDevice;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
+import com.bigboxer23.solar_moon.util.TimeConstants;
 import java.util.Optional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
@@ -67,6 +68,9 @@ public class LinkedDeviceComponent extends AbstractDynamodbComponent<LinkedDevic
 		}
 		Optional<LinkedDevice> linkedDevice = queryBySerialNumber(device.getSerialNumber(), deviceData.getCustomerId());
 		if (linkedDevice.isEmpty()) {
+			return;
+		}
+		if (linkedDevice.get().getDate() < System.currentTimeMillis() - TimeConstants.HOUR) {
 			return;
 		}
 		deviceData.setCriticalError(linkedDevice.get().getCriticalAlarm());
