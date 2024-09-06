@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.TestUtils;
+import com.bigboxer23.solar_moon.alarm.ISolectriaConstants;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.LinkedDevice;
 import java.util.Optional;
@@ -24,7 +25,7 @@ public class TestLinkedDeviceComponent implements IComponentRegistry {
 				.queryBySerialNumber(TestUtils.getDevice().getSerialNumber(), CUSTOMER_ID)
 				.isPresent());
 		LinkedDevice linkedDevice = new LinkedDevice(
-				TestUtils.getDevice().getSerialNumber(), CUSTOMER_ID, "0", "0", System.currentTimeMillis());
+				TestUtils.getDevice().getSerialNumber(), CUSTOMER_ID, ISolectriaConstants.NOMINAL, ISolectriaConstants.NOMINAL, System.currentTimeMillis());
 		linkedDeviceComponent.update(linkedDevice);
 	}
 
@@ -57,7 +58,7 @@ public class TestLinkedDeviceComponent implements IComponentRegistry {
 				linkedDeviceComponent.queryBySerialNumber(TestUtils.getDevice().getSerialNumber(), CUSTOMER_ID);
 		assertTrue(dbLinkedDevice.isPresent());
 		assertNotEquals(0, dbLinkedDevice.get().getDate());
-		dbLinkedDevice.get().setCriticalAlarm("1234");
+		dbLinkedDevice.get().setCriticalAlarm(ISolectriaConstants.AC_Contactor_Opened);
 		dbLinkedDevice.get().setDate(1);
 		linkedDeviceComponent.update(dbLinkedDevice.get());
 		dbLinkedDevice =
@@ -113,7 +114,7 @@ public class TestLinkedDeviceComponent implements IComponentRegistry {
 		deviceComponent.updateDevice(altDevice);
 
 		LinkedDevice altLinkedDevice =
-				new LinkedDevice(altDevice.getSerialNumber(), CUSTOMER_ID, "0", "0", System.currentTimeMillis());
+				new LinkedDevice(altDevice.getSerialNumber(), CUSTOMER_ID, ISolectriaConstants.NOMINAL, ISolectriaConstants.NOMINAL, System.currentTimeMillis());
 		linkedDeviceComponent.update(altLinkedDevice);
 
 		assertTrue(linkedDeviceComponent

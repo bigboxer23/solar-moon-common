@@ -1,6 +1,7 @@
 package com.bigboxer23.solar_moon.ingest;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.alarm.SolectriaErrorOracle;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.data.LinkedDevice;
@@ -135,30 +136,22 @@ public class ObviusIngestComponent implements MeterConstants {
 		}
 		getNodeListForPath(body, POINT_PATH).ifPresent(nodes -> {
 			for (int i = 0;
-					(StringUtils.isEmpty(linkedDevice.getCriticalAlarm())
-									|| StringUtils.isEmpty(linkedDevice.getInformativeAlarm()))
+					(linkedDevice.getCriticalAlarm() == -1 || linkedDevice.getInformativeAlarm() == -1)
 							&& i < nodes.getLength();
 					i++) {
 				String attributeName =
 						nodes.item(i).getAttributes().getNamedItem("name").getNodeValue();
 				if (CRITICAL_ALARMS.equals(attributeName)) {
-					linkedDevice.setCriticalAlarm(getLinkedAlarmValue(
+					linkedDevice.setCriticalAlarm(SolectriaErrorOracle.rawErrorToCode(
 							nodes.item(i).getAttributes().getNamedItem("value").getNodeValue()));
 				}
 				if (INFORMATIVE_ALARMS.equals(attributeName)) {
-					linkedDevice.setInformativeAlarm(getLinkedAlarmValue(
+					linkedDevice.setInformativeAlarm(SolectriaErrorOracle.rawErrorToCode(
 							nodes.item(i).getAttributes().getNamedItem("value").getNodeValue()));
 				}
 			}
 		});
 		IComponentRegistry.linkedDeviceComponent.update(linkedDevice);
-	}
-
-	private String getLinkedAlarmValue(String value) {
-		if (StringUtils.isBlank(value) || "NULL".equals(value)) {
-			return "0";
-		}
-		return value;
 	}
 
 	public boolean isUpdateEvent(String body) throws XPathExpressionException {

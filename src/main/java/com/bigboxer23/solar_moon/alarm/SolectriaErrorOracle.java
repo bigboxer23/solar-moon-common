@@ -5,8 +5,7 @@ import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 public class SolectriaErrorOracle implements ISolectriaConstants {
-	public static String translateError(String rawErrorCode, boolean criticalErrorType) {
-		int errorCode = rawErrorToCode(rawErrorCode);
+	public static String translateError(int errorCode, boolean criticalErrorType) {
 		if (errorCode == 0) {
 			return "";
 		}
@@ -22,7 +21,7 @@ public class SolectriaErrorOracle implements ISolectriaConstants {
 		return builder.toString();
 	}
 
-	protected static int rawErrorToCode(String rawErrorCode) {
+	public static int rawErrorToCode(String rawErrorCode) {
 		if (StringUtils.isBlank(rawErrorCode)) {
 			return 0;
 		}

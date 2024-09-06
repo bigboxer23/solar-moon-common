@@ -18,10 +18,10 @@ public class LinkedDevice {
 	String customerId;
 
 	@Schema(description = "Content of critical alarm")
-	String criticalAlarm;
+	int criticalAlarm = -1;
 
 	@Schema(description = "Content of informative alarm")
-	String informativeAlarm;
+	int informativeAlarm = -1;
 
 	@Schema(description = "date data was retrieved from")
 	long date;
@@ -33,7 +33,7 @@ public class LinkedDevice {
 		setCustomerId(customerId);
 	}
 
-	public LinkedDevice(String id, String customerId, String criticalAlarm, String informativeAlarm, long date) {
+	public LinkedDevice(String id, String customerId, int criticalAlarm, int informativeAlarm, long date) {
 		this(id, customerId);
 		setCriticalAlarm(criticalAlarm);
 		setInformativeAlarm(informativeAlarm);
