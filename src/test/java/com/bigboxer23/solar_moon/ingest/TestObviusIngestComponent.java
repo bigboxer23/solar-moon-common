@@ -91,6 +91,20 @@ public class TestObviusIngestComponent implements TestConstants, IComponentRegis
 		assertTrue(linkedDevice.isPresent());
 		assertEquals("0", linkedDevice.get().getCriticalAlarm());
 		assertEquals("0", linkedDevice.get().getInformativeAlarm());
+
+		obviousIngestComponent.handleLinkedBody(
+				LINKED_DEVICE_XML
+						.replace(
+								TestConstants.criticalAlarmsTestString,
+								TestConstants.criticalAlarmsTestString.replace("value=\"0", "value=\"NULL"))
+						.replace(
+								TestConstants.informativeAlarmsTestString,
+								TestConstants.informativeAlarmsTestString.replace("value=\"0", "value=\"NULL")),
+				CUSTOMER_ID);
+		linkedDevice = linkedDeviceComponent.queryBySerialNumber(serialNumber, CUSTOMER_ID);
+		assertTrue(linkedDevice.isPresent());
+		assertEquals("0", linkedDevice.get().getCriticalAlarm());
+		assertEquals("0", linkedDevice.get().getInformativeAlarm());
 	}
 
 	@Test

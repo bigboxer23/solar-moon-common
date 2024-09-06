@@ -24,6 +24,9 @@ public interface TestConstants {
 
 	String serialNumber = "xx1xx6xxxxxx";
 
+	String criticalAlarmsTestString = "<point number=\"15\" name=\"Critical Alarms\" units=\"\" value=\"0\" />";
+	String informativeAlarmsTestString = "<point number=\"15\" name=\"Informative Alarms\" units=\"\" value=\"0\" />";
+
 	String LINKED_DEVICE_XML =
 			"""
 			<?xml version="1.0" encoding="UTF-8" ?>
@@ -69,8 +72,12 @@ public interface TestConstants {
 			<point number="12" name="Fan on-time Hours" units="Hrs" value="34822.000" />
 			<point number="13" name="AC Contactors Cycles" units="" value="24311.000" />
 			<point number="14" name="Slave ID" units="" value="1.000" />
-			<point number="15" name="Critical Alarms" units="" value="0" />
-			<point number="16" name="Informative Alarms" units="" value="0" />
+			"""
+					+ criticalAlarmsTestString
+					+ """
+			"""
+					+ informativeAlarmsTestString
+					+ """
 			</record>
 			</records>
 			</device>

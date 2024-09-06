@@ -142,16 +142,23 @@ public class ObviusIngestComponent implements MeterConstants {
 				String attributeName =
 						nodes.item(i).getAttributes().getNamedItem("name").getNodeValue();
 				if (CRITICAL_ALARMS.equals(attributeName)) {
-					linkedDevice.setCriticalAlarm(
-							nodes.item(i).getAttributes().getNamedItem("value").getNodeValue());
+					linkedDevice.setCriticalAlarm(getLinkedAlarmValue(
+							nodes.item(i).getAttributes().getNamedItem("value").getNodeValue()));
 				}
 				if (INFORMATIVE_ALARMS.equals(attributeName)) {
-					linkedDevice.setInformativeAlarm(
-							nodes.item(i).getAttributes().getNamedItem("value").getNodeValue());
+					linkedDevice.setInformativeAlarm(getLinkedAlarmValue(
+							nodes.item(i).getAttributes().getNamedItem("value").getNodeValue()));
 				}
 			}
 		});
 		IComponentRegistry.linkedDeviceComponent.update(linkedDevice);
+	}
+
+	private String getLinkedAlarmValue(String value) {
+		if (StringUtils.isBlank(value) || "NULL".equals(value)) {
+			return "0";
+		}
+		return value;
 	}
 
 	public boolean isUpdateEvent(String body) throws XPathExpressionException {
