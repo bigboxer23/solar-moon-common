@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon.alarm;
 
+import java.util.Map;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
@@ -11,9 +12,10 @@ public class SolectriaErrorOracle implements ISolectriaConstants {
 		}
 		StringBuilder builder = new StringBuilder();
 		String[] newline = {""};
-		INFORMATIVE_ERROR_CODES.keySet().forEach(key -> {
+		Map<Integer, String> errorCodeMap = (criticalErrorType ? CRITICAL_ERROR_CODES : INFORMATIVE_ERROR_CODES);
+		errorCodeMap.keySet().forEach(key -> {
 			if ((errorCode & key) == key) {
-				builder.append(newline[0]).append(INFORMATIVE_ERROR_CODES.get(key));
+				builder.append(newline[0]).append(errorCodeMap.get(key));
 				newline[0] = "\n";
 			}
 		});

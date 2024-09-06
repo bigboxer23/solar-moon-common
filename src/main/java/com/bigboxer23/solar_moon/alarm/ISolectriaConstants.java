@@ -45,4 +45,32 @@ public interface ISolectriaConstants {
 			put(UL_Islanding_Fault, "UL Islanding Fault");
 		}
 	};
+
+	int Temperature_Sensor_Failure = 1;
+	int AC_Contactor_Opened = 1 << 1;
+	int Power_Stage_Over_Temperature = 1 << 2;
+	int Power_Stage_Desaturation = 1 << 3;
+	int Contactor_Failure = 1 << 4;
+	int AC_Current_Sensor_Circuit_Failure = 1 << 5;
+	int MOV_Failure = 1 << 6;
+	int Ground_Fault_Failure = 1 << 7;
+	int VAC_Sense_Circuit_Failure = 1 << 8;
+	int Open_Phase_Failure = 1 << 9;
+	int MAG_Failure = 1 << 10;
+
+	Map<Integer, String> CRITICAL_ERROR_CODES = new HashMap<Integer, String>() {
+		{
+			put(Temperature_Sensor_Failure, "Temperature Sensor Failure");
+			put(AC_Contactor_Opened, "AC Contactor Opened");
+			put(Power_Stage_Over_Temperature, "Power Stage Over Temperature");
+			put(Power_Stage_Desaturation, "Power Stage Desaturation");
+			put(Contactor_Failure, "Contactor Failure ");
+			put(AC_Current_Sensor_Circuit_Failure, "AC Current Sensor Circuit Failure");
+			put(MOV_Failure, "MOV Failure ");
+			put(Ground_Fault_Failure, "Ground Fault Failure");
+			put(VAC_Sense_Circuit_Failure, "VAC Sense Circuit Failure ");
+			put(Open_Phase_Failure, "Open Phase Failure");
+			put(MAG_Failure, "MAG Failure");
+		}
+	};
 }
