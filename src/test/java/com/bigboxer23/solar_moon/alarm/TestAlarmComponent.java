@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.opensearch.client.ResponseException;
 
 /** */
-public class TestAlarmComponent implements IComponentRegistry, TestConstants, IAlarmConstants {
+public class TestAlarmComponent implements IComponentRegistry, TestConstants, IAlarmConstants, ISolectriaConstants {
 	public static final String TEST_ALARM_ID = "2883206e-9e35-4bdd-8c32-d1b35357b22f";
 
 	@BeforeEach
@@ -639,8 +639,8 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 				.isPresent());
 		LinkedDevice linkedDevice = new LinkedDevice(TestUtils.getDevice().getSerialNumber(), CUSTOMER_ID);
 		linkedDevice.setDate(System.currentTimeMillis());
-		linkedDevice.setCriticalAlarm("1");
-		linkedDevice.setInformativeAlarm("1");
+		linkedDevice.setCriticalAlarm(Temperature_Sensor_Failure);
+		linkedDevice.setInformativeAlarm(DC_voltage_Low);
 		linkedDeviceComponent.update(linkedDevice);
 		assertTrue(linkedDeviceComponent
 				.queryBySerialNumber(TestUtils.getDevice().getSerialNumber(), CUSTOMER_ID)
@@ -665,21 +665,15 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		deviceData.setDeviceId(TestUtils.getDevice().getId());
 
 		// Test normal values
-		linkedDevice.setCriticalAlarm("0");
-		linkedDeviceComponent.update(linkedDevice);
-		assertTrue(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent());
-		linkedDevice.setInformativeAlarm("0");
+		linkedDevice.setCriticalAlarm(NOMINAL);
 		linkedDeviceComponent.update(linkedDevice);
 		assertFalse(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent());
-
-		// Test FAN_OVER_40K_HOURS
-		linkedDevice.setCriticalAlarm("1");
-		linkedDevice.setInformativeAlarm(ISolectriaConstants.FAN_OVER_40K_HOURS);
-		linkedDeviceComponent.update(linkedDevice);
-		assertTrue(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent());
-		linkedDevice.setCriticalAlarm("0");
+		linkedDevice.setInformativeAlarm(NOMINAL);
 		linkedDeviceComponent.update(linkedDevice);
 		assertFalse(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent());
+		linkedDevice.setCriticalAlarm(Contactor_Failure);
+		linkedDeviceComponent.update(linkedDevice);
+		assertTrue(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent());
 
 		// test no linked device
 		linkedDeviceComponent.delete(linkedDevice.getId(), linkedDevice.getCustomerId());

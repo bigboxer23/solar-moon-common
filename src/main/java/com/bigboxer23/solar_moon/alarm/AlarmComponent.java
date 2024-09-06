@@ -112,15 +112,16 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			logger.debug("no linked device. " + optionalDevice.get().getSerialNumber());
 			return Optional.empty();
 		}
-		if ((StringUtils.isBlank(linkedDevice.get().getCriticalAlarm())
-						|| "0".equals(linkedDevice.get().getCriticalAlarm()))
-				&& (StringUtils.isBlank(linkedDevice.get().getInformativeAlarm())
-						|| "0".equals(linkedDevice.get().getInformativeAlarm())
-						|| FAN_OVER_40K_HOURS.equals(linkedDevice.get().getInformativeAlarm()))) {
+		if (linkedDevice.get().getCriticalAlarm() == ISolectriaConstants.NOMINAL) {
+			if (linkedDevice.get().getInformativeAlarm() != ISolectriaConstants.NOMINAL) {
+				logger.warn(optionalDevice.get().getSerialNumber()
+						+ " Linked device has informative error: "
+						+ SolectriaErrorOracle.translateError(linkedDevice.get().getInformativeAlarm(), false));
+			}
 			logger.debug("Linked device looks normal. " + optionalDevice.get().getSerialNumber());
 			return Optional.empty();
 		}
-		logger.warn("Linked device is in error state. "
+		logger.warn("Linked device is in critical error state. "
 				+ optionalDevice.get().getSerialNumber()
 				+ " "
 				+ linkedDevice.get().getCriticalAlarm()

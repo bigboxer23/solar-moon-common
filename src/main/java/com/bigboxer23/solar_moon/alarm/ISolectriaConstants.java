@@ -6,7 +6,8 @@ import java.util.Map;
 /** */
 public interface ISolectriaConstants {
 	// https://solectria.com/site/assets/files/2340/docr-070468-b_solectria_renewables_modbus_level_7.pdf
-	String FAN_OVER_40K_HOURS = "2048.000"; // TODO: remove
+
+	int NOMINAL = 0;
 
 	int DC_voltage_Low = 1;
 	int DC_Voltage_High = 1 << 1;

@@ -12,9 +12,11 @@ import org.junit.jupiter.api.Test;
 public class TestSolectriaErrorOracle implements ISolectriaConstants {
 	@Test
 	public void rawErrorToCode() {
-		assertEquals(0, SolectriaErrorOracle.rawErrorToCode(null));
-		assertEquals(0, SolectriaErrorOracle.rawErrorToCode("null"));
-		assertEquals(0, SolectriaErrorOracle.rawErrorToCode("NULL"));
+		assertEquals(NOMINAL, SolectriaErrorOracle.rawErrorToCode(null));
+		assertEquals(NOMINAL, SolectriaErrorOracle.rawErrorToCode("null"));
+		assertEquals(NOMINAL, SolectriaErrorOracle.rawErrorToCode("NULL"));
+		assertEquals(NOMINAL, SolectriaErrorOracle.rawErrorToCode(""));
+		assertEquals(NOMINAL, SolectriaErrorOracle.rawErrorToCode(" "));
 		assertEquals(128, SolectriaErrorOracle.rawErrorToCode("128"));
 		assertEquals(128, SolectriaErrorOracle.rawErrorToCode("128.000"));
 	}
@@ -44,7 +46,8 @@ public class TestSolectriaErrorOracle implements ISolectriaConstants {
 	}
 
 	private void validateErrors(String rawError, Collection<Integer> errors, boolean criticalError) {
-		String errorString = SolectriaErrorOracle.translateError(rawError, criticalError);
+		String errorString =
+				SolectriaErrorOracle.translateError(SolectriaErrorOracle.rawErrorToCode(rawError), criticalError);
 		if (!errors.isEmpty()) {
 			assertEquals(errors.size(), errorString.split("\n").length);
 		}
