@@ -20,7 +20,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
-public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements IAlarmConstants {
+public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements IAlarmConstants, ISolectriaConstants {
 	private static final Logger logger = LoggerFactory.getLogger(AlarmComponent.class);
 
 	protected static final long QUICK_CHECK_THRESHOLD = TimeConstants.FORTY_FIVE_MINUTES;

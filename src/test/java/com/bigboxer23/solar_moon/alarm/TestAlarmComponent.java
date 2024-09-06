@@ -674,7 +674,7 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 
 		// Test FAN_OVER_40K_HOURS
 		linkedDevice.setCriticalAlarm("1");
-		linkedDevice.setInformativeAlarm(FAN_OVER_40K_HOURS);
+		linkedDevice.setInformativeAlarm(ISolectriaConstants.FAN_OVER_40K_HOURS);
 		linkedDeviceComponent.update(linkedDevice);
 		assertTrue(alarmComponent.isLinkedDeviceErrored(deviceData, device).isPresent());
 		linkedDevice.setCriticalAlarm("0");
