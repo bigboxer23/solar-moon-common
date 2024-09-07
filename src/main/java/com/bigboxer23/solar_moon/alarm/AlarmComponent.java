@@ -134,6 +134,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		Alarm newAlarm = new Alarm(TokenGenerator.generateNewToken(), customerId, deviceId, siteId);
 		newAlarm.setStartDate(System.currentTimeMillis());
 		newAlarm.setState(ACTIVE);
+		newAlarm.setMessage(content);
 		if (!IComponentRegistry.deviceComponent
 				.findDeviceById(deviceId, customerId)
 				.map(Device::isNotificationsDisabled)
@@ -161,7 +162,6 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				.orElseGet(() -> {
 					Alarm newAlarm = getNewAlarm(customerId, deviceId, siteId, content);
 					newAlarm.setEmailed(DONT_EMAIL);
-					newAlarm.setMessage(content); // Write alarm on first
 					return newAlarm;
 				});
 		alarm.setLastUpdate(System.currentTimeMillis());
