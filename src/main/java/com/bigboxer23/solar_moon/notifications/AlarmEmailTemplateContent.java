@@ -7,7 +7,9 @@ import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,9 +23,7 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 
 	private String subject;
 
-	private String deviceId;
-
-	protected List<Device> devices;
+	protected Map<Alarm, Device> alarmsToMail = new HashMap<>();
 
 	public AlarmEmailTemplateContent(String customerId, List<Alarm> alarms) {
 		super("email.template.html", "Potential issue detected with device", "", "", "See active alerts");
@@ -32,24 +32,23 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 			logger.error("cannot find customer for " + customerId);
 			return;
 		}
-		devices = alarms.stream()
-				.map(a -> deviceComponent.findDeviceById(a.getDeviceId(), customerId))
-				.filter(Optional::isPresent)
-				.map(Optional::get)
-				.filter(d -> {
+		alarms.forEach(a -> deviceComponent
+				.findDeviceById(a.getDeviceId(), customerId)
+				.map(d -> {
 					if (d.isNotificationsDisabled()) {
 						TransactionUtil.addDeviceId(d.getId(), d.getSiteId());
-						logger.warn("New notification detected, but not sending email " + " as requested.");
+						logger.warn("New notification detected, but not sending" + " email  as requested.");
+						return null;
 					}
-					return !d.isNotificationsDisabled();
+					return d;
 				})
-				.toList();
+				.ifPresent(device -> alarmsToMail.put(a, device)));
 		setRecipient(customer.get().getEmail());
 		setCustomerName("Hello "
 				+ (StringUtils.isEmpty(customer.get().getName())
 						? customer.get().getEmail()
 						: customer.get().getName()));
-		if (devices.size() == 1) {
+		if (alarmsToMail.size() == 1) {
 			singleDevice();
 		} else {
 			multipleDevices();
@@ -62,36 +61,38 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 				+ " Team");
 	}
 
-	protected void singleDevice() {
-		TransactionUtil.addDeviceId(
-				devices.getFirst().getId(), devices.getFirst().getSiteId());
-		setDeviceId(devices.getFirst().getId());
-		setSubject("🚨 ALERT: issue with your solar energy device "
-				+ devices.getFirst().getDisplayName());
-		setLink("/alerts?deviceId=" + URLEncoder.encode(devices.getFirst().getId(), StandardCharsets.UTF_8));
-		StringBuilder builder = new StringBuilder("There may be an issue with your device, <b>"
-				+ devices.getFirst().getDisplayName()
-				+ "</b>");
-		if (!StringUtils.isEmpty(devices.getFirst().getSiteId())) {
-			builder.append(" (").append(devices.getFirst().getSite()).append(")");
+	private void fillInDeviceBody(StringBuilder builder, Alarm alarm, Device device) {
+		builder.append("<br/><b>").append(device.getDisplayName()).append("</b>");
+		if (!StringUtils.isEmpty(device.getSiteId())) {
+			builder.append(" (").append(device.getSite()).append(")");
 		}
-		builder.append(". <br/><br/>Our monitoring system has indicated that your device has stopped"
-				+ " responding or is not generating power as expected. Please click the link"
-				+ " below to see more detailed information.");
-		setBodyContent1(builder.toString());
+		builder.append("<br/><span style='padding-left:15px;'>")
+				.append(alarm.getMessage())
+				.append("</span>");
+	}
+
+	protected void singleDevice() {
+		alarmsToMail.keySet().stream().findAny().ifPresent(a -> {
+			Device d = alarmsToMail.get(a);
+			TransactionUtil.addDeviceId(d.getId(), d.getSiteId());
+			setSubject("🚨 ALERT: issue with your solar energy device " + d.getDisplayName());
+			setLink("/alerts?deviceId=" + URLEncoder.encode(d.getId(), StandardCharsets.UTF_8));
+			StringBuilder builder = new StringBuilder("There may be an issue with your device:<br/>");
+			fillInDeviceBody(builder, a, d);
+			builder.append("<br/><br/>Our monitoring system has indicated that your device"
+					+ " has stopped responding or is not generating power as"
+					+ " expected. Please click the link below to see more"
+					+ " detailed information.");
+			setBodyContent1(builder.toString());
+		});
 	}
 
 	protected void multipleDevices() {
 		TransactionUtil.addDeviceId(null, null);
-		setSubject("🚨 ALERT: issue with " + devices.size() + " of your solar energy devices");
+		setSubject("🚨 ALERT: issue with " + alarmsToMail.size() + " of your solar energy devices");
 		setLink("/alerts");
 		StringBuilder builder = new StringBuilder("There may be an issue with some of your devices:<br/>");
-		devices.forEach(d -> {
-			builder.append("<br/><b>").append(d.getDisplayName()).append("</b>");
-			if (!StringUtils.isEmpty(d.getSiteId())) {
-				builder.append(" (").append(d.getSite()).append(")");
-			}
-		});
+		alarmsToMail.forEach((a, d) -> fillInDeviceBody(builder, a, d));
 		builder.append("<br/><br/>Our monitoring system has indicated that your devices have stopped"
 				+ " responding or are not generating power as expected. Please click the link"
 				+ " below to see more detailed information.");
@@ -99,6 +100,6 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 	}
 
 	public boolean isNotificationEnabled() {
-		return !devices.isEmpty() && !StringUtils.isBlank(getRecipient());
+		return !alarmsToMail.isEmpty() && !StringUtils.isBlank(getRecipient());
 	}
 }
