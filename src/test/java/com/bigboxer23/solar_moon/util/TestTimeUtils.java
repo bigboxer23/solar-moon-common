@@ -1,13 +1,22 @@
 package com.bigboxer23.solar_moon.util;
 
+import static com.bigboxer23.solar_moon.TestConstants.CUSTOMER_ID;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.TestUtils;
 import java.time.zone.ZoneRulesException;
 import java.util.Date;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 /** */
 public class TestTimeUtils {
+	@AfterAll
+	public static void afterAll() {
+		TestUtils.nukeCustomerId(CUSTOMER_ID);
+	}
+
 	@Test
 	public void get15mRoundedDate() {
 		Date rounded = TimeUtils.get15mRoundedDate();
@@ -34,5 +43,53 @@ public class TestTimeUtils {
 		} catch (ZoneRulesException zre) {
 
 		}
+	}
+
+	@Test
+	public void formatUnixTimestampsInString() {
+		TestUtils.setupSite();
+
+		String message = "No data recently from device. Last data: 1725887724503";
+		String formattedMessage = "No data recently from device. Last data: Sep 9, 24 8:15 AM";
+		String formattedMessageNYC = "No data recently from device. Last data: Sep 9, 24 9:15 AM";
+		String formattedMessageLA = "No data recently from device. Last data: Sep 9, 24 6:15 AM";
+
+		assertNull(TimeUtils.formatUnixTimestampsInString(null, null, null));
+		assertEquals("t", TimeUtils.formatUnixTimestampsInString("t", null, null));
+		assertEquals("t", TimeUtils.formatUnixTimestampsInString("t", "fake", null));
+		assertEquals("t", TimeUtils.formatUnixTimestampsInString("t", null, "fake"));
+		assertEquals(message, TimeUtils.formatUnixTimestampsInString(message, null, null));
+		assertEquals(formattedMessage, TimeUtils.formatUnixTimestampsInString(message, null, CUSTOMER_ID));
+		assertEquals(
+				formattedMessage,
+				TimeUtils.formatUnixTimestampsInString(
+						message, TestUtils.getDevice().getId(), CUSTOMER_ID));
+
+		TestUtils.getSite().setLatitude(-1);
+		TestUtils.getSite().setLongitude(-1);
+		TestUtils.getSite().setCity("New York");
+		TestUtils.getSite().setState("New York");
+		IComponentRegistry.deviceComponent.updateDevice(TestUtils.getSite());
+		IComponentRegistry.customerComponent
+				.findCustomerByCustomerId(CUSTOMER_ID)
+				.ifPresent(c -> {
+					c.setDefaultTimezone("America/Los_Angeles");
+					IComponentRegistry.customerComponent.updateCustomer(c);
+				});
+		assertEquals(
+				formattedMessageNYC,
+				TimeUtils.formatUnixTimestampsInString(
+						message, TestUtils.getDevice().getId(), CUSTOMER_ID));
+
+		TestUtils.getSite().setLatitude(-1);
+		TestUtils.getSite().setLongitude(-1);
+		TestUtils.getSite().setCity(null);
+		TestUtils.getSite().setState(null);
+		TestUtils.getSite().setCountry(null);
+		IComponentRegistry.deviceComponent.updateDevice(TestUtils.getSite());
+		assertEquals(
+				formattedMessageLA,
+				TimeUtils.formatUnixTimestampsInString(
+						message, TestUtils.getDevice().getId(), CUSTOMER_ID));
 	}
 }
