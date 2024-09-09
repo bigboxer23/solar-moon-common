@@ -4,6 +4,7 @@ import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Alarm;
 import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.data.Device;
+import com.bigboxer23.solar_moon.util.TimeUtils;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -67,7 +68,8 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 			builder.append(" (").append(device.getSite()).append(")");
 		}
 		builder.append("<br/><span style='padding-left:15px;'>")
-				.append(alarm.getMessage())
+				.append(TimeUtils.formatUnixTimestampsInString(
+						alarm.getMessage(), alarm.getDeviceId(), alarm.getCustomerId()))
 				.append("</span>");
 	}
 
