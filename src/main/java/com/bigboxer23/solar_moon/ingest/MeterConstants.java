@@ -67,6 +67,10 @@ public interface MeterConstants {
 
 	String INFORMATIONAL_ERROR = "informationalError";
 
+	String CRITICAL_ERROR_STRING = "criticalErrorString";
+
+	String INFORMATIONAL_ERROR_STRING = "informationalErrorString";
+
 	String CUSTOMER_ID_ATTRIBUTE = "customer-id";
 
 	float OBVIOUS_ROLLOVER = 10000000;
