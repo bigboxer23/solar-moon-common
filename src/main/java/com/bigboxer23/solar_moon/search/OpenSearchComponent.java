@@ -352,6 +352,9 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		if (searchJSON.isDaylight()) {
 			filters.add(OpenSearchQueries.getIsDaylight());
 		}
+		if (searchJSON.isFilterErrors()) {
+			filters.add(OpenSearchQueries.getInformationalErrors());
+		}
 		filters.addAll(Arrays.asList(
 				OpenSearchQueries.getDateRangeQuery(searchJSON.getJavaStartDate(), searchJSON.getJavaEndDate()),
 				OpenSearchQueries.getCustomerIdQuery(searchJSON.getCustomerId())));

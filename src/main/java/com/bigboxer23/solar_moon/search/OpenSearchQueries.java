@@ -39,6 +39,10 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.toQuery();
 	}
 
+	public static Query getInformationalErrors() {
+		return QueryBuilders.exists().field(INFORMATIONAL_ERROR_STRING).build().toQuery();
+	}
+
 	public static Query getNotIsSite() {
 		return QueryBuilders.exists().field(IS_SITE).build().toQuery();
 	}
