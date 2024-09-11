@@ -1,6 +1,7 @@
 package com.bigboxer23.solar_moon.device;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.alarm.SolectriaErrorOracle;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.data.LinkedDevice;
@@ -73,7 +74,15 @@ public class LinkedDeviceComponent extends AbstractDynamodbComponent<LinkedDevic
 		if (linkedDevice.get().getDate() < System.currentTimeMillis() - TimeConstants.HOUR) {
 			return;
 		}
-		deviceData.setCriticalError(linkedDevice.get().getCriticalAlarm());
-		deviceData.setInformationalError(linkedDevice.get().getInformativeAlarm());
+		if (linkedDevice.get().getCriticalAlarm() > 0) {
+			deviceData.setCriticalError(linkedDevice.get().getCriticalAlarm());
+			deviceData.setCriticalErrorString(
+					SolectriaErrorOracle.translateError(linkedDevice.get().getCriticalAlarm(), true));
+		}
+		if (linkedDevice.get().getInformativeAlarm() > 0) {
+			deviceData.setInformationalError(linkedDevice.get().getInformativeAlarm());
+			deviceData.setInformationalErrorString(
+					SolectriaErrorOracle.translateError(linkedDevice.get().getInformativeAlarm(), false));
+		}
 	}
 }
