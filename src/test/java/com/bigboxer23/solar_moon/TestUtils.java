@@ -5,9 +5,11 @@ import static com.bigboxer23.solar_moon.search.OpenSearchConstants.DATA_SEARCH_T
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.bigboxer23.solar_moon.alarm.ISolectriaConstants;
 import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
+import com.bigboxer23.solar_moon.data.LinkedDevice;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import com.bigboxer23.solar_moon.search.OpenSearchUtils;
 import com.bigboxer23.solar_moon.search.SearchJSON;
@@ -125,6 +127,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 								.getId(),
 						customerId)
 				.get();
+		testDevice.setSerialNumber(null);
 		for (int ai = 1; ai < 5; ai++) {
 			addDevice(TestConstants.deviceName + ai, testDevice, false, testDevice.getSiteId());
 		}
@@ -151,6 +154,12 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 		LocalDateTime ldt = LocalDateTime.ofInstant(
 						TimeUtils.get15mRoundedDate().toInstant(), ZoneId.systemDefault())
 				.minusDays(2);
+		linkedDeviceComponent.update(new LinkedDevice(
+				TestUtils.getDevice().getSerialNumber(),
+				TestUtils.getDevice().getClientId(),
+				ISolectriaConstants.NOMINAL,
+				ISolectriaConstants.Fan_Life_Reached,
+				System.currentTimeMillis()));
 		for (int aj = 0; aj < 5; aj++) {
 			System.out.println(TestConstants.deviceName + aj);
 			for (int ai = 0; ai < 5; ai++) {

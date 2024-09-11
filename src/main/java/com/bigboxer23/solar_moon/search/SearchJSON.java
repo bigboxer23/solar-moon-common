@@ -24,6 +24,7 @@ public class SearchJSON {
 	private boolean noVirtual;
 	private boolean noIsSite;
 	private boolean daylight;
+	private boolean filterErrors;
 	private boolean includeSource = false;
 
 	private List<String> additionalFields;
@@ -50,6 +51,7 @@ public class SearchJSON {
 		setSiteId(search.getSiteId());
 		setIncludeSource(search.isIncludeSource());
 		setAdditionalFields(search.getAdditionalFields());
+		setFilterErrors(search.isFilterErrors());
 	}
 
 	public SearchJSON(String customerId, String deviceId, long endDate, long startDate) {
