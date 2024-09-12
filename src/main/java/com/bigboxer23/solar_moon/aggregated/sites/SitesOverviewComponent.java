@@ -138,7 +138,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 				siteOverview,
 				search,
 				search.isDaylight(),
-				OpenSearchConstants.TIME_SERIES_SEARCH_TYPE,
+				OpenSearchConstants.TIME_SERIES_WITH_ERRORS_SEARCH_TYPE,
 				siteOverview.getDeviceTimeSeries());
 	}
 

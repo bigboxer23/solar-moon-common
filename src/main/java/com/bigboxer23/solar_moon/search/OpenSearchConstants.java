@@ -7,6 +7,8 @@ public interface OpenSearchConstants {
 
 	String TIME_SERIES_SEARCH_TYPE = "timeseries";
 
+	String TIME_SERIES_WITH_ERRORS_SEARCH_TYPE = "timeseriesWithErrors";
+
 	String TIME_SERIES_MAX_SEARCH_TYPE = "timeSeriesMax";
 	String AVG_TOTAL_SEARCH_TYPE = "avgTotal";
 
