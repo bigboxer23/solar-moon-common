@@ -364,8 +364,8 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	private SearchRequest.Builder getSearchRequest(SearchJSON searchJSON) {
 		SearchRequest.Builder builder =
 				switch (searchJSON.getType()) {
-					case TIME_SERIES_SEARCH_TYPE -> OpenSearchQueries.getTimeSeriesBuilder(
-							searchJSON.getTimeZone(), searchJSON.getBucketSize());
+					case TIME_SERIES_SEARCH_TYPE, TIME_SERIES_WITH_ERRORS_SEARCH_TYPE -> OpenSearchQueries
+							.getTimeSeriesBuilder(searchJSON.getTimeZone(), searchJSON.getBucketSize());
 					case TIME_SERIES_MAX_SEARCH_TYPE -> OpenSearchQueries.getTimeSeriesMaxBuilder(
 							searchJSON.getTimeZone(), searchJSON.getBucketSize());
 					case AVG_TOTAL_SEARCH_TYPE -> OpenSearchQueries.getAverageTotalBuilder(
@@ -384,10 +384,14 @@ public class OpenSearchComponent implements OpenSearchConstants {
 							searchJSON.getTimeZone(), searchJSON.getBucketSize());
 					default -> null;
 				};
+		if (builder != null && searchJSON.getType().equals(TIME_SERIES_WITH_ERRORS_SEARCH_TYPE)) {
+			OpenSearchQueries.appendInformationErrorsFacet(builder);
+		}
 		if (builder != null && searchJSON.getAdditionalFields() != null) {
-			searchJSON.getAdditionalFields().forEach(field -> {
-				builder.docvalueFields(new FieldAndFormat.Builder().field(field).build());
-			});
+			searchJSON
+					.getAdditionalFields()
+					.forEach(field -> builder.docvalueFields(
+							new FieldAndFormat.Builder().field(field).build()));
 		}
 		return builder;
 	}

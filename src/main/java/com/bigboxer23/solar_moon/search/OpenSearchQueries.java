@@ -190,6 +190,16 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 								._toAggregation());
 	}
 
+	public static SearchRequest.Builder appendInformationErrorsFacet(SearchRequest.Builder builder) {
+		return builder.aggregations(
+				MeterConstants.INFORMATIONAL_ERROR_STRING,
+				AggregationBuilders.terms()
+						.field(getKeywordField(MeterConstants.INFORMATIONAL_ERROR_STRING))
+						.size(15)
+						.build()
+						._toAggregation());
+	}
+
 	public static SearchRequest.Builder geDeviceIdFacet() {
 		return getBaseBuilder(0, false)
 				.aggregations(

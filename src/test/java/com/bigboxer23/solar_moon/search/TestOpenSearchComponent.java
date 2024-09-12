@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.TestConstants;
 import com.bigboxer23.solar_moon.TestUtils;
+import com.bigboxer23.solar_moon.alarm.ISolectriaConstants;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
@@ -28,7 +29,7 @@ import org.opensearch.client.opensearch._types.aggregations.StringTermsBucket;
 import org.opensearch.client.opensearch.core.SearchResponse;
 
 /** */
-public class TestOpenSearchComponent implements IComponentRegistry, TestConstants {
+public class TestOpenSearchComponent implements IComponentRegistry, TestConstants, ISolectriaConstants {
 
 	@BeforeEach
 	public void setup() {
@@ -203,6 +204,36 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 			assertTrue(buckets.get(ai).aggregations().get("1").avg().value()
 					> buckets.get(ai + 1).aggregations().get("1").avg().value());
 		}
+	}
+
+	@Test
+	public void testTimeSeriesWithErrorsSearch() throws XPathExpressionException, ResponseException {
+		TestUtils.seedOpenSearchData();
+		LocalDateTime ldt = LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault())
+				.minusDays(2);
+		SearchJSON json = new SearchJSON(
+				CUSTOMER_ID,
+				TestUtils.getDevice().getId(),
+				Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime(),
+				Date.from(ldt.minusDays(1).atZone(ZoneId.systemDefault()).toInstant())
+						.getTime());
+		json.setType(TIME_SERIES_WITH_ERRORS_SEARCH_TYPE);
+		json.setTimeZone(ZonedDateTime.now().getZone().getId());
+		SearchResponse<DeviceData> response = OSComponent.search(json);
+		assertNotNull(response.aggregations().get(MeterConstants.INFORMATIONAL_ERROR_STRING));
+		assertNotNull(response.aggregations()
+				.get(MeterConstants.INFORMATIONAL_ERROR_STRING)
+				._get());
+		List<StringTermsBucket> terms = response.aggregations()
+				.get(MeterConstants.INFORMATIONAL_ERROR_STRING)
+				.sterms()
+				.buckets()
+				.array();
+		assertFalse(terms.isEmpty());
+		assertEquals(1, terms.size());
+		assertEquals(5, terms.getFirst().docCount());
+		assertEquals(
+				INFORMATIVE_ERROR_CODES.get(Fan_Life_Reached), terms.getFirst().key());
 	}
 
 	@Test
