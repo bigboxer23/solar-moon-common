@@ -1,12 +1,14 @@
 package com.bigboxer23.solar_moon.device;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.alarm.ISolectriaConstants;
 import com.bigboxer23.solar_moon.alarm.SolectriaErrorOracle;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.data.LinkedDevice;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
+import java.util.List;
 import java.util.Optional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
@@ -58,6 +60,36 @@ public class LinkedDeviceComponent extends AbstractDynamodbComponent<LinkedDevic
 	@Override
 	protected Class<LinkedDevice> getObjectClass() {
 		return LinkedDevice.class;
+	}
+
+	public DeviceData addLinkedDeviceDataVirtual(DeviceData virtualDevice, List<DeviceData> childDevices) {
+		if (virtualDevice == null || childDevices == null || childDevices.isEmpty()) {
+			logger.warn("invalid virtual device or child devices");
+			return virtualDevice;
+		}
+		childDevices.forEach(d -> {
+			if (d.getInformationalError() > -1) {
+				if (virtualDevice.getInformationalError() == -1) {
+					virtualDevice.setInformationalError(ISolectriaConstants.NOMINAL);
+				}
+				virtualDevice.setInformationalError(virtualDevice.getInformationalError() | d.getInformationalError());
+			}
+			if (d.getCriticalError() > -1) {
+				if (virtualDevice.getCriticalError() == -1) {
+					virtualDevice.setCriticalError(ISolectriaConstants.NOMINAL);
+				}
+				virtualDevice.setCriticalError(virtualDevice.getCriticalError() | d.getCriticalError());
+			}
+		});
+		if (virtualDevice.getInformationalError() > -1) {
+			virtualDevice.setInformationalErrorString(
+					SolectriaErrorOracle.translateError(virtualDevice.getInformationalError(), false));
+		}
+		if (virtualDevice.getCriticalError() > -1) {
+			virtualDevice.setCriticalErrorString(
+					SolectriaErrorOracle.translateError(virtualDevice.getCriticalError(), true));
+		}
+		return virtualDevice;
 	}
 
 	public void addLinkedDeviceData(Device device, DeviceData deviceData) {
