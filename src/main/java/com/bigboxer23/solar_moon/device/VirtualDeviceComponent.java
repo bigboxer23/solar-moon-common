@@ -52,6 +52,7 @@ public class VirtualDeviceComponent {
 							0, getPushedDeviceValues(siteDevices, virtualDevice, DeviceData::getTotalEnergyConsumed)));
 					IComponentRegistry.locationComponent.addLocationData(virtualDeviceData, virtualDevice);
 					IComponentRegistry.weatherComponent.addWeatherData(virtualDeviceData, virtualDevice);
+					IComponentRegistry.linkedDeviceComponent.addLinkedDeviceDataVirtual(virtualDeviceData, siteDevices);
 					logger.info("updating virtual device: " + device.getDate());
 					try {
 						IComponentRegistry.OSComponent.logData(

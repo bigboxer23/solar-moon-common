@@ -6,13 +6,18 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.TestUtils;
 import com.bigboxer23.solar_moon.alarm.ISolectriaConstants;
+import com.bigboxer23.solar_moon.alarm.SolectriaErrorOracle;
 import com.bigboxer23.solar_moon.data.Device;
+import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.data.LinkedDevice;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.*;
 
 /** */
-public class TestLinkedDeviceComponent implements IComponentRegistry {
+public class TestLinkedDeviceComponent implements IComponentRegistry, ISolectriaConstants {
 
 	@BeforeAll
 	public static void before() {
@@ -41,6 +46,67 @@ public class TestLinkedDeviceComponent implements IComponentRegistry {
 	@AfterEach
 	public void afterEach() {
 		linkedDeviceComponent.delete(TestUtils.getDevice().getSerialNumber(), CUSTOMER_ID);
+	}
+
+	@Test
+	public void addLinkedDeviceDataVirtual() {
+		assertNull(linkedDeviceComponent.addLinkedDeviceDataVirtual(null, null));
+		assertNull(linkedDeviceComponent.addLinkedDeviceDataVirtual(null, Collections.emptyList()));
+		DeviceData virtualData = new DeviceData();
+		assertNotNull(linkedDeviceComponent.addLinkedDeviceDataVirtual(virtualData, Collections.emptyList()));
+		assertNotNull(linkedDeviceComponent.addLinkedDeviceDataVirtual(virtualData, null));
+		assertEquals(
+				-1,
+				linkedDeviceComponent
+						.addLinkedDeviceDataVirtual(virtualData, Collections.emptyList())
+						.getInformationalError());
+		List<DeviceData> childDevices = new ArrayList<>();
+		DeviceData childData = new DeviceData();
+		childData.setInformationalError(NOMINAL);
+		childDevices.add(childData);
+		assertEquals(
+				NOMINAL,
+				linkedDeviceComponent
+						.addLinkedDeviceDataVirtual(virtualData, childDevices)
+						.getInformationalError());
+		childData = new DeviceData();
+		childData.setInformationalError(DC_Voltage_High);
+		childDevices.add(childData);
+		assertEquals(
+				DC_Voltage_High,
+				linkedDeviceComponent
+						.addLinkedDeviceDataVirtual(virtualData, childDevices)
+						.getInformationalError());
+		childDevices.clear();
+		childDevices.add(childData);
+		assertEquals(
+				DC_Voltage_High,
+				linkedDeviceComponent
+						.addLinkedDeviceDataVirtual(virtualData, childDevices)
+						.getInformationalError());
+		childData = new DeviceData();
+		childData.setInformationalError(Fan_Life_Reached);
+		childDevices.add(childData);
+		assertEquals(
+				DC_Voltage_High + Fan_Life_Reached,
+				linkedDeviceComponent
+						.addLinkedDeviceDataVirtual(virtualData, childDevices)
+						.getInformationalError());
+		childData = new DeviceData();
+		childData.setInformationalError(UL_Islanding_Fault);
+		childDevices.add(childData);
+		assertEquals(
+				DC_Voltage_High + Fan_Life_Reached + UL_Islanding_Fault,
+				linkedDeviceComponent
+						.addLinkedDeviceDataVirtual(virtualData, childDevices)
+						.getInformationalError());
+		String errorString = linkedDeviceComponent
+				.addLinkedDeviceDataVirtual(virtualData, childDevices)
+				.getInformationalErrorString();
+		assertNotNull(errorString);
+		assertTrue(errorString.contains(SolectriaErrorOracle.translateError(DC_Voltage_High, false)));
+		assertTrue(errorString.contains(SolectriaErrorOracle.translateError(Fan_Life_Reached, false)));
+		assertTrue(errorString.contains(SolectriaErrorOracle.translateError(UL_Islanding_Fault, false)));
 	}
 
 	@Test
