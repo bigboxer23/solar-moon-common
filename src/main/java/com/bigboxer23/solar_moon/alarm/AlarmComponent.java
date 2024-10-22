@@ -351,6 +351,19 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				.forEach(d -> IComponentRegistry.deviceComponent
 						.findDeviceById(d.getDeviceId())
 						.filter(d2 -> !d2.isDisabled())
+						.filter(d2 -> {
+							boolean isDay = IComponentRegistry.deviceComponent
+									.findDeviceById(d2.getSiteId(), d2.getClientId())
+									.map(site -> IComponentRegistry.locationComponent
+											.isDay(new Date(), site.getLatitude(), site.getLongitude())
+											.orElse(true))
+									.orElse(true);
+							TransactionUtil.updateCustomerId(d2.getClientId());
+							// TODO:remove this after  burn in
+							TransactionUtil.addDeviceId(d2.getId(), d2.getSiteId());
+							logger.info("quickCheck is day: " + isDay);
+							return isDay;
+						})
 						.flatMap(d2 -> {
 							TransactionUtil.updateCustomerId(d2.getClientId());
 							TransactionUtil.addDeviceId(d2.getId(), d2.getSiteId());
