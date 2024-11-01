@@ -53,6 +53,7 @@ public class OverviewComponent implements IComponentRegistry {
 		search.setEndDate(start.getTime() + TimeConstants.DAY);
 		search.setStartDate(start.getTime());
 		search.setType(OpenSearchConstants.AVG_TOTAL_SEARCH_TYPE);
+		search.setDaylight(true);
 		// This is necessary because the period can shift to wk/mo/yr, and always need to get daily
 		// for overview as well.
 		data.getOverall().setDailyEnergyConsumedTotal(OSComponent.search(search));
