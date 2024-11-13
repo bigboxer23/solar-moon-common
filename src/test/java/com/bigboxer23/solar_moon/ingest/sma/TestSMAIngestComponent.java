@@ -209,4 +209,33 @@ public class TestSMAIngestComponent implements TestConstants, IComponentRegistry
 			return IOUtils.toString(stream, StandardCharsets.UTF_8);
 		}
 	}
+
+	@Test
+	public void getDateFromSMAS3Path() {
+		long July12024Ms = 1719810000000L;
+
+		assertFalse(smaIngestComponent.getDateFromSMAS3Path(null).isPresent());
+		assertFalse(smaIngestComponent.getDateFromSMAS3Path("").isPresent());
+		assertFalse(smaIngestComponent
+				.getDateFromSMAS3Path("xx-xx-xx-xx/XML/2024/07/")
+				.isPresent());
+		assertFalse(smaIngestComponent.getDateFromSMAS3Path("xx-xx-xx-xx").isPresent());
+
+		Optional<Date> parsed = smaIngestComponent.getDateFromSMAS3Path("xx-xx-xx-xx/XML/2024/07/20240701/");
+		assertTrue(parsed.isPresent());
+		assertEquals(July12024Ms, parsed.get().getTime());
+		parsed = smaIngestComponent.getDateFromSMAS3Path("xx-xx-xx-xx/XML/2024/07/20240701");
+		assertFalse(parsed.isPresent());
+		parsed = smaIngestComponent.getDateFromSMAS3Path("xx-xx-xx-xx/XML/2024/07/20240701/103000.zip");
+		assertTrue(parsed.isPresent());
+		assertEquals(July12024Ms, parsed.get().getTime());
+		parsed = smaIngestComponent.getDateFromSMAS3Path("20240701/");
+		assertTrue(parsed.isPresent());
+		assertEquals(July12024Ms, parsed.get().getTime());
+		parsed = smaIngestComponent.getDateFromSMAS3Path("20240701");
+		assertTrue(parsed.isPresent());
+		assertEquals(July12024Ms, parsed.get().getTime());
+		parsed = smaIngestComponent.getDateFromSMAS3Path("/20240701");
+		assertFalse(parsed.isPresent());
+	}
 }

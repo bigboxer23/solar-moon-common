@@ -10,6 +10,7 @@ import com.bigboxer23.solar_moon.util.XMLUtil;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import com.bigboxer23.utils.properties.PropertyUtils;
 import java.io.StringReader;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import javax.xml.xpath.XPathConstants;
@@ -33,6 +34,8 @@ import software.amazon.awssdk.utils.StringUtils;
 /** */
 public class SMAIngestComponent implements ISMAIngestConstants {
 	private static final Logger logger = LoggerFactory.getLogger(SMAIngestComponent.class);
+
+	private final SimpleDateFormat smaFtpFolderDateFormatter = new SimpleDateFormat("yyyyMMdd");
 
 	private static S3Client s3;
 
@@ -307,5 +310,22 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 							.build());
 			logger.info("Deleted folder: " + response.toString());
 		}
+	}
+
+	public Optional<Date> getDateFromSMAS3Path(String path) {
+		if (StringUtils.isEmpty(path)) {
+			return Optional.empty();
+		}
+		int index = path.lastIndexOf("/");
+		if (index > -1 && !path.endsWith("/")) {
+			path = path.substring(0, index);
+		}
+		String[] paths = path.split("/");
+		try {
+			return Optional.of(smaFtpFolderDateFormatter.parse(paths[paths.length - 1]));
+		} catch (ParseException e) {
+			logger.info("cannot parse: " + path, e);
+		}
+		return Optional.empty();
 	}
 }
