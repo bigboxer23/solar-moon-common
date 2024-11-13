@@ -7,7 +7,6 @@ import com.bigboxer23.solar_moon.search.SearchJSON;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TimeUtils;
 import java.util.Date;
-import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
