@@ -10,6 +10,7 @@ import com.bigboxer23.solar_moon.gson.SearchResponseAdapter;
 import com.bigboxer23.solar_moon.ingest.IngestComponent;
 import com.bigboxer23.solar_moon.ingest.ObviusIngestComponent;
 import com.bigboxer23.solar_moon.ingest.sma.SMAIngestComponent;
+import com.bigboxer23.solar_moon.ingest.sma.SMAS3CleanupComponent;
 import com.bigboxer23.solar_moon.location.LocationComponent;
 import com.bigboxer23.solar_moon.maintenance.MaintenanceComponent;
 import com.bigboxer23.solar_moon.mapping.MappingComponent;
@@ -57,6 +58,8 @@ public interface IComponentRegistry {
 	ObviusIngestComponent obviousIngestComponent = new ObviusIngestComponent();
 
 	SMAIngestComponent smaIngestComponent = new SMAIngestComponent();
+
+	SMAS3CleanupComponent smaCleanupComponent = new SMAS3CleanupComponent();
 
 	MaintenanceComponent maintenanceComponent = new MaintenanceComponent();
 

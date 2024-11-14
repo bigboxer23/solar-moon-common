@@ -39,6 +39,8 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 
 	private static S3Client s3;
 
+	private final String bucket = PropertyUtils.getProperty("ftp.s3.bucket");
+
 	public S3Client getS3Client() {
 		if (s3 == null) {
 			s3 = S3Client.builder()
@@ -295,7 +297,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 			PutObjectResponse response = getS3Client()
 					.putObject(
 							PutObjectRequest.builder()
-									.bucket(PropertyUtils.getProperty("ftp.s3.bucket"))
+									.bucket(bucket)
 									.key(newAccessKey + "/")
 									.build(),
 							RequestBody.empty());
@@ -305,7 +307,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 			logger.warn("Deleting folder for " + oldAccessKey);
 			DeleteObjectResponse response = getS3Client()
 					.deleteObject(DeleteObjectRequest.builder()
-							.bucket(PropertyUtils.getProperty("ftp.s3.bucket"))
+							.bucket(bucket)
 							.key(oldAccessKey + "/")
 							.build());
 			logger.info("Deleted folder: " + response.toString());
