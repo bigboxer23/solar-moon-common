@@ -15,12 +15,19 @@ public class SMAS3CleanupComponent {
 
 	private final String bucket = PropertyUtils.getProperty("ftp.s3.bucket");
 
+	// TODO: look at logic to deal w/stale data
+
 	public void cleanupEmptyFTPS3Folders() {
-		ListObjectsV2Response response = IComponentRegistry.smaIngestComponent
-				.getS3Client()
-				.listObjectsV2(ListObjectsV2Request.builder().bucket(bucket).build());
+
 		int count = 0;
-		while (response.nextContinuationToken() != null) {
+		String continuationToken = null;
+		do {
+			ListObjectsV2Response response = IComponentRegistry.smaIngestComponent
+					.getS3Client()
+					.listObjectsV2(ListObjectsV2Request.builder()
+							.bucket(bucket)
+							.continuationToken(continuationToken)
+							.build());
 			for (S3Object object : response.contents()) {
 				if (isEmptyFolder(object.key())) {
 					logger.info(count + " deleting " + object.key());
@@ -31,15 +38,10 @@ public class SMAS3CleanupComponent {
 									.key(object.key())
 									.build());
 				}
+				count++;
 			}
-			count++;
-			response = IComponentRegistry.smaIngestComponent
-					.getS3Client()
-					.listObjectsV2(ListObjectsV2Request.builder()
-							.bucket(bucket)
-							.continuationToken(response.nextContinuationToken())
-							.build());
-		}
+			continuationToken = response.nextContinuationToken();
+		} while (continuationToken != null);
 	}
 
 	public boolean isEmptyFolder(String folderKey) {
