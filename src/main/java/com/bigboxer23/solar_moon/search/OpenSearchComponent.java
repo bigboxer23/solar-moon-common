@@ -355,6 +355,12 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		if (searchJSON.isFilterErrors()) {
 			filters.add(OpenSearchQueries.getInformationalErrors());
 		}
+		if (searchJSON.isLargeEnergyConsumed()) {
+			filters.add(OpenSearchQueries.getLargeEnergyConsumedQuery());
+		}
+		if (!StringUtils.isEmpty(searchJSON.getId())) {
+			filters.add(OpenSearchQueries.getElasticDocumentIdQuery(searchJSON.getId()));
+		}
 		filters.addAll(Arrays.asList(
 				OpenSearchQueries.getDateRangeQuery(searchJSON.getJavaStartDate(), searchJSON.getJavaEndDate()),
 				OpenSearchQueries.getCustomerIdQuery(searchJSON.getCustomerId())));

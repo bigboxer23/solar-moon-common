@@ -126,6 +126,23 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.toQuery();
 	}
 
+	public static Query getLargeEnergyConsumedQuery() {
+		return QueryBuilders.range()
+				.field(ENG_CONS)
+				.gte(JsonData.of(1000))
+				.build()
+				.toQuery();
+	}
+
+	public static Query getElasticDocumentIdQuery(String id)
+	{
+		return QueryBuilders.match()
+				.field("_id")
+				.query(builder -> builder.stringValue(id))
+				.build()
+				.toQuery();
+	}
+
 	public static Script getUpdateScript(String field, Object value) {
 		return new Script.Builder()
 				.inline(new InlineScript.Builder()

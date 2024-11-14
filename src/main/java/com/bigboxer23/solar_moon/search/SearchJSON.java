@@ -26,6 +26,8 @@ public class SearchJSON {
 	private boolean daylight;
 	private boolean filterErrors;
 	private boolean includeSource = false;
+	private boolean largeEnergyConsumed = false;
+	private String id; //Elastic doc id
 
 	private List<String> additionalFields;
 
