@@ -29,6 +29,7 @@ public class SMAS3CleanupComponent {
 							.continuationToken(continuationToken)
 							.build());
 			for (S3Object object : response.contents()) {
+				logger.info(count + " checking " + object.key());
 				if (isEmptyFolder(object.key())) {
 					logger.info(count + " deleting " + object.key());
 					IComponentRegistry.smaIngestComponent

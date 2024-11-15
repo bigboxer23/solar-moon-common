@@ -134,8 +134,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.toQuery();
 	}
 
-	public static Query getElasticDocumentIdQuery(String id)
-	{
+	public static Query getElasticDocumentIdQuery(String id) {
 		return QueryBuilders.match()
 				.field("_id")
 				.query(builder -> builder.stringValue(id))
