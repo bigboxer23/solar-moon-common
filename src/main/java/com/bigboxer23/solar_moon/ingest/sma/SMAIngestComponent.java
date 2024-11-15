@@ -249,7 +249,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		});
 		if (data.getTotalEnergyConsumed() == 0) {
 			data.setTotalEnergyConsumed(IComponentRegistry.OSComponent.getMaxTotalEnergyConsumed(
-					smaDevice.getCustomerId(), smaDevice.getDevice().getId(), TimeConstants.DAY));
+					smaDevice.getCustomerId(), smaDevice.getDevice().getId(), 6 * TimeConstants.HOUR));
 		}
 		return data;
 	}
