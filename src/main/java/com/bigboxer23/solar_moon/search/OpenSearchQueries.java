@@ -227,7 +227,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 								._toAggregation());
 	}
 
-	public static SearchRequest.Builder getDataSearch(int offset, int size, boolean includeSource) {
+	public static SearchRequest.Builder getDataSearch(int offset, int size, boolean includeSource, boolean sortASC) {
 		SearchRequest.Builder search = getBaseBuilder(size, includeSource)
 				.from(offset)
 				.docvalueFields(new FieldAndFormat.Builder()
@@ -241,7 +241,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 						new FieldAndFormat.Builder().field(TOTAL_ENG_CONS).build())
 				.sort(builder -> builder.field(new FieldSort.Builder()
 						.field(TIMESTAMP)
-						.order(SortOrder.Desc)
+						.order(sortASC ? SortOrder.Asc : SortOrder.Desc)
 						.build()));
 		// If size == 500, it's for the report.  If it's 10000, it's extracting the report (which
 		// does not include weather)

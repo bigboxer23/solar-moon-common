@@ -82,12 +82,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		try {
 			SearchRequest request = OpenSearchQueries.getSearchRequestBuilder()
 					.query(OpenSearchQueries.getDeviceIdQuery(deviceId))
-					.sort(new SortOptions.Builder()
-							.field(new FieldSort.Builder()
-									.field(TIMESTAMP)
-									.order(SortOrder.Desc)
-									.build())
-							.build())
+					.sort(OpenSearchQueries.sortByTimeStampDesc())
 					.size(1)
 					.source(new SourceConfig.Builder()
 							.filter(new SourceFilter.Builder()
@@ -385,7 +380,10 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					case STACKED_TIME_SERIES_SEARCH_TYPE, GROUPED_BAR_SEARCH_TYPE -> OpenSearchQueries
 							.getStackedTimeSeriesBuilder(searchJSON.getTimeZone(), searchJSON.getBucketSize());
 					case DATA_SEARCH_TYPE -> OpenSearchQueries.getDataSearch(
-							searchJSON.getOffset(), searchJSON.getSize(), searchJSON.isIncludeSource());
+							searchJSON.getOffset(),
+							searchJSON.getSize(),
+							searchJSON.isIncludeSource(),
+							searchJSON.isSortAsc());
 					case TOTAL_ENERGY_CONSUMED_SEARCH_TYPE -> OpenSearchQueries.getTotalEnergyConsumedBuilder(
 							searchJSON.getTimeZone(), searchJSON.getBucketSize());
 					default -> null;
