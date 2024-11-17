@@ -61,11 +61,18 @@ public class IngestComponent implements MeterConstants {
 		}
 		deviceData.setEnergyConsumed(
 				Optional.ofNullable(IComponentRegistry.OSComponent.getTotalEnergyConsumed(deviceData.getDeviceId()))
-						.map(previousTotalEnergyConsumed -> Math.max(
-								0,
+						.map(previousTotalEnergyConsumed -> zeroObviouslyBadValues(
 								maybeCorrectForRollover(previousTotalEnergyConsumed, totalEnergyConsumption)
 										- previousTotalEnergyConsumed))
 						.orElse(0f));
+	}
+
+	private float zeroObviouslyBadValues(float energyConsumed) {
+		float returnValue = energyConsumed < 0 || energyConsumed > 1000 ? 0 : energyConsumed;
+		if (returnValue != energyConsumed) {
+			logger.warn("incorrect energy consumed value seen " + energyConsumed);
+		}
+		return returnValue;
 	}
 
 	/**
