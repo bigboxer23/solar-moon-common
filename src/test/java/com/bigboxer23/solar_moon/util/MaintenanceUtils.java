@@ -108,4 +108,67 @@ public class MaintenanceUtils implements IComponentRegistry {
 		search.setStartDate(System.currentTimeMillis() - TimeConstants.YEAR);
 		OSComponent.updateByQuery(search, MeterConstants.ENG_CONS, correctedValue);
 	}
+
+	/**
+	 * Walk through all device data in chronological order and validate any stamped energy consumed
+	 * data. If incorrect data is found re-stamp the corrected data
+	 */
+	/*@Test*/
+	public void auditEnergyConsumed() {
+		String customerId = "xxxx";
+		deviceComponent.getDevicesForCustomerId(customerId).forEach(this::checkEnergyConsumed);
+	}
+
+	public void checkEnergyConsumed(Device device) {
+		logger.warn("Auditing " + device.getId());
+		SearchJSON search = new SearchJSON();
+		search.setType(DATA_SEARCH_TYPE);
+		search.setIncludeSource(true);
+		search.setSize(10000);
+		search.setOffset(0);
+		search.setCustomerId(device.getClientId());
+		search.setDeviceId(device.getId());
+		search.setStartDate(System.currentTimeMillis() - TimeConstants.YEAR);
+		search.setEndDate(search.getStartDate() + (30 * TimeConstants.DAY));
+		search.setSortAsc(true);
+		Hit[] previous = {null};
+
+		while (search.getStartDate() < System.currentTimeMillis()) {
+			OSComponent.search(search).hits().hits().forEach(hit -> {
+				correctEnergyConsumed(hit, previous[0]);
+				previous[0] = hit;
+			});
+			search.setStartDate(search.getEndDate() + 1);
+			search.setEndDate(search.getStartDate() + (30 * TimeConstants.DAY));
+			logger.info(search.getJavaStartDate() + " " + search.getJavaEndDate());
+		}
+	}
+
+	private void correctEnergyConsumed(Hit<DeviceData> current, Hit<DeviceData> previous) {
+		if (current == null || previous == null) {
+			logger.warn("cannot correct, null values");
+			return;
+		}
+		DeviceData deviceData = current.source();
+		DeviceData previousData = previous.source();
+		if (deviceData == null || previousData == null) {
+			logger.warn(current.id() + " cannot correct, null deviceData");
+			return;
+		}
+		float energyConsumed = deviceData.getTotalEnergyConsumed() - previousData.getTotalEnergyConsumed();
+		if (energyConsumed < 0 || energyConsumed > 1000) {
+			energyConsumed = 0;
+		}
+		if (energyConsumed != deviceData.getEnergyConsumed()) {
+			logger.warn(deviceData.getDate() + " " + deviceData.getEnergyConsumed() + " " + energyConsumed);
+			SearchJSON search = new SearchJSON();
+			search.setType(DATA_SEARCH_TYPE);
+			search.setSize(100);
+			search.setId(current.id());
+			search.setCustomerId(deviceData.getCustomerId());
+			search.setEndDate(System.currentTimeMillis());
+			search.setStartDate(System.currentTimeMillis() - TimeConstants.YEAR);
+			OSComponent.updateByQuery(search, MeterConstants.ENG_CONS, energyConsumed);
+		}
+	}
 }
