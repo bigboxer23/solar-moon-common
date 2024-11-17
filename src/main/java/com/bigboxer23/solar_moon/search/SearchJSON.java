@@ -28,6 +28,7 @@ public class SearchJSON {
 	private boolean includeSource = false;
 	private boolean largeEnergyConsumed = false;
 	private String id; // Elastic doc id
+	private boolean sortAsc = false;
 
 	private List<String> additionalFields;
 
