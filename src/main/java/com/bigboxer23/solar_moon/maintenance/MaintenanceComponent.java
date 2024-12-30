@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon.maintenance;
 
+import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import java.util.Optional;
 
@@ -17,6 +18,10 @@ public class MaintenanceComponent extends AbstractDynamodbComponent<MaintenanceM
 		} else {
 			getTable().deleteItem(new MaintenanceMode());
 		}
+	}
+
+	public void cleanupOldLogs() {
+		IComponentRegistry.OSComponent.deleteOldLogs();
 	}
 
 	@Override

@@ -5,6 +5,10 @@ public interface OpenSearchConstants {
 	String TIMESTAMP = "@timestamp";
 	String INDEX_NAME = "generation-meter";
 
+	String LOGS_INDEX_NAME = "logs-";
+
+	String LOGS_INDEX_DATE_FORMAT = "yyyy.MM";
+
 	String TIME_SERIES_SEARCH_TYPE = "timeseries";
 
 	String TIME_SERIES_WITH_ERRORS_SEARCH_TYPE = "timeseriesWithErrors";
