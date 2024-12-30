@@ -7,8 +7,6 @@ import com.bigboxer23.solar_moon.util.TimeUtils;
 import com.bigboxer23.utils.properties.PropertyUtils;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.*;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -151,12 +149,9 @@ public class OpenSearchComponent implements OpenSearchConstants {
 
 	public void deleteOldLogs() {
 		try {
-			String logIndex = LOGS_INDEX_NAME
-					+ new SimpleDateFormat(LOGS_INDEX_DATE_FORMAT)
-							.format(LocalDate.now()
-									.minusMonths(3)
-									.atStartOfDay(ZoneId.systemDefault())
-									.toInstant());
+			Calendar calendar = Calendar.getInstance();
+			calendar.add(Calendar.MONTH, -3);
+			String logIndex = LOGS_INDEX_NAME + new SimpleDateFormat(LOGS_INDEX_DATE_FORMAT).format(calendar.getTime());
 			logger.info("deleting old logs requested " + logIndex);
 			getClient()
 					.indices()
