@@ -32,7 +32,6 @@ import org.opensearch.client.opensearch.core.search.Hit;
 import org.opensearch.client.opensearch.core.search.SourceConfig;
 import org.opensearch.client.opensearch.core.search.SourceFilter;
 import org.opensearch.client.opensearch.indices.DeleteIndexRequest;
-import org.opensearch.client.opensearch.indices.DeleteIndexResponse;
 import org.opensearch.client.transport.rest_client.RestClientTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,16 +151,16 @@ public class OpenSearchComponent implements OpenSearchConstants {
 
 	public void deleteOldLogs() {
 		try {
-			DeleteIndexResponse response = getClient()
+			String logIndex = LOGS_INDEX_NAME
+					+ new SimpleDateFormat(LOGS_INDEX_DATE_FORMAT)
+							.format(LocalDate.now()
+									.minusMonths(3)
+									.atStartOfDay(ZoneId.systemDefault())
+									.toInstant());
+			logger.info("deleting old logs requested " + logIndex);
+			getClient()
 					.indices()
-					.delete(new DeleteIndexRequest.Builder()
-							.index(LOGS_INDEX_NAME
-									+ new SimpleDateFormat(LOGS_INDEX_DATE_FORMAT)
-											.format(LocalDate.now()
-													.minusMonths(3)
-													.atStartOfDay(ZoneId.systemDefault())
-													.toInstant()))
-							.build());
+					.delete(new DeleteIndexRequest.Builder().index(logIndex).build());
 		} catch (OpenSearchException | IOException e) {
 			logger.error("deleteOldLogs: ", e);
 		}
