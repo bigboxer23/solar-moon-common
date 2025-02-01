@@ -4,11 +4,13 @@ import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.DeviceUpdateData;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class DeviceUpdateComponent extends AbstractDynamodbComponent<DeviceUpdateData> {
 
 	public void update(String deviceId) {
@@ -18,7 +20,7 @@ public class DeviceUpdateComponent extends AbstractDynamodbComponent<DeviceUpdat
 	// Only for tests
 	public void update(String deviceId, long time) {
 		if (StringUtils.isBlank(deviceId)) {
-			logger.warn("invalid device id, not updating");
+			log.warn("invalid device id, not updating");
 			return;
 		}
 		getTable().updateItem(builder -> builder.item(new DeviceUpdateData(deviceId, time)));

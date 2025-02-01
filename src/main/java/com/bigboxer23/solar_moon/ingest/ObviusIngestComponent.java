@@ -15,15 +15,15 @@ import java.util.*;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.opensearch.client.ResponseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class ObviusIngestComponent implements MeterConstants {
 	private static final Map<String, String> fields = new HashMap<>();
 
@@ -49,16 +49,14 @@ public class ObviusIngestComponent implements MeterConstants {
 		fields.put("Total System Power Factor", TOTAL_PF);
 	}
 
-	private static final Logger logger = LoggerFactory.getLogger(ObviusIngestComponent.class);
-
 	public DeviceData handleDeviceBody(String body, String customerId)
 			throws XPathExpressionException, ResponseException {
 		if (customerId == null || customerId.isBlank()) {
-			logger.error("no customer id, not doing anything.");
+			log.error("no customer id, not doing anything.");
 			return null;
 		}
 		if (body == null || body.isBlank()) {
-			logger.error("no body, not doing anything.");
+			log.error("no body, not doing anything.");
 			return null;
 		}
 		if (isLinkedDevice(body)) {
@@ -68,11 +66,11 @@ public class ObviusIngestComponent implements MeterConstants {
 		Device device =
 				IComponentRegistry.generationComponent.findDeviceFromDeviceName(customerId, findDeviceName(body));
 		if (device == null) {
-			logger.error("error getting device for device name " + findDeviceName(body));
+			log.error("error getting device for device name " + findDeviceName(body));
 			return null;
 		}
 		handleSerialNumber(device, body);
-		logger.debug("parsing device body: " + body);
+		log.debug("parsing device body: " + body);
 		return IComponentRegistry.generationComponent.handleDevice(
 				device,
 				Optional.of(device)
@@ -84,11 +82,11 @@ public class ObviusIngestComponent implements MeterConstants {
 
 	public void handleSerialNumber(Device device, String body) throws XPathExpressionException {
 		if (device == null || StringUtils.isBlank(body) || StringUtils.isNotBlank(device.getSerialNumber())) {
-			logger.debug("not handling serial number, bad body, device or already exists on device");
+			log.debug("not handling serial number, bad body, device or already exists on device");
 			return;
 		}
 		findSerialNumber(body).ifPresent(serialNumber -> {
-			logger.info("adding serial number " + device.getSerialNumber());
+			log.info("adding serial number " + device.getSerialNumber());
 			device.setSerialNumber(serialNumber);
 			IComponentRegistry.deviceComponent.updateDevice(device);
 		});
@@ -119,19 +117,19 @@ public class ObviusIngestComponent implements MeterConstants {
 
 	public void handleLinkedBody(String body, String customerId) throws XPathExpressionException {
 		if (StringUtils.isBlank(body) || StringUtils.isBlank(customerId)) {
-			logger.error("Customer id or body is invalid, cannot handle linked body");
+			log.error("Customer id or body is invalid, cannot handle linked body");
 			return;
 		}
 		Optional<String> serial = findSerialNumber(body);
 		if (serial.isEmpty()) {
-			logger.error("Can't find serial number, cannot handle linked body");
+			log.error("Can't find serial number, cannot handle linked body");
 			return;
 		}
-		logger.info("handling linked device " + serial.get());
+		log.info("handling linked device " + serial.get());
 		LinkedDevice linkedDevice = new LinkedDevice(serial.get(), customerId);
 		getTimestampFromBody(body).map(Date::getTime).ifPresent(linkedDevice::setDate);
 		if (linkedDevice.getDate() <= 0) {
-			logger.error(linkedDevice.getId() + " Can't find date, cannot handle linked body");
+			log.error(linkedDevice.getId() + " Can't find date, cannot handle linked body");
 			return;
 		}
 		getNodeListForPath(body, POINT_PATH).ifPresent(nodes -> {
@@ -175,7 +173,7 @@ public class ObviusIngestComponent implements MeterConstants {
 
 	private Optional<NodeList> getNodeListForPath(String body, String path) throws XPathExpressionException {
 		if (StringUtils.isBlank(body)) {
-			logger.error("no body, not doing anything.");
+			log.error("no body, not doing anything.");
 			return Optional.empty();
 		}
 		return Optional.ofNullable((NodeList) XPathFactory.newInstance()
@@ -198,7 +196,7 @@ public class ObviusIngestComponent implements MeterConstants {
 					})
 					.orElse(null);
 		} catch (XPathExpressionException e) {
-			logger.warn("findError", e);
+			log.warn("findError", e);
 		}
 		return null;
 	}
@@ -206,7 +204,7 @@ public class ObviusIngestComponent implements MeterConstants {
 	protected DeviceData parseDeviceInformation(
 			String body, String siteId, String name, String customerId, String deviceId) {
 		try {
-			logger.debug("parsing device info " + siteId + ":" + name + "\n" + body);
+			log.debug("parsing device info " + siteId + ":" + name + "\n" + body);
 			if (!isOK(body)) {
 				IComponentRegistry.alarmComponent.faultDetected(customerId, deviceId, siteId, findError(body));
 				return getTimestampFromBody(body)
@@ -235,7 +233,7 @@ public class ObviusIngestComponent implements MeterConstants {
 									.getNodeValue());
 							deviceData.addAttribute(mappingFields.get(attributeName), value);
 						} catch (NumberFormatException nfe) {
-							logger.warn("bad value retrieved from xml " + attributeName + "\n" + body, nfe);
+							log.warn("bad value retrieved from xml " + attributeName + "\n" + body, nfe);
 							String value = nodes.item(i)
 									.getAttributes()
 									.getNamedItem("value")
@@ -252,7 +250,7 @@ public class ObviusIngestComponent implements MeterConstants {
 			getTimestampFromBody(body).ifPresent(deviceData::setDate);
 			return deviceData;
 		} catch (XPathExpressionException e) {
-			logger.error("parseDeviceInformation", e);
+			log.error("parseDeviceInformation", e);
 		}
 		return null;
 	}
@@ -273,7 +271,7 @@ public class ObviusIngestComponent implements MeterConstants {
 							+ " "
 							+ timeNode.getAttributes().getNamedItem(ZONE).getNodeValue());
 				} catch (ParseException e) {
-					logger.warn("cannot parse date string: " + body, e);
+					log.warn("cannot parse date string: " + body, e);
 				}
 			}
 			return null;
@@ -282,13 +280,13 @@ public class ObviusIngestComponent implements MeterConstants {
 
 	private void calculateTotalRealPower(DeviceData deviceData) {
 		if (deviceData.getTotalRealPower() != -1) {
-			logger.debug("Value already exists, not calculating");
+			log.debug("Value already exists, not calculating");
 			return;
 		}
 		if (deviceData.getAverageVoltage() == -1
 				|| deviceData.getAverageCurrent() == -1
 				|| deviceData.getPowerFactor() == -1) {
-			logger.info("missing required values to calculate real power "
+			log.info("missing required values to calculate real power "
 					+ deviceData.getDeviceId()
 					+ " "
 					+ deviceData.getAverageVoltage()

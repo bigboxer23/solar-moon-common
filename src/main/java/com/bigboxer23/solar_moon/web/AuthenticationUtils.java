@@ -5,28 +5,26 @@ import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.lambda.data.LambdaRequest;
 import java.util.Base64;
 import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class AuthenticationUtils {
-	private static final Logger logger = LoggerFactory.getLogger(AuthenticationUtils.class);
-
 	private static final String sourceUserId = System.getenv("SRC_USER");
 	private static final String destinationUserId = System.getenv("DEST_USER");
 
 	public static String authenticateRequest(String authHeader, CustomerComponent customerComponent) {
 		if (authHeader == null || !authHeader.startsWith("Basic ")) {
-			logger.warn("Missing authorization token.");
+			log.warn("Missing authorization token.");
 			return null;
 		}
 		String usernameAndPassword = authHeader.substring(6);
 		String decoded = new String(Base64.getDecoder().decode(usernameAndPassword));
 		String[] parts = decoded.split(":");
 		if (parts.length != 2) {
-			logger.warn("Invalid auth, returning unauthorized: " + parts[0]);
+			log.warn("Invalid auth, returning unauthorized: " + parts[0]);
 			return null;
 		}
 		String customerId = customerComponent
@@ -37,7 +35,7 @@ public class AuthenticationUtils {
 			TransactionUtil.updateCustomerId(customerId);
 			return customerId;
 		}
-		logger.warn("Invalid token, returning unauthorized: " + parts[1]);
+		log.warn("Invalid token, returning unauthorized: " + parts[1]);
 		return null;
 	}
 

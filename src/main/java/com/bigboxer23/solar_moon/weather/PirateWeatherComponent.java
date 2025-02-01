@@ -17,10 +17,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 /** */
+@Slf4j
 public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeatherData> {
 	private static final String API_KEY = PropertyUtils.getProperty("pirate.weather.api");
 
@@ -32,24 +34,24 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 				OkHttpUtil.getSynchronous(MessageFormat.format(FORCAST_URL, latitude, longitude), null)) {
 			return OkHttpUtil.getBody(response, PirateWeatherDataResponse.class);
 		} catch (IOException e) {
-			IComponentRegistry.logger.error("getForecastData", e);
+			log.error("getForecastData", e);
 		}
 		return Optional.empty();
 	}
 
 	public void addWeatherData(DeviceData deviceData, Device site) {
 		if (site == null || deviceData == null || (site.getLatitude() == -1 && site.getLongitude() == -1)) {
-			logger.debug("Not adding weather data");
+			log.debug("Not adding weather data");
 			return;
 		}
 		if (getLastUpdate(site.getLatitude(), site.getLongitude())
 				< (System.currentTimeMillis() - (TimeConstants.HOUR + TimeConstants.THIRTY_MINUTES))) {
-			logger.warn("Stale weather data, not stamping " + site.getLatitude() + "," + site.getLongitude());
+			log.warn("Stale weather data, not stamping " + site.getLatitude() + "," + site.getLongitude());
 			return;
 		}
 		if (deviceData.getDate().getTime()
 				< (System.currentTimeMillis() - (TimeConstants.HOUR + TimeConstants.THIRTY_MINUTES))) {
-			logger.warn("Stale date, not stamping weather " + site.getLatitude() + "," + site.getLongitude());
+			log.warn("Stale date, not stamping weather " + site.getLatitude() + "," + site.getLongitude());
 			return;
 		}
 		getWeather(site.getLatitude(), site.getLongitude()).ifPresent(w -> {
@@ -74,7 +76,7 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 			TransactionUtil.updateCustomerId(site.getClientId());
 			long lastUpdate = getLastUpdate(site.getLatitude(), site.getLongitude());
 			if (lastUpdate >= System.currentTimeMillis() - TimeConstants.FIFTEEN_MINUTES) {
-				logger.info("Not getting new weather, previous data isn't old. "
+				log.info("Not getting new weather, previous data isn't old. "
 						+ site.getLatitude()
 						+ ":"
 						+ site.getLongitude());
@@ -85,7 +87,7 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 								.isDay(new Date(), site.getLatitude(), site.getLongitude())
 								.orElse(true)
 						|| isTopOfHour) {
-					logger.info("fetching weather data for " + site.getLatitude() + "," + site.getLongitude());
+					log.info("fetching weather data for " + site.getLatitude() + "," + site.getLongitude());
 					Optional<PirateWeatherDataResponse> response = RetryingCommand.execute(
 							() -> {
 								Optional<PirateWeatherDataResponse> r =
@@ -101,7 +103,7 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 					response.ifPresent(w -> updateWeather(site.getLatitude(), site.getLongitude(), w.getCurrently()));
 				}
 			} catch (Exception e) {
-				logger.error("fetchNewWeather " + site.getLatitude() + ":" + site.getLongitude(), e);
+				log.error("fetchNewWeather " + site.getLatitude() + ":" + site.getLongitude(), e);
 			}
 		});
 	}
@@ -130,17 +132,17 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 			return Optional.ofNullable(
 					IComponentRegistry.moshi.adapter(PirateWeatherData.class).fromJson(data.getWeather()));
 		} catch (IOException e) {
-			logger.error("getWeather", e);
+			log.error("getWeather", e);
 			return Optional.empty();
 		}
 	}
 
 	public void updateWeather(double latitude, double longitude, PirateWeatherData data) {
 		if (data == null) {
-			logger.warn("invalid weather, not storing " + latitude + "," + longitude);
+			log.warn("invalid weather, not storing " + latitude + "," + longitude);
 			return;
 		}
-		logger.info("Updating weather for: " + latitude + "," + longitude);
+		log.info("Updating weather for: " + latitude + "," + longitude);
 		getTable()
 				.updateItem(builder -> builder.item(new StoredWeatherData(
 						latitude,

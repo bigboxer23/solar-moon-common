@@ -13,14 +13,12 @@ import java.util.Optional;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class TimeUtils implements TimeConstants {
-	private static final Logger logger = LoggerFactory.getLogger(TimeUtils.class);
-
 	private static final String USER_FACING_DATE_FORMAT = "MMM d, yy h:mm aaa";
 
 	/**
@@ -76,7 +74,7 @@ public class TimeUtils implements TimeConstants {
 
 	public static Optional<String> getTimeZone(Device device) {
 		if (device == null) {
-			logger.error("device is null, cannot set time zone");
+			log.error("device is null, cannot set time zone");
 			return Optional.empty();
 		}
 		if (!DeviceComponent.NO_SITE.equals(device.getSiteId())) {

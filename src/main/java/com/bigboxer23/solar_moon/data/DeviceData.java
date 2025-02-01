@@ -8,10 +8,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;
 import java.util.Optional;
 import lombok.Data;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 @Data
 public class DeviceData {
 	@JsonProperty(TIMESTAMP)
@@ -198,7 +199,7 @@ public class DeviceData {
 				setCriticalErrorString((String) value);
 				break;
 			default:
-				LoggerFactory.getLogger(DeviceData.class).error("unknown field: " + key);
+				log.error("unknown field: " + key);
 				throw new RuntimeException("unknown field: " + key);
 		}
 	}

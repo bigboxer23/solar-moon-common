@@ -5,9 +5,11 @@ import com.bigboxer23.solar_moon.data.Device;
 import java.text.ParseException;
 import java.util.*;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 @Data
 public class SMADevice implements ISMAIngestConstants {
 	private String deviceName;
@@ -29,7 +31,7 @@ public class SMADevice implements ISMAIngestConstants {
 			setDeviceName(record.getDevice());
 			setDevice(IComponentRegistry.generationComponent.findDeviceFromDeviceName(customerId, deviceName));
 			if (getDevice() == null) {
-				IComponentRegistry.logger.error("cannot add record, no device created (licensing?)");
+				log.error("cannot add record, no device created (licensing?)");
 				return;
 			}
 			if (!StringUtils.isEmpty(record.getTimestamp())) {
@@ -37,7 +39,7 @@ public class SMADevice implements ISMAIngestConstants {
 					setTimestamp(
 							SMAIngestComponent.getDateFormatter(getDevice()).parse(record.getTimestamp()));
 				} catch (ParseException e) {
-					IComponentRegistry.logger.warn("cannot parse date string: " + record.getTimestamp(), e);
+					log.warn("cannot parse date string: " + record.getTimestamp(), e);
 				}
 			}
 		}

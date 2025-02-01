@@ -14,11 +14,13 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 @EqualsAndHashCode(callSuper = true)
 @Data
+@Slf4j
 public class AlarmEmailTemplateContent extends EmailTemplateContent implements IComponentRegistry {
 	private String recipient;
 
@@ -30,7 +32,7 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 		super("email.template.html", "Potential issue detected with device", "", "", "See active alerts");
 		Optional<Customer> customer = customerComponent.findCustomerByCustomerId(customerId);
 		if (customer.isEmpty()) {
-			logger.error("cannot find customer for " + customerId);
+			log.error("cannot find customer for " + customerId);
 			return;
 		}
 		alarms.forEach(a -> deviceComponent
@@ -38,7 +40,7 @@ public class AlarmEmailTemplateContent extends EmailTemplateContent implements I
 				.map(d -> {
 					if (d.isNotificationsDisabled()) {
 						TransactionUtil.addDeviceId(d.getId(), d.getSiteId());
-						logger.warn("New notification detected, but not sending" + " email  as requested.");
+						log.warn("New notification detected, but not sending" + " email  as requested.");
 						return null;
 					}
 					return d;

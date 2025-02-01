@@ -2,17 +2,15 @@ package com.bigboxer23.solar_moon.ingest.sma;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.utils.properties.PropertyUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 /** Contains logic to look through S3 bucket and cleanup/remove any empty directory structure */
+@Slf4j
 public class SMAS3CleanupComponent {
-	private static final Logger logger = LoggerFactory.getLogger(SMAS3CleanupComponent.class);
-
 	private final String bucket = PropertyUtils.getProperty("ftp.s3.bucket");
 
 	// TODO: look at logic to deal w/stale data
@@ -29,9 +27,9 @@ public class SMAS3CleanupComponent {
 							.continuationToken(continuationToken)
 							.build());
 			for (S3Object object : response.contents()) {
-				logger.info(count + " checking " + object.key());
+				log.info(count + " checking " + object.key());
 				if (isEmptyFolder(object.key())) {
-					logger.info(count + " deleting " + object.key());
+					log.info(count + " deleting " + object.key());
 					IComponentRegistry.smaIngestComponent
 							.getS3Client()
 							.deleteObject(DeleteObjectRequest.builder()

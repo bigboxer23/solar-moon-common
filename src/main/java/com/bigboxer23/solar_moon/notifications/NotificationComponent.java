@@ -9,8 +9,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ses.SesClient;
@@ -18,10 +17,8 @@ import software.amazon.awssdk.services.ses.model.*;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class NotificationComponent {
-
-	private static final Logger logger = LoggerFactory.getLogger(NotificationComponent.class);
-
 	private static final MustacheFactory mf = new DefaultMustacheFactory("templates");
 
 	private static final String SENDER = PropertyUtils.getProperty("emailer.info");
@@ -39,7 +36,7 @@ public class NotificationComponent {
 		try {
 			mf.compile(template.getTemplateName()).execute(content, template).flush();
 		} catch (IOException e) {
-			logger.warn("sendNotification: template error", e);
+			log.warn("sendNotification: template error", e);
 			return;
 		}
 		getRecipients(recipient).forEach(r -> {
@@ -47,7 +44,7 @@ public class NotificationComponent {
 					.region(Region.of(PropertyUtils.getProperty("aws.region")))
 					.credentialsProvider(DefaultCredentialsProvider.create())
 					.build(); ) {
-				logger.info("Sending email to " + recipient + " proxy:" + r);
+				log.info("Sending email to " + recipient + " proxy:" + r);
 				client.sendEmail(SendEmailRequest.builder()
 						.destination(Destination.builder().toAddresses(r).build())
 						.message(Message.builder()
@@ -61,7 +58,7 @@ public class NotificationComponent {
 						.source(sender)
 						.build());
 			} catch (SesException e) {
-				logger.warn(e.awsErrorDetails().errorMessage(), e);
+				log.warn(e.awsErrorDetails().errorMessage(), e);
 			}
 		});
 	}

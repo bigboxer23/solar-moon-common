@@ -24,8 +24,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.squareup.moshi.Moshi;
 import org.opensearch.client.opensearch.core.SearchResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** */
 public interface IComponentRegistry {
@@ -76,6 +74,4 @@ public interface IComponentRegistry {
 	DownloadComponent downloadComponent = new DownloadComponent();
 
 	LinkedDeviceComponent linkedDeviceComponent = new LinkedDeviceComponent();
-
-	Logger logger = LoggerFactory.getLogger(IComponentRegistry.class);
 }

@@ -8,6 +8,7 @@ import com.bigboxer23.utils.properties.PropertyUtils;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -31,15 +32,11 @@ import org.opensearch.client.opensearch.core.search.SourceConfig;
 import org.opensearch.client.opensearch.core.search.SourceFilter;
 import org.opensearch.client.opensearch.indices.DeleteIndexRequest;
 import org.opensearch.client.transport.rest_client.RestClientTransport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class OpenSearchComponent implements OpenSearchConstants {
-
-	private static final Logger logger = LoggerFactory.getLogger(OpenSearchComponent.class);
-
 	private OpenSearchClient client;
 
 	private final String openSearchUrl;
@@ -55,7 +52,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	}
 
 	public void logData(Date fetchDate, List<DeviceData> deviceDatas) throws ResponseException {
-		logger.debug("sending to opensearch component");
+		log.debug("sending to opensearch component");
 		BulkRequest.Builder bulkRequest = new BulkRequest.Builder().index(INDEX_NAME);
 		deviceDatas.forEach(data -> {
 			data.setDate(data.getDate() == null ? fetchDate : data.getDate());
@@ -66,14 +63,14 @@ public class OpenSearchComponent implements OpenSearchConstants {
 							.build())
 					.build());
 		});
-		logger.debug("Sending Request to open search");
+		log.debug("Sending Request to open search");
 		try {
 			BulkResponse response = getClient().bulk(bulkRequest.build());
 			if (response.errors()) {
-				response.items().forEach(item -> logger.warn("error:" + item.error()));
+				response.items().forEach(item -> log.warn("error:" + item.error()));
 			}
 		} catch (IOException e) {
-			logger.error("logStatusEvent", e);
+			log.error("logStatusEvent", e);
 			if (e instanceof ResponseException) {
 				throw (ResponseException) e;
 			}
@@ -94,17 +91,17 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					.build();
 			SearchResponse<DeviceData> response = getClient().search(request, DeviceData.class);
 			if (response.hits().hits().isEmpty()) {
-				logger.warn("couldn't find previous value for " + deviceId);
+				log.warn("couldn't find previous value for " + deviceId);
 				return null;
 			}
 			DeviceData data = response.hits().hits().getFirst().source();
 			if (data == null) {
-				logger.warn("No data associated with result for " + deviceId);
+				log.warn("No data associated with result for " + deviceId);
 				return null;
 			}
 			return data.getTotalEnergyConsumed();
 		} catch (IOException e) {
-			logger.error("getTotalEnergyConsumed", e);
+			log.error("getTotalEnergyConsumed", e);
 			return null;
 		}
 	}
@@ -126,12 +123,12 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					.build();
 			SearchResponse<DeviceData> response = getClient().search(request, DeviceData.class);
 			if (response.hits().hits().isEmpty()) {
-				logger.debug("couldn't find previous value for " + deviceId);
+				log.debug("couldn't find previous value for " + deviceId);
 				return null;
 			}
 			return response.hits().hits().getFirst().source();
 		} catch (IOException e) {
-			logger.error("getLastDeviceEntry:", e);
+			log.error("getLastDeviceEntry:", e);
 			return null;
 		}
 	}
@@ -143,7 +140,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 							.query(OpenSearchQueries.getCustomerIdQuery(customerId))
 							.build());
 		} catch (IOException e) {
-			logger.error("deleteByCustomerId: ", e);
+			log.error("deleteByCustomerId: ", e);
 		}
 	}
 
@@ -152,12 +149,12 @@ public class OpenSearchComponent implements OpenSearchConstants {
 			Calendar calendar = Calendar.getInstance();
 			calendar.add(Calendar.MONTH, -3);
 			String logIndex = LOGS_INDEX_NAME + new SimpleDateFormat(LOGS_INDEX_DATE_FORMAT).format(calendar.getTime());
-			logger.info("deleting old logs requested " + logIndex);
+			log.info("deleting old logs requested " + logIndex);
 			getClient()
 					.indices()
 					.delete(new DeleteIndexRequest.Builder().index(logIndex).build());
 		} catch (OpenSearchException | IOException e) {
-			logger.error("deleteOldLogs: ", e);
+			log.error("deleteOldLogs: ", e);
 		}
 	}
 
@@ -173,7 +170,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 									.toQuery())
 							.build());
 		} catch (IOException e) {
-			logger.error("deleteByCustomerId: ", e);
+			log.error("deleteByCustomerId: ", e);
 		}
 	}
 
@@ -189,7 +186,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 									.toQuery())
 							.build());
 		} catch (IOException e) {
-			logger.error("deleteByCustomerId: ", e);
+			log.error("deleteByCustomerId: ", e);
 		}
 	}
 
@@ -198,7 +195,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 			getClient()
 					.delete(new DeleteRequest.Builder().index(INDEX_NAME).id(id).build());
 		} catch (IOException e) {
-			logger.error("deleteById: " + id, e);
+			log.error("deleteById: " + id, e);
 		}
 	}
 
@@ -215,7 +212,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					.build();
 			SearchResponse<DeviceData> response = getClient().search(request, DeviceData.class);
 			if (response.hits().hits().isEmpty()) {
-				logger.debug("Couldn't find previous value for " + deviceId);
+				log.debug("Couldn't find previous value for " + deviceId);
 				return null;
 			}
 			if (response.hits().hits().size() > 1) {
@@ -224,7 +221,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 			}
 			return response.hits().hits().getFirst().source();
 		} catch (IOException e) {
-			logger.error("getDeviceByTimePeriod", e);
+			log.error("getDeviceByTimePeriod", e);
 			return null;
 		}
 	}
@@ -244,7 +241,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					.map(Hit::source)
 					.toList();
 		} catch (IOException e) {
-			logger.error("getDeviceCountByTimePeriod", e);
+			log.error("getDeviceCountByTimePeriod", e);
 			return Collections.emptyList();
 		}
 	}
@@ -262,7 +259,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					.build();
 			return getClient().search(request, Map.class).hits().hits().size();
 		} catch (IOException e) {
-			logger.error("getDeviceCountByTimePeriod " + customerId + ":" + siteId, e);
+			log.error("getDeviceCountByTimePeriod " + customerId + ":" + siteId, e);
 			return -1;
 		}
 	}
@@ -276,7 +273,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 									.build(),
 							DeviceData.class);
 		} catch (IOException e) {
-			logger.error("search " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
+			log.error("search " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
 		}
 		return null;
 	}
@@ -289,7 +286,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					.build();
 			return getClient().updateByQuery(request);
 		} catch (IOException e) {
-			logger.error("updatebyquery " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
+			log.error("updatebyquery " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
 		}
 		return null;
 	}
@@ -301,7 +298,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 					.build();
 			return getClient().deleteByQuery(request);
 		} catch (IOException e) {
-			logger.error("deletebyquery " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
+			log.error("deletebyquery " + searchJSON.getCustomerId() + ":" + searchJSON.getDeviceName(), e);
 		}
 		return null;
 	}
@@ -475,12 +472,12 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	public boolean isOpenSearchAvailable() {
 		try {
 			if (!getClient().ping().value()) {
-				logger.warn("isOpenSearchAvailable false ping");
+				log.warn("isOpenSearchAvailable false ping");
 				return false;
 			}
 			getClient().indices().stats();
 		} catch (IOException e) {
-			logger.error("isOpenSearchAvailable", e);
+			log.error("isOpenSearchAvailable", e);
 			return false;
 		}
 		return true;

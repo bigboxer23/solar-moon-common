@@ -16,9 +16,8 @@ import java.util.*;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.opensearch.client.ResponseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
@@ -32,9 +31,8 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class SMAIngestComponent implements ISMAIngestConstants {
-	private static final Logger logger = LoggerFactory.getLogger(SMAIngestComponent.class);
-
 	private final SimpleDateFormat smaFtpFolderDateFormatter = new SimpleDateFormat("yyyyMMdd");
 
 	private static S3Client s3;
@@ -52,15 +50,15 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 
 	public void ingestXMLFile(String xml, String customerId) throws XPathExpressionException {
 		if (StringUtils.isEmpty(xml)) {
-			logger.warn("empty xml file, not doing anything");
+			log.warn("empty xml file, not doing anything");
 			return;
 		}
 		if (StringUtils.isEmpty(customerId)) {
-			logger.error("no customer id, not doing anything.");
+			log.error("no customer id, not doing anything.");
 			return;
 		}
 		if (StringUtils.isEmpty(xml)) {
-			logger.error("no xml body, not doing anything.");
+			log.error("no xml body, not doing anything.");
 			return;
 		}
 		NodeList nodelist = (NodeList) XPathFactory.newInstance()
@@ -88,7 +86,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		devices.forEach((key, smaDevice) -> {
 			if (smaDevice.getDevice() == null) {
 				TransactionUtil.addDeviceId(null, null);
-				logger.warn("No device for " + smaDevice.getDeviceName() + ", not doing anything.");
+				log.warn("No device for " + smaDevice.getDeviceName() + ", not doing anything.");
 				return;
 			}
 			try {
@@ -96,9 +94,9 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 						smaDevice.getDevice().getId(), smaDevice.getDevice().getSiteId());
 				DeviceData data = IComponentRegistry.generationComponent.handleDevice(
 						smaDevice.getDevice(), translateToDeviceData(smaDevice));
-				logger.info("successfully uploaded data: " + data.getDate());
+				log.info("successfully uploaded data: " + data.getDate());
 			} catch (ResponseException e) {
-				logger.error("ingestXMLFile", e);
+				log.error("ingestXMLFile", e);
 			}
 		});
 	}
@@ -107,7 +105,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		boolean shouldChangeSite = devices.values().stream()
 				.allMatch(d -> DeviceComponent.NO_SITE.equals(d.getDevice().getSiteId()));
 		if (shouldChangeSite) {
-			logger.info("all new items, assigning site");
+			log.info("all new items, assigning site");
 			Double[] yield = {(double) -1};
 			String[] siteNameHolder = new String[1];
 			devices.values().forEach(sma -> {
@@ -131,11 +129,11 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 
 	private void lookupSiteDeviceAndAssignSiteToDeviceList(
 			String customerId, String siteDeviceName, Collection<SMADevice> devices) {
-		logger.warn("Attempting to update site for " + siteDeviceName);
+		log.warn("Attempting to update site for " + siteDeviceName);
 		Optional<Device> siteOptional =
 				IComponentRegistry.deviceComponent.findDeviceByDeviceName(customerId, siteDeviceName);
 		if (siteOptional.isEmpty()) {
-			logger.warn("Cannot find device for " + siteDeviceName + ". Cannot automatically stamp site");
+			log.warn("Cannot find device for " + siteDeviceName + ". Cannot automatically stamp site");
 			return;
 		}
 		Device site = siteOptional.get();
@@ -150,7 +148,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 				.filter(device -> DeviceComponent.NO_SITE.equalsIgnoreCase(device.getSiteId()))
 				.forEach(device -> {
 					TransactionUtil.addDeviceId(device.getId(), site.getId());
-					logger.warn("adjusting site for " + device.getDisplayName() + " " + site.getSite());
+					log.warn("adjusting site for " + device.getDisplayName() + " " + site.getSite());
 					device.setSite(site.getDisplayName());
 					device.setSiteId(site.getId());
 					IComponentRegistry.deviceComponent.updateDevice(device);
@@ -158,7 +156,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 	}
 
 	private void checkForNewDevicesAndAssignSite(Map<String, SMADevice> devices) {
-		logger.debug("checking for new devices");
+		log.debug("checking for new devices");
 		Device donor = devices.values().stream()
 				.map(SMADevice::getDevice)
 				.filter(Objects::nonNull)
@@ -166,7 +164,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 				.findFirst()
 				.orElse(null);
 		if (donor == null) {
-			logger.error("cannot determine site.");
+			log.error("cannot determine site.");
 			return;
 		}
 		devices.values().stream()
@@ -175,7 +173,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 				.filter(device -> device.getSite().equalsIgnoreCase(DeviceComponent.NO_SITE))
 				.forEach(device -> {
 					TransactionUtil.addDeviceId(device.getId(), donor.getSiteId());
-					logger.warn("found unassigned device within site, assigning to site " + donor.getSite());
+					log.warn("found unassigned device within site, assigning to site " + donor.getSite());
 					device.setSite(donor.getSite());
 					device.setSiteId(donor.getSiteId());
 					IComponentRegistry.deviceComponent.updateDevice(device);
@@ -196,7 +194,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		devices.keySet().stream().findFirst().ifPresent(key -> {
 			SMADevice donor = devices.get(key);
 			if (DeviceComponent.NO_SITE.equals(donor.getDevice().getSiteId())) {
-				logger.debug("cannot find ghost devices w/o site configuration");
+				log.debug("cannot find ghost devices w/o site configuration");
 				return;
 			}
 			boolean isDay = IComponentRegistry.locationComponent
@@ -213,9 +211,9 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 						if (d.getDeviceName() != null && !devices.containsKey(d.getDeviceName())) {
 							TransactionUtil.addDeviceId(d.getId(), d.getSiteId());
 							if (isDay) {
-								logger.info("adding ghost device " + d.getDeviceName());
+								log.info("adding ghost device " + d.getDeviceName());
 							} else {
-								logger.debug("adding ghost device " + d.getDeviceName());
+								log.debug("adding ghost device " + d.getDeviceName());
 							}
 							SMADevice smaDevice = new SMADevice(customerId);
 							SMARecord record = new SMARecord(donor.getRecords().getFirst());
@@ -293,7 +291,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 			// TODO: pushing
 		}
 		if (!StringUtils.isEmpty(newAccessKey)) {
-			logger.warn("Creating new folder for access key " + newAccessKey);
+			log.warn("Creating new folder for access key " + newAccessKey);
 			PutObjectResponse response = getS3Client()
 					.putObject(
 							PutObjectRequest.builder()
@@ -301,16 +299,16 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 									.key(newAccessKey + "/")
 									.build(),
 							RequestBody.empty());
-			logger.info("Created folder: " + response.toString());
+			log.info("Created folder: " + response.toString());
 		} else {
 			// Account deletion
-			logger.warn("Deleting folder for " + oldAccessKey);
+			log.warn("Deleting folder for " + oldAccessKey);
 			DeleteObjectResponse response = getS3Client()
 					.deleteObject(DeleteObjectRequest.builder()
 							.bucket(bucket)
 							.key(oldAccessKey + "/")
 							.build());
-			logger.info("Deleted folder: " + response.toString());
+			log.info("Deleted folder: " + response.toString());
 		}
 	}
 
@@ -326,7 +324,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		try {
 			return Optional.of(smaFtpFolderDateFormatter.parse(paths[paths.length - 1]));
 		} catch (ParseException e) {
-			logger.info("cannot parse: " + path, e);
+			log.info("cannot parse: " + path, e);
 		}
 		return Optional.empty();
 	}

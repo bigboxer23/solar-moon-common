@@ -10,11 +10,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 
 	public static final String NO_SITE = "No Site"; // TODO:set as site id instead of name (or also as name)
@@ -86,7 +88,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	public List<Device> getDevices(boolean isVirtual) {
-		logger.info("Fetching " + (isVirtual ? "" : "non-") + "virtual devices");
+		log.info("Fetching " + (isVirtual ? "" : "non-") + "virtual devices");
 		return getTable()
 				.index(Device.VIRTUAL_INDEX)
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(isVirtual + "")))
@@ -96,7 +98,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 	}
 
 	public List<Device> getSites() {
-		logger.info("Fetching site devices");
+		log.info("Fetching site devices");
 		return getTable()
 				.index(Device.IS_SITE_INDEX)
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue("1")))
@@ -109,7 +111,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		if (StringUtils.isBlank(customerId)) {
 			return Collections.emptyList();
 		}
-		logger.debug("Fetching all devices");
+		log.debug("Fetching all devices");
 		return getTable()
 				.index(Device.CLIENT_INDEX)
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(customerId)))
@@ -186,7 +188,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 
 	public Device addDevice(Device device) {
 		if (!IComponentRegistry.subscriptionComponent.canAddAnotherDevice(device.getClientId())) {
-			logger.warn("Cannot add new device, not enough devices in license: "
+			log.warn("Cannot add new device, not enough devices in license: "
 					+ (IComponentRegistry.subscriptionComponent
 									.getSubscription(device.getClientId())
 									.map(Subscription::getPacks)
@@ -197,11 +199,11 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 			return null;
 		}
 		if (findDeviceById(device.getId(), device.getClientId()).isPresent()) {
-			logger.warn(device.getClientId() + ":" + device.getId() + " exists, not putting into db.");
+			log.warn(device.getClientId() + ":" + device.getId() + " exists, not putting into db.");
 			return null;
 		}
 		if (findDeviceByDeviceName(device.getClientId(), device.getDeviceName()).isPresent()) {
-			logger.warn(device.getClientId() + ":" + device.getDeviceName() + " exists, cannot add a matching device");
+			log.warn(device.getClientId() + ":" + device.getDeviceName() + " exists, cannot add a matching device");
 			return null;
 		}
 		maybeUpdateLocationData(device);
@@ -223,7 +225,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		logAction("update", device.getId(), device.getSiteId());
 		Optional<Device> dbDevice = findDeviceByDeviceName(device.getClientId(), device.getDeviceName());
 		if (dbDevice.isPresent() && !dbDevice.get().getId().equals(device.getId())) {
-			logger.warn(device.getClientId() + ":" + device.getDeviceName() + " exists, cannot update matching device");
+			log.warn(device.getClientId() + ":" + device.getDeviceName() + " exists, cannot update matching device");
 			return Optional.empty();
 		}
 		if (device.isDeviceSite()) {
@@ -265,7 +267,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 
 	public void logAction(String action, String id, String siteId) {
 		TransactionUtil.addDeviceId(id, siteId);
-		logger.info("device " + action);
+		log.info("device " + action);
 	}
 
 	@Override

@@ -8,19 +8,17 @@ import com.bigboxer23.solar_moon.search.OpenSearchUtils;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.util.*;
 import java.util.function.Function;
+import lombok.extern.slf4j.Slf4j;
 import org.opensearch.client.ResponseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Component to stash all the logic related to aggregating virtual site devices */
+@Slf4j
 public class VirtualDeviceComponent {
-	private static final Logger logger = LoggerFactory.getLogger(VirtualDeviceComponent.class);
-
 	public void handleVirtualDevice(DeviceData device) {
 		if (!shouldAddVirtualDevice(device)) {
 			return;
 		}
-		logger.info("Trying to aquire lock");
+		log.info("Trying to aquire lock");
 		DynamoLockUtils.doLockedCommand(
 				device.getSiteId() + "-" + device.getDate().getTime(), device.getDeviceId(), () -> {
 					Device virtualDevice =
@@ -31,7 +29,7 @@ public class VirtualDeviceComponent {
 									.findAny()
 									.orElse(null);
 					if (virtualDevice == null) {
-						logger.warn("cannot find virtualDevice " + device.getCustomerId() + ":" + device.getSiteId());
+						log.warn("cannot find virtualDevice " + device.getCustomerId() + ":" + device.getSiteId());
 						return;
 					}
 					TransactionUtil.addDeviceId(virtualDevice.getId(), virtualDevice.getSiteId());
@@ -53,13 +51,13 @@ public class VirtualDeviceComponent {
 					IComponentRegistry.locationComponent.addLocationData(virtualDeviceData, virtualDevice);
 					IComponentRegistry.weatherComponent.addWeatherData(virtualDeviceData, virtualDevice);
 					IComponentRegistry.linkedDeviceComponent.addLinkedDeviceDataVirtual(virtualDeviceData, siteDevices);
-					logger.info("updating virtual device: " + device.getDate());
+					log.info("updating virtual device: " + device.getDate());
 					try {
 						IComponentRegistry.OSComponent.logData(
 								virtualDeviceData.getDate(), Collections.singletonList(virtualDeviceData));
 						OpenSearchUtils.waitForIndexing();
 					} catch (ResponseException e) {
-						logger.error("handleVirtualDevice", e);
+						log.error("handleVirtualDevice", e);
 					}
 				});
 	}
@@ -77,7 +75,7 @@ public class VirtualDeviceComponent {
 		int openSearchDeviceCount = IComponentRegistry.OSComponent.getSiteDevicesCountByTimePeriod(
 				device.getCustomerId(), device.getSiteId(), device.getDate());
 		if (devices.size() - 1 != openSearchDeviceCount) {
-			logger.debug("not calculating site "
+			log.debug("not calculating site "
 					+ device.getSiteId()
 					+ ". Only "
 					+ openSearchDeviceCount

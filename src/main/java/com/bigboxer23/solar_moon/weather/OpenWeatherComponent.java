@@ -14,15 +14,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** */
 // @Component
+@Slf4j
 public class OpenWeatherComponent {
-	private static final Logger logger = LoggerFactory.getLogger(OpenWeatherComponent.class);
-
 	private static final String kOpenWeatherMapUrl =
 			"https://api.openweathermap.org/data/2.5/weather?lat={0}&lon={1}&APPID={2}";
 
@@ -48,12 +46,12 @@ public class OpenWeatherComponent {
 	protected Location getLatLongFromCity(String city, String state, int countryCode) {
 		return Optional.ofNullable(locationCache.get(city + state + countryCode))
 				.map(loc -> {
-					logger.debug("retrieving lat/long (cached) from " + city + " " + state);
+					log.debug("retrieving lat/long (cached) from " + city + " " + state);
 					loc.setFromCache(true);
 					return loc;
 				})
 				.orElseGet(() -> {
-					logger.info("retrieving lat/long from " + city + " " + state);
+					log.info("retrieving lat/long from " + city + " " + state);
 					try (Response response = OkHttpUtil.getSynchronous(
 							MessageFormat.format(
 									kOpenWeatherMapCityToLatLong,
@@ -61,7 +59,7 @@ public class OpenWeatherComponent {
 									openWeatherMapAPIKey),
 							null)) {
 						String body = response.body().string();
-						logger.debug("lat/long body " + body);
+						log.debug("lat/long body " + body);
 						JsonAdapter<List<Location>> jsonAdapter =
 								moshi.adapter(Types.newParameterizedType(List.class, Location.class));
 						Location location = Optional.ofNullable(jsonAdapter.fromJson(body))
@@ -80,7 +78,7 @@ public class OpenWeatherComponent {
 						}
 						return location;
 					} catch (IOException e) {
-						logger.error("getLatLongFromCity", e);
+						log.error("getLatLongFromCity", e);
 					}
 					return null;
 				});
@@ -89,17 +87,17 @@ public class OpenWeatherComponent {
 	protected WeatherSystemData getSunriseSunset(double latitude, double longitude) {
 		return Optional.ofNullable(weatherCache.get(latitude + ":" + longitude))
 				.map(loc -> {
-					logger.debug("retrieving weather (cached) from " + latitude + ":" + longitude);
+					log.debug("retrieving weather (cached) from " + latitude + ":" + longitude);
 					loc.setFromCache(true);
 					return loc;
 				})
 				.orElseGet(() -> {
-					logger.debug("Fetching OpenWeatherMap data");
+					log.debug("Fetching OpenWeatherMap data");
 					try (Response response = OkHttpUtil.getSynchronous(
 							MessageFormat.format(kOpenWeatherMapUrl, latitude, longitude, openWeatherMapAPIKey),
 							null)) {
 						String body = response.body().string();
-						logger.debug("weather body " + body);
+						log.debug("weather body " + body);
 						WeatherSystemData data = Optional.ofNullable(
 										moshi.adapter(WeatherData.class).fromJson(body))
 								.map(WeatherData::getSys)
@@ -109,7 +107,7 @@ public class OpenWeatherComponent {
 						}
 						return data;
 					} catch (IOException e) {
-						logger.error("getSunriseSunset", e);
+						log.error("getSunriseSunset", e);
 					}
 					return null;
 				});
