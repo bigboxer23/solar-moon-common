@@ -1,5 +1,6 @@
 package com.bigboxer23.solar_moon.notifications;
 
+import java.time.LocalDate;
 import lombok.Data;
 
 /** */
@@ -42,6 +43,8 @@ public class EmailTemplateContent {
 	private String fontColor = "#000000";
 
 	private String border = "";
+
+	private String year = "" + LocalDate.now().getYear();
 
 	/*
 	Dark
