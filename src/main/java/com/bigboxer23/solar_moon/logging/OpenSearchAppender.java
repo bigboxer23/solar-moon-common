@@ -29,7 +29,7 @@ public class OpenSearchAppender extends ElasticsearchAppender {
 	public void setProperties(ElasticsearchProperties elasticsearchProperties) {
 		super.setProperties(elasticsearchProperties);
 		elasticsearchProperties.addProperty(new Property("level", "%level", true));
-		elasticsearchProperties.addProperty(new Property("logger_name", "%logger", true));
+		elasticsearchProperties.addProperty(new Property("log_name", "%log", true));
 		elasticsearchProperties.addProperty(new Property("thread_name", "%thread", true));
 		elasticsearchProperties.addProperty(new Property("type", "main", true));
 		elasticsearchProperties.addProperty(new Property("stack_trace", "%ex", true));

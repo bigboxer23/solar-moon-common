@@ -13,16 +13,14 @@ import com.bigboxer23.solar_moon.weather.IWeatherConstants;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.io.IOException;
 import java.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements IAlarmConstants, ISolectriaConstants {
-	private static final Logger logger = LoggerFactory.getLogger(AlarmComponent.class);
-
 	protected static final long QUICK_CHECK_THRESHOLD = TimeConstants.FORTY_FIVE_MINUTES;
 
 	public Optional<Alarm> getMostRecentAlarm(String deviceId) {
@@ -42,7 +40,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	public void resolveActiveAlarms(DeviceData deviceData) {
 		if (deviceData.getDate() == null
 				|| deviceData.getDate().getTime() <= System.currentTimeMillis() - TimeConstants.HOUR) {
-			logger.warn("old data, not adding device update or resolving active alarms " + deviceData.getDate());
+			log.warn("old data, not adding device update or resolving active alarms " + deviceData.getDate());
 			return;
 		}
 		IComponentRegistry.deviceUpdateComponent.update(deviceData.getDeviceId());
@@ -52,11 +50,11 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			return;
 		}
 		if (!deviceData.isDaylight()) {
-			logger.debug("not resolving alarm, not daylight " + maybeAlarm.get().getAlarmId());
+			log.debug("not resolving alarm, not daylight " + maybeAlarm.get().getAlarmId());
 			return;
 		}
 		if (deviceData.getTotalRealPower() <= 0.1) {
-			logger.warn("not resolving alarm, no real power reported "
+			log.warn("not resolving alarm, no real power reported "
 					+ deviceData.getTotalRealPower()
 					+ " "
 					+ maybeAlarm.get().getAlarmId());
@@ -66,7 +64,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			return;
 		}
 		maybeAlarm.ifPresent(alarm -> {
-			logger.warn("Resolving alarm for "
+			log.warn("Resolving alarm for "
 					+ alarm.getAlarmId()
 					+ " "
 					+ deviceData.getDate().getTime());
@@ -95,7 +93,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	 */
 	protected Optional<LinkedDevice> isLinkedDeviceErrored(DeviceData deviceData, Device device) {
 		if (deviceData == null) {
-			logger.debug("device data empty, linked device is normal.");
+			log.debug("device data empty, linked device is normal.");
 			return Optional.empty();
 		}
 		Optional<Device> optionalDevice = device != null
@@ -103,25 +101,25 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				: IComponentRegistry.deviceComponent.findDeviceById(
 						deviceData.getDeviceId(), deviceData.getCustomerId());
 		if (optionalDevice.isEmpty() || StringUtils.isBlank(optionalDevice.get().getSerialNumber())) {
-			logger.debug("no device or no serial number found, linked device is normal.");
+			log.debug("no device or no serial number found, linked device is normal.");
 			return Optional.empty();
 		}
 		Optional<LinkedDevice> linkedDevice = IComponentRegistry.linkedDeviceComponent.queryBySerialNumber(
 				optionalDevice.get().getSerialNumber(), deviceData.getCustomerId());
 		if (linkedDevice.isEmpty()) {
-			logger.debug("no linked device. " + optionalDevice.get().getSerialNumber());
+			log.debug("no linked device. " + optionalDevice.get().getSerialNumber());
 			return Optional.empty();
 		}
 		if (linkedDevice.get().getCriticalAlarm() == ISolectriaConstants.NOMINAL) {
 			if (linkedDevice.get().getInformativeAlarm() != ISolectriaConstants.NOMINAL) {
-				logger.warn(optionalDevice.get().getSerialNumber()
+				log.warn(optionalDevice.get().getSerialNumber()
 						+ " Linked device has informative error: "
 						+ SolectriaErrorOracle.translateError(linkedDevice.get().getInformativeAlarm(), false));
 			}
-			logger.debug("Linked device looks normal. " + optionalDevice.get().getSerialNumber());
+			log.debug("Linked device looks normal. " + optionalDevice.get().getSerialNumber());
 			return Optional.empty();
 		}
-		logger.warn("Linked device is in critical error state. "
+		log.warn("Linked device is in critical error state. "
 				+ optionalDevice.get().getSerialNumber()
 				+ " "
 				+ linkedDevice.get().getCriticalAlarm()
@@ -155,7 +153,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	 * @return
 	 */
 	public Optional<Alarm> faultDetected(String customerId, String deviceId, String siteId, String content) {
-		logger.warn("fault condition detected: " + content);
+		log.warn("fault condition detected: " + content);
 		Alarm alarm = findAlarmsByDevice(customerId, deviceId).stream()
 				.filter(a -> a.getState() == ACTIVE)
 				.findAny()
@@ -169,9 +167,9 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	}
 
 	public Optional<Alarm> alarmConditionDetected(String customerId, String deviceId, String siteId, String content) {
-		logger.warn("Alarm condition detected: " + content);
+		log.warn("Alarm condition detected: " + content);
 		if (IComponentRegistry.maintenanceComponent.isInMaintenanceMode()) {
-			logger.warn("Maintenance mode activated, not flagging alarm condition.");
+			log.warn("Maintenance mode activated, not flagging alarm condition.");
 			return Optional.empty();
 		}
 		Alarm alarm = findAlarmsByDevice(customerId, deviceId).stream()
@@ -193,7 +191,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	}
 
 	public void sendPendingNotifications() {
-		logger.info("Checking for pending active alert notifications");
+		log.info("Checking for pending active alert notifications");
 		Map<String, List<Alarm>> customerSortedAlarms = new HashMap<>();
 		findNonEmailedActiveAlarms().forEach(alarm -> {
 			if (!customerSortedAlarms.containsKey(alarm.getCustomerId())) {
@@ -204,7 +202,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 
 		customerSortedAlarms.forEach((customerId, alarms) -> {
 			TransactionUtil.updateCustomerId(customerId);
-			logger.info("Starting sending active notifications");
+			log.info("Starting sending active notifications");
 			AlarmEmailTemplateContent alarmEmail = new AlarmEmailTemplateContent(customerId, alarms);
 			if (alarmEmail.isNotificationEnabled()
 					&& !IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes()) {
@@ -212,9 +210,9 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 						alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
 			} else {
 				if (IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes()) {
-					logger.warn("Not sending notification, opensearch failure has occurred " + " recently.");
+					log.warn("Not sending notification, opensearch failure has occurred " + " recently.");
 				} else {
-					logger.warn("New notification detected, but not sending email as " + " requested.");
+					log.warn("New notification detected, but not sending email as " + " requested.");
 				}
 			}
 			alarms.forEach(a -> {
@@ -223,7 +221,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			});
 		});
 
-		logger.info("Checking for pending resolved alert notifications");
+		log.info("Checking for pending resolved alert notifications");
 		customerSortedAlarms.clear();
 		findNonEmailedResolvedAlarms().forEach(alarm -> {
 			if (!customerSortedAlarms.containsKey(alarm.getCustomerId())) {
@@ -233,7 +231,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		});
 		customerSortedAlarms.forEach((customerId, alarms) -> {
 			TransactionUtil.updateCustomerId(customerId);
-			logger.info("Starting sending resolved notifications");
+			log.info("Starting sending resolved notifications");
 			ResolvedAlertEmailTemplateContent alarmEmail = new ResolvedAlertEmailTemplateContent(customerId, alarms);
 			IComponentRegistry.notificationComponent.sendNotification(
 					alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
@@ -306,7 +304,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		if (StringUtils.isBlank(customerId)) {
 			return Collections.emptyList();
 		}
-		logger.debug("Fetching all alarms");
+		log.debug("Fetching all alarms");
 		return getTable()
 				.index(Alarm.CUSTOMER_INDEX)
 				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(customerId)))
@@ -317,10 +315,10 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 
 	public Optional<Alarm> updateAlarm(Alarm alarm) {
 		if (alarm == null || StringUtils.isBlank(alarm.getCustomerId()) || StringUtils.isBlank(alarm.getAlarmId())) {
-			logger.warn("invalid alarm, not updating");
+			log.warn("invalid alarm, not updating");
 			return Optional.empty();
 		}
-		logger.warn("Updating alarm: " + alarm.getAlarmId());
+		log.warn("Updating alarm: " + alarm.getAlarmId());
 		return Optional.ofNullable(getTable().updateItem(builder -> builder.item(alarm)));
 	}
 
@@ -329,7 +327,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	}
 
 	public void deleteAlarm(String alarmId, String customerId) {
-		logger.warn("Deleting alarm: " + alarmId);
+		log.warn("Deleting alarm: " + alarmId);
 		getTable().deleteItem(new Alarm(alarmId, customerId));
 	}
 
@@ -344,7 +342,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	}
 
 	public List<Alarm> quickCheckDevices() {
-		logger.info("Checking for non-responsive devices");
+		log.info("Checking for non-responsive devices");
 		List<Alarm> alarms = new ArrayList<>();
 		IComponentRegistry.deviceUpdateComponent
 				.queryByTimeRange(System.currentTimeMillis() - QUICK_CHECK_THRESHOLD)
@@ -361,13 +359,13 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 							TransactionUtil.updateCustomerId(d2.getClientId());
 							// TODO:remove this after  burn in
 							TransactionUtil.addDeviceId(d2.getId(), d2.getSiteId());
-							logger.info("quickCheck is day: " + isDay);
+							log.info("quickCheck is day: " + isDay);
 							return isDay;
 						})
 						.flatMap(d2 -> {
 							TransactionUtil.updateCustomerId(d2.getClientId());
 							TransactionUtil.addDeviceId(d2.getId(), d2.getSiteId());
-							logger.warn("Quick check shows no updates for" + " device in last 45 min.");
+							log.warn("Quick check shows no updates for" + " device in last 45 min.");
 							return alarmConditionDetected(
 									d2.getClientId(),
 									d2.getId(),
@@ -380,7 +378,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 
 	public Optional<Alarm> checkDevice(Device device) {
 		if (device == null) {
-			logger.warn("Null device, can't check.");
+			log.warn("Null device, can't check.");
 			return Optional.empty();
 		}
 		TransactionUtil.updateCustomerId(device.getClientId());
@@ -389,14 +387,14 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				device.getId(), OpenSearchQueries.getDeviceIdQuery(device.getId()));
 		// Check disabled or new
 		if (data == null || device.isDisabled()) {
-			logger.debug("likely new device with no data (or disabled) " + device.getId());
+			log.debug("likely new device with no data (or disabled) " + device.getId());
 			return Optional.empty();
 		}
 		// If stale and open search is healthy, fail
 		boolean isOpenSearchOk = !IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes();
 		if (data.getDate().getTime() < new Date(System.currentTimeMillis() - TimeConstants.HOUR).getTime()
 				&& isOpenSearchOk) {
-			logger.warn("Check shows no updates for device in last 60 min.");
+			log.warn("Check shows no updates for device in last 60 min.");
 			return alarmConditionDetected(
 					data.getCustomerId(),
 					data.getDeviceId(),
@@ -430,7 +428,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			return true;
 		}
 		if (!isOpenSearchOK) {
-			logger.info("OpenSearch failures seen within last 30m so ignoring alerting while system" + " recovers.");
+			log.info("OpenSearch failures seen within last 30m so ignoring alerting while system" + " recovers.");
 			return true;
 		}
 		try {
@@ -439,7 +437,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 
 			boolean isDarkAdjacent = historicData.stream().anyMatch(d -> !d.isDaylight());
 			if (isDarkAdjacent) {
-				logger.debug("dark detected in the recent data, device is assumed to be OK");
+				log.debug("dark detected in the recent data, device is assumed to be OK");
 				return true;
 			}
 			if (deviceData.getDate() != null
@@ -449,7 +447,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 									device.getLatitude(),
 									device.getLongitude())
 							.orElse(true)) {
-				logger.debug("close to sunset, device is assumed to be OK");
+				log.debug("close to sunset, device is assumed to be OK");
 				return true;
 			}
 			double averageRealPower = historicData.stream()
@@ -458,7 +456,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 					.average()
 					.orElse(-1);
 			if (averageRealPower > 0.1) {
-				logger.debug("average production over .1kW detected");
+				log.debug("average production over .1kW detected");
 				return true;
 			}
 			// Check weather
@@ -469,8 +467,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 					.orElse(-1);
 			// Check for -1 as could be a site w/o location data set (or we could be missing weather
 			// data)
-			if (uvIndex != -1 && uvIndex <= 0.4) {
-				logger.info("average uv conditions are very low, panel may be OK " + uvIndex);
+			if (uvIndex != -1 && uvIndex <= 0.3) {
+				log.info("average uv conditions are very low, panel may be OK " + uvIndex);
 				return true;
 			}
 			boolean hasRain = historicData.stream()
@@ -481,14 +479,14 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 					.average()
 					.orElse(-1);
 			if (hasRain && precipIntensity > .01) {
-				logger.info("rain recently, panel may be OK " + precipIntensity);
+				log.info("rain recently, panel may be OK " + precipIntensity);
 				return true;
 			}
 			if (!anySiteDevicesHealthy(device)) {
-				logger.info("site devices all report low power, panel(s) may be OK");
+				log.info("site devices all report low power, panel(s) may be OK");
 				return true;
 			}
-			logger.warn("Device not generating power "
+			log.warn("Device not generating power "
 					+ historicData.size()
 					+ ": "
 					+ isDarkAdjacent
@@ -500,7 +498,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 					+ precipIntensity);
 			return false;
 		} catch (IOException e) {
-			logger.error("isDeviceGeneratingPower", e);
+			log.error("isDeviceGeneratingPower", e);
 			return true;
 		}
 	}
@@ -518,7 +516,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				|| device.isDeviceSite()
 				|| StringUtils.isEmpty(device.getSiteId())
 				|| DeviceComponent.NO_SITE.equalsIgnoreCase(device.getSiteId())) {
-			logger.info("no site attached to device or is site. Won't include in OK check.");
+			log.info("no site attached to device or is site. Won't include in OK check.");
 			return true;
 		}
 		List<Device> siteDevices =
@@ -530,7 +528,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 						siteDevice.getId(), OpenSearchQueries.getDeviceIdQuery(siteDevice.getId()));
 				hasValidSiteDeviceData = hasValidSiteDeviceData || siteDeviceData != null;
 				if (siteDeviceData != null && siteDeviceData.getTotalRealPower() > 0.25) {
-					logger.info("average production over .25kW detected on site device"
+					log.info("average production over .25kW detected on site device"
 							+ siteDevice.getId()
 							+ " : "
 							+ siteDeviceData.getTotalRealPower()
@@ -541,7 +539,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			}
 		}
 		if (!hasValidSiteDeviceData) {
-			logger.warn("no other valid site data exists to check, returning true");
+			log.warn("no other valid site data exists to check, returning true");
 			return true;
 		}
 		return false;
@@ -553,7 +551,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				.filter(Device::isDisabled)
 				.ifPresent(device -> {
 					TransactionUtil.addDeviceId(device.getId(), device.getSiteId());
-					logger.warn("resolving alarm for disabled device");
+					log.warn("resolving alarm for disabled device");
 					alarm.setState(RESOLVED);
 					alarm.setEmailed(RESOLVED_NOT_EMAILED);
 					alarm.setEndDate(new Date().getTime());

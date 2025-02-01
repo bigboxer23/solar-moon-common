@@ -9,9 +9,11 @@ import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import com.bigboxer23.solar_moon.search.SearchJSON;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.opensearch.client.opensearch.core.search.Hit;
 
 /** Collect useful utility methods here */
+@Slf4j
 public class MaintenanceUtils implements IComponentRegistry {
 	/*@Test*/
 	public void renameDevicesWhichHaveParansNames() {
@@ -53,7 +55,7 @@ public class MaintenanceUtils implements IComponentRegistry {
 	}
 
 	private void findLargeEnergyConsumedForDevice(Device device) {
-		logger.warn("Checking " + device.getId() + " (" + device.getDisplayName() + ")");
+		log.warn("Checking " + device.getId() + " (" + device.getDisplayName() + ")");
 		SearchJSON search = new SearchJSON();
 		search.setType(DATA_SEARCH_TYPE);
 		search.setLargeEnergyConsumed(true);
@@ -69,11 +71,11 @@ public class MaintenanceUtils implements IComponentRegistry {
 	private void correctLargeEnergyConsumed(Hit<DeviceData> hit) {
 		DeviceData deviceData = hit.source();
 		assert deviceData != null;
-		logger.debug("attempting to correct " + hit.id());
+		log.debug("attempting to correct " + hit.id());
 		float previousValue = findPreviousTotalEnergyConsumed(deviceData);
 		float correctedValue = deviceData.getTotalEnergyConsumed() - previousValue;
 		if (previousValue < 0) {
-			logger.warn("Could not correct " + hit.id());
+			log.warn("Could not correct " + hit.id());
 			return;
 		}
 		writeCorrectedEnergyConsumed(deviceData, hit.id(), correctedValue);
@@ -98,7 +100,7 @@ public class MaintenanceUtils implements IComponentRegistry {
 	}
 
 	private void writeCorrectedEnergyConsumed(DeviceData data, String id, float correctedValue) {
-		logger.warn("Correcting " + id + " to " + correctedValue);
+		log.warn("Correcting " + id + " to " + correctedValue);
 		SearchJSON search = new SearchJSON();
 		search.setType(DATA_SEARCH_TYPE);
 		search.setSize(100);
@@ -120,7 +122,7 @@ public class MaintenanceUtils implements IComponentRegistry {
 	}
 
 	public void checkEnergyConsumed(Device device) {
-		logger.warn("Auditing " + device.getId());
+		log.warn("Auditing " + device.getId());
 		SearchJSON search = new SearchJSON();
 		search.setType(DATA_SEARCH_TYPE);
 		search.setIncludeSource(true);
@@ -140,19 +142,19 @@ public class MaintenanceUtils implements IComponentRegistry {
 			});
 			search.setStartDate(search.getEndDate() + 1);
 			search.setEndDate(search.getStartDate() + (30 * TimeConstants.DAY));
-			logger.info(search.getJavaStartDate() + " " + search.getJavaEndDate());
+			log.info(search.getJavaStartDate() + " " + search.getJavaEndDate());
 		}
 	}
 
 	private void correctEnergyConsumed(Hit<DeviceData> current, Hit<DeviceData> previous) {
 		if (current == null || previous == null) {
-			logger.warn("cannot correct, null values");
+			log.warn("cannot correct, null values");
 			return;
 		}
 		DeviceData deviceData = current.source();
 		DeviceData previousData = previous.source();
 		if (deviceData == null || previousData == null) {
-			logger.warn(current.id() + " cannot correct, null deviceData");
+			log.warn(current.id() + " cannot correct, null deviceData");
 			return;
 		}
 		float energyConsumed = deviceData.getTotalEnergyConsumed() - previousData.getTotalEnergyConsumed();
@@ -160,7 +162,7 @@ public class MaintenanceUtils implements IComponentRegistry {
 			energyConsumed = 0;
 		}
 		if (energyConsumed != deviceData.getEnergyConsumed()) {
-			logger.warn(deviceData.getDate() + " " + deviceData.getEnergyConsumed() + " " + energyConsumed);
+			log.warn(deviceData.getDate() + " " + deviceData.getEnergyConsumed() + " " + energyConsumed);
 			SearchJSON search = new SearchJSON();
 			search.setType(DATA_SEARCH_TYPE);
 			search.setSize(100);

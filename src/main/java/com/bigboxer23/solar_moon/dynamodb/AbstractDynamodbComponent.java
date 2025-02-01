@@ -1,15 +1,11 @@
 package com.bigboxer23.solar_moon.dynamodb;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 
 /** */
 public abstract class AbstractDynamodbComponent<T> {
-	protected static final Logger logger = LoggerFactory.getLogger(AbstractDynamodbComponent.class);
-
 	private static DynamoDbEnhancedClient client;
 
 	private DynamoDbEnhancedClient getClient() {

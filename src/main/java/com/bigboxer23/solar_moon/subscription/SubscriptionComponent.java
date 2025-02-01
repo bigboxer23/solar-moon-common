@@ -5,10 +5,12 @@ import com.bigboxer23.solar_moon.data.Subscription;
 import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class SubscriptionComponent extends AbstractDynamodbComponent<Subscription> {
 
 	public static final int DEVICES_PER_SUBSCRIPTION = 20;
@@ -41,17 +43,17 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 
 	public Subscription updateSubscription(String customerId, int seats) {
 		if (StringUtils.isBlank(customerId) || seats < -2) {
-			logger.warn("invalid customer passed " + seats);
+			log.warn("invalid customer passed " + seats);
 			return null;
 		}
 		long joinDate =
 				getSubscription(customerId).map(Subscription::getJoinDate).orElse(System.currentTimeMillis());
-		logger.warn("Updating subscription: " + customerId + " " + seats);
+		log.warn("Updating subscription: " + customerId + " " + seats);
 		return getTable().updateItem(builder -> builder.item(new Subscription(customerId, seats, joinDate)));
 	}
 
 	public void deleteSubscription(String customerId) {
-		logger.warn("Deleting subscription: " + customerId);
+		log.warn("Deleting subscription: " + customerId);
 		getTable().deleteItem(new Subscription(customerId, 0, -1L));
 	}
 

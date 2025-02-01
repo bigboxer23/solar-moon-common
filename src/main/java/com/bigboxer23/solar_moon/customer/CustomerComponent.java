@@ -6,10 +6,12 @@ import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 	@Override
 	protected String getTableName() {
@@ -26,17 +28,17 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 				|| StringUtils.isEmpty(customerId)
 				|| StringUtils.isEmpty(name)
 				|| StringUtils.isEmpty(stripeCustomerId)) {
-			logger.warn("email, name strip id, or customer id is null/empty, cannot add.");
+			log.warn("email, name strip id, or customer id is null/empty, cannot add.");
 			return Optional.empty();
 		}
 		Optional<Customer> dbCustomer = findCustomerByCustomerId(customerId);
 		if (dbCustomer.isPresent()) {
-			logger.debug(customerId + ":" + email + " exists, not putting into db");
+			log.debug(customerId + ":" + email + " exists, not putting into db");
 			return dbCustomer;
 		}
 		Customer customer = new Customer(customerId, email, TokenGenerator.generateNewToken(), name);
 		customer.setStripeCustomerId(stripeCustomerId);
-		logger.info("Adding customer " + email);
+		log.info("Adding customer " + email);
 		getTable().putItem(customer);
 		IComponentRegistry.smaIngestComponent.handleAccessKeyChange(null, customer.getAccessKey());
 		return Optional.of(customer);
@@ -44,17 +46,17 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 
 	public void updateCustomer(Customer customer) {
 		if (customer == null || customer.getCustomerId() == null) {
-			logger.warn("invalid customer passed, not updating");
+			log.warn("invalid customer passed, not updating");
 			return;
 		}
 		logAction("update", customer.getCustomerId());
 		if (customer.isAccessKeyChangeRequested()) {
-			logger.info("generating new access key for " + customer.getCustomerId());
+			log.info("generating new access key for " + customer.getCustomerId());
 			customer.setAccessKey(TokenGenerator.generateNewToken());
 		}
 		findCustomerByCustomerId(customer.getCustomerId()).ifPresent(existingCustomer -> {
 			if (customer.isAdmin() && !existingCustomer.isAdmin()) {
-				logger.warn("Not allowing admin escalation" + customer.getCustomerId());
+				log.warn("Not allowing admin escalation" + customer.getCustomerId());
 				customer.setAdmin(false);
 			}
 			if (!StringUtils.isEmpty(existingCustomer.getStripeCustomerId())) {
@@ -137,6 +139,6 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 
 	private void logAction(String action, String customerId) {
 		TransactionUtil.updateCustomerId(customerId);
-		logger.info("customer " + action);
+		log.info("customer " + action);
 	}
 }

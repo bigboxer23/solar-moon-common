@@ -15,14 +15,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.opensearch.client.opensearch.core.SearchResponse;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class SitesOverviewComponent implements IComponentRegistry {
 	public SitesSiteData getExtendedSiteOverviewData(String siteId, SearchJSON search) {
 		TransactionUtil.addDeviceId(siteId, siteId);
-		logger.info("Fetching site data");
+		log.info("Fetching site data");
 		SitesSiteData data = deviceComponent
 				.findDeviceById(siteId, search.getCustomerId())
 				.map(site -> getSiteOverviewData(site, search))

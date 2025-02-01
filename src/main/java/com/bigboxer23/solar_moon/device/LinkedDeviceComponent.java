@@ -10,14 +10,16 @@ import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class LinkedDeviceComponent extends AbstractDynamodbComponent<LinkedDevice> {
 	public void update(LinkedDevice device) {
 		if (device == null || StringUtils.isBlank(device.getId()) || StringUtils.isBlank(device.getCustomerId())) {
-			logger.warn("invalid linked device, not updating");
+			log.warn("invalid linked device, not updating");
 			return;
 		}
 		getTable().updateItem(builder -> builder.item(device));
@@ -25,7 +27,7 @@ public class LinkedDeviceComponent extends AbstractDynamodbComponent<LinkedDevic
 
 	public void delete(String serialNumber, String customerId) {
 		if (StringUtils.isBlank(serialNumber) || StringUtils.isBlank(customerId)) {
-			logger.warn("invalid delete query");
+			log.warn("invalid delete query");
 			return;
 		}
 		getTable()
@@ -41,7 +43,7 @@ public class LinkedDeviceComponent extends AbstractDynamodbComponent<LinkedDevic
 
 	public Optional<LinkedDevice> queryBySerialNumber(String serialNumber, String customerId) {
 		if (StringUtils.isBlank(serialNumber) || StringUtils.isBlank(customerId)) {
-			logger.warn("invalid query");
+			log.warn("invalid query");
 			return Optional.empty();
 		}
 		return getTable()
@@ -64,7 +66,7 @@ public class LinkedDeviceComponent extends AbstractDynamodbComponent<LinkedDevic
 
 	public DeviceData addLinkedDeviceDataVirtual(DeviceData virtualDevice, List<DeviceData> childDevices) {
 		if (virtualDevice == null || childDevices == null || childDevices.isEmpty()) {
-			logger.warn("invalid virtual device or child devices");
+			log.warn("invalid virtual device or child devices");
 			return virtualDevice;
 		}
 		childDevices.forEach(d -> {

@@ -10,12 +10,14 @@ import com.bigboxer23.solar_moon.util.TimeUtils;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class OverviewComponent implements IComponentRegistry {
 	public OverviewData getOverviewData(SearchJSON search) {
-		logger.info("Fetching overview data");
+		log.info("Fetching overview data");
 		search.setIsSite(true);
 		OverviewData data = new OverviewData(
 				deviceComponent.getDevicesForCustomerId(search.getCustomerId()),
@@ -32,7 +34,7 @@ public class OverviewComponent implements IComponentRegistry {
 
 	private void fillSiteInfo(OverviewData data, SearchJSON searchJson) {
 		if (data == null || data.getDevices() == null) {
-			logger.warn("data or devices null, cannot fill data");
+			log.warn("data or devices null, cannot fill data");
 			return;
 		}
 		data.setSitesOverviewData(new HashMap<>());

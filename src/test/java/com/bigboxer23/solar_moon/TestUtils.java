@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import javax.xml.xpath.XPathExpressionException;
+import lombok.extern.slf4j.Slf4j;
 import org.opensearch.client.ResponseException;
 import org.opensearch.client.opensearch.core.SearchResponse;
 import software.amazon.awssdk.regions.Region;
@@ -29,6 +30,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
+@Slf4j
 public class TestUtils implements IComponentRegistry, TestConstants {
 
 	private static Device device;
@@ -231,7 +233,7 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 				.findAny()
 				.orElse(null);
 		if (site == null) {
-			logger.warn("can't find site");
+			log.warn("can't find site");
 			return;
 		}
 		devices.put(site.getId(), site);
