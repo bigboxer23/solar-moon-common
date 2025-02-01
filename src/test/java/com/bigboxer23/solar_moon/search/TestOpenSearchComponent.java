@@ -431,4 +431,9 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 	public void isOpenSearchAvailable() {
 		assertTrue(OSComponent.isOpenSearchAvailable());
 	}
+
+	@Test
+	public void deleteOldLogs() {
+		OSComponent.deleteOldLogs();
+	}
 }
