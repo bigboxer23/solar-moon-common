@@ -60,6 +60,9 @@ public class DeviceData {
 	@JsonProperty(WEATHER_SUMMARY)
 	private String weatherSummary = "";
 
+	@JsonProperty(WEATHER_ICON)
+	private String icon = "";
+
 	@JsonProperty(AVG_VOLT)
 	private float averageVoltage = -1;
 

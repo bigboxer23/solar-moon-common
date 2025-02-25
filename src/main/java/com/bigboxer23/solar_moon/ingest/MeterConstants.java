@@ -59,6 +59,8 @@ public interface MeterConstants {
 
 	String WEATHER_SUMMARY = "weatherSummary";
 
+	String WEATHER_ICON = "weatherIcon";
+
 	String CLOUD_COVER = "cloudCover";
 
 	String VISIBILITY = "visibility";
