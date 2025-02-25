@@ -56,6 +56,7 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 		}
 		getWeather(site.getLatitude(), site.getLongitude()).ifPresent(w -> {
 			deviceData.setWeatherSummary(w.getSummary());
+			deviceData.setIcon(w.getIcon());
 			deviceData.setTemperature((float) w.getTemperature());
 			deviceData.setCloudCover((float) w.getCloudCover());
 			deviceData.setVisibility((float) w.getVisibility());
