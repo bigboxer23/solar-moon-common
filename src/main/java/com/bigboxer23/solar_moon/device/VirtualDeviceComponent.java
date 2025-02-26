@@ -20,7 +20,7 @@ public class VirtualDeviceComponent {
 		}
 		log.info("Trying to aquire lock");
 		DynamoLockUtils.doLockedCommand(
-				device.getSiteId() + "-" + device.getDate().getTime(), device.getDeviceId(), () -> {
+				device.getSiteId() + "-" + device.getDate().getTime(), () -> {
 					Device virtualDevice =
 							IComponentRegistry.deviceComponent
 									.getDevicesBySiteId(device.getCustomerId(), device.getSiteId())

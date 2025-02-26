@@ -14,7 +14,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 /** */
 @Slf4j
 public class DynamoLockUtils {
-	public static void doLockedCommand(String key, String deviceName, Runnable command) {
+	public static void doLockedCommand(String key, Runnable command) {
 		try (AmazonDynamoDBLockClient client = new AmazonDynamoDBLockClient(
 				AmazonDynamoDBLockClientOptions.builder(DynamoDbClient.builder().build(), LOCK_TABLE)
 						.withTimeUnit(TimeUnit.SECONDS)
@@ -26,12 +26,12 @@ public class DynamoLockUtils {
 								.withShouldSkipBlockingWait(true)
 								.build())
 						.ifPresent(lock -> {
-							log.info("Got lock " + key + " for device " + deviceName);
+							log.debug("Got lock " + key);
 							command.run();
 							client.releaseLock(lock);
 						});
 			} catch (LockCurrentlyUnavailableException e) {
-				log.info("Can't get lock " + key + " for device " + deviceName);
+				log.info("Can't get lock " + key);
 			}
 		} catch (IOException | InterruptedException e) {
 			log.warn("doLockedCommand", e);
