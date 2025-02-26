@@ -100,7 +100,9 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 								return r;
 							},
 							site.getLatitude() + ":" + site.getLongitude(),
-							2);
+							2,
+							3,
+							null);
 					response.ifPresent(w -> updateWeather(site.getLatitude(), site.getLongitude(), w.getCurrently()));
 				}
 			} catch (Exception e) {
