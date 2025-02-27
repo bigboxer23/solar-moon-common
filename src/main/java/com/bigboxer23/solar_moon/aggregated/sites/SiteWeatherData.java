@@ -8,6 +8,8 @@ import lombok.Data;
 public class SiteWeatherData {
 	private String weatherSummary;
 
+	private String weatherIcon;
+
 	private float temperature;
 
 	private float uvIndex;
@@ -19,5 +21,6 @@ public class SiteWeatherData {
 		setUvIndex(data.getUVIndex());
 		setTemperature(data.getTemperature());
 		setPrecipitationIntensity(data.getPrecipitationIntensity());
+		setWeatherIcon(data.getIcon());
 	}
 }
