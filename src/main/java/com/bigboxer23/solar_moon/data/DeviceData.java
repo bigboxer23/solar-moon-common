@@ -165,6 +165,9 @@ public class DeviceData {
 			case WEATHER_SUMMARY:
 				setWeatherSummary((String) value);
 				break;
+			case WEATHER_ICON:
+				setIcon((String) value);
+				break;
 			case SITE_ID:
 				setSiteId((String) value);
 				break;
