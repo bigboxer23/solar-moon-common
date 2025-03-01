@@ -88,9 +88,9 @@
       <version>2.0.43</version>
     </dependency>
     <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>33.4.0-jre</version>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+      <version>3.2.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -220,7 +220,7 @@
         <configuration>
           <java>
             <googleJavaFormat>
-              <version>1.19.2</version>
+              <version>1.24.0</version>
               <style>AOSP</style>
               <reflowLongStrings>true</reflowLongStrings>
             </googleJavaFormat>

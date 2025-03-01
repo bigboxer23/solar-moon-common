@@ -1,43 +1,34 @@
 package com.bigboxer23.solar_moon.device;
 
 import com.bigboxer23.solar_moon.data.Device;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 public class CachingDeviceComponent extends DeviceComponent {
-	private final LoadingCache<String, Optional<Device>> deviceCache = CacheBuilder.newBuilder()
+	private final LoadingCache<String, Optional<Device>> deviceCache = Caffeine.newBuilder()
 			.maximumSize(1000)
-			.expireAfterWrite(10, TimeUnit.SECONDS)
-			.build(new CacheLoader<>() {
-				public Optional<Device> load(String key) {
-					return CachingDeviceComponent.super.findDeviceById(
-							key.substring(key.indexOf(":") + 1), key.substring(0, key.indexOf(":")));
-				}
-			});
+			.expireAfterWrite(Duration.ofSeconds(10))
+			.build(key -> CachingDeviceComponent.super.findDeviceById(
+					key.substring(key.indexOf(":") + 1), key.substring(0, key.indexOf(":"))));
 
-	private final LoadingCache<String, List<Device>> devicesBySiteIdCache = CacheBuilder.newBuilder()
+	private final LoadingCache<String, List<Device>> devicesBySiteIdCache = Caffeine.newBuilder()
 			.maximumSize(10)
-			.expireAfterWrite(10, TimeUnit.SECONDS)
-			.build(new CacheLoader<>() {
-				public List<Device> load(String key) {
-					return CachingDeviceComponent.super.getDevicesBySiteId(
-							key.substring(0, key.indexOf(":")), key.substring(key.indexOf(":") + 1));
-				}
-			});
+			.expireAfterWrite(Duration.ofSeconds(10))
+			.build(key -> CachingDeviceComponent.super.getDevicesBySiteId(
+					key.substring(0, key.indexOf(":")), key.substring(key.indexOf(":") + 1)));
 
 	@Override
 	public List<Device> getDevicesBySiteId(String customerId, String siteId) {
 		if (customerId == null || siteId == null || siteId.isBlank() || customerId.isBlank()) {
 			return Collections.emptyList();
 		}
-		return devicesBySiteIdCache.getUnchecked(customerId + ":" + siteId);
+		return devicesBySiteIdCache.get(customerId + ":" + siteId);
 	}
 
 	@Override
@@ -45,7 +36,7 @@ public class CachingDeviceComponent extends DeviceComponent {
 		if (StringUtils.isBlank(id) || StringUtils.isBlank(customerId)) {
 			return Optional.empty();
 		}
-		return deviceCache.getUnchecked(customerId + ":" + id);
+		return deviceCache.get(customerId + ":" + id);
 	}
 
 	@Override
