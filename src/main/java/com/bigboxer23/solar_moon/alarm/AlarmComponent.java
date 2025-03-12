@@ -49,37 +49,40 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 		if (maybeAlarm.isEmpty()) {
 			return;
 		}
-		if (!deviceData.isDaylight()) {
+		Alarm alarm = maybeAlarm.get();
+		boolean isAlarmFromNoResponse =
+				!StringUtils.isEmpty(alarm.getMessage()) && alarm.getMessage().startsWith(NO_DATA_RECENTLY);
+		if (!deviceData.isDaylight() && !isAlarmFromNoResponse) {
 			log.debug("not resolving alarm, not daylight " + maybeAlarm.get().getAlarmId());
 			return;
 		}
-		if (deviceData.getTotalRealPower() <= 0.1) {
+		if (deviceData.getTotalRealPower() <= 0.1 && !isAlarmFromNoResponse) {
 			log.warn("not resolving alarm, no real power reported "
 					+ deviceData.getTotalRealPower()
 					+ " "
 					+ maybeAlarm.get().getAlarmId());
 			return;
 		}
-		if (isLinkedDeviceErrored(deviceData, null).isPresent()) {
+		if (isLinkedDeviceErrored(deviceData, null).isPresent() && !isAlarmFromNoResponse) {
 			return;
 		}
-		maybeAlarm.ifPresent(alarm -> {
-			log.warn("Resolving alarm for "
-					+ alarm.getAlarmId()
-					+ " "
-					+ deviceData.getDate().getTime());
-			alarm.setState(RESOLVED);
-			// If we've sent a notification email to customer, should flag we need
-			// to send a resolve email too
-			if (alarm.getEmailed() > RESOLVED_NOT_EMAILED) {
-				alarm.setResolveEmailed(NEEDS_EMAIL);
-			}
-			if (alarm.getEmailed() == NEEDS_EMAIL) {
-				alarm.setEmailed(RESOLVED_NOT_EMAILED);
-			}
-			alarm.setEndDate(new Date().getTime());
-			updateAlarm(alarm);
-		});
+		log.warn("Resolving alarm for "
+				+ alarm.getAlarmId()
+				+ " "
+				+ deviceData.getDate().getTime()
+				+ " "
+				+ isAlarmFromNoResponse);
+		alarm.setState(RESOLVED);
+		// If we've sent a notification email to customer, should flag we need
+		// to send a resolve email too
+		if (alarm.getEmailed() > RESOLVED_NOT_EMAILED) {
+			alarm.setResolveEmailed(NEEDS_EMAIL);
+		}
+		if (alarm.getEmailed() == NEEDS_EMAIL) {
+			alarm.setEmailed(RESOLVED_NOT_EMAILED);
+		}
+		alarm.setEndDate(new Date().getTime());
+		updateAlarm(alarm);
 		// TODO: inspect data to see if looks "normal"
 
 	}
@@ -367,10 +370,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 							TransactionUtil.addDeviceId(d2.getId(), d2.getSiteId());
 							log.warn("Quick check shows no updates for" + " device in last 45 min.");
 							return alarmConditionDetected(
-									d2.getClientId(),
-									d2.getId(),
-									d2.getSiteId(),
-									"No data recently from device. " + " Last data: " + d.getLastUpdate());
+									d2.getClientId(), d2.getId(), d2.getSiteId(), NO_DATA_RECENTLY + d.getLastUpdate());
 						})
 						.ifPresent(alarms::add));
 		return alarms;
