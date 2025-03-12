@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.TestUtils;
+import com.bigboxer23.solar_moon.alarm.IAlarmConstants;
 import java.time.zone.ZoneRulesException;
 import java.util.Date;
 import org.junit.jupiter.api.AfterAll;
@@ -49,10 +50,10 @@ public class TestTimeUtils {
 	public void formatUnixTimestampsInString() {
 		TestUtils.setupSite();
 
-		String message = "No data recently from device. Last data: 1725887724503";
-		String formattedMessage = "No data recently from device. Last data: Sep 9, 24 8:15 AM";
-		String formattedMessageNYC = "No data recently from device. Last data: Sep 9, 24 9:15 AM";
-		String formattedMessageLA = "No data recently from device. Last data: Sep 9, 24 6:15 AM";
+		String message = IAlarmConstants.NO_DATA_RECENTLY + "1725887724503";
+		String formattedMessage = IAlarmConstants.NO_DATA_RECENTLY + "Sep 9, 24 8:15 AM";
+		String formattedMessageNYC = IAlarmConstants.NO_DATA_RECENTLY + "Sep 9, 24 9:15 AM";
+		String formattedMessageLA = IAlarmConstants.NO_DATA_RECENTLY + "Sep 9, 24 6:15 AM";
 
 		assertNull(TimeUtils.formatUnixTimestampsInString(null, null, null));
 		assertEquals("t", TimeUtils.formatUnixTimestampsInString("t", null, null));
