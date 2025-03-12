@@ -379,24 +379,29 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		deviceData.setDate(new Date());
 		deviceData.setDaylight(true);
 		deviceData.setTotalRealPower(2);
-		validateAlertResolution(deviceData, IAlarmConstants.RESOLVED);
+		validateAlertResolution(deviceData, false, IAlarmConstants.RESOLVED);
+		validateAlertResolution(deviceData, true, IAlarmConstants.RESOLVED);
 
 		// Test not daylight
 		deviceData.setDaylight(false);
-		validateAlertResolution(deviceData, IAlarmConstants.ACTIVE);
+		validateAlertResolution(deviceData, false, IAlarmConstants.ACTIVE);
+		validateAlertResolution(deviceData, true, IAlarmConstants.RESOLVED);
 		deviceData.setDaylight(true);
 
 		// test low power
 		deviceData.setTotalRealPower(0);
-		validateAlertResolution(deviceData, IAlarmConstants.ACTIVE);
+		validateAlertResolution(deviceData, false, IAlarmConstants.ACTIVE);
+		validateAlertResolution(deviceData, true, IAlarmConstants.RESOLVED);
 		deviceData.setTotalRealPower(0.09f);
-		validateAlertResolution(deviceData, IAlarmConstants.ACTIVE);
+		validateAlertResolution(deviceData, false, IAlarmConstants.ACTIVE);
+		validateAlertResolution(deviceData, true, IAlarmConstants.RESOLVED);
 		deviceData.setTotalRealPower(0.1f);
-		validateAlertResolution(deviceData, IAlarmConstants.RESOLVED);
+		validateAlertResolution(deviceData, false, IAlarmConstants.RESOLVED);
 
 		// test old date
 		deviceData.setDate(new Date(deviceData.getDate().getTime() - (2 * TimeConstants.HOUR)));
-		validateAlertResolution(deviceData, IAlarmConstants.ACTIVE);
+		validateAlertResolution(deviceData, false, IAlarmConstants.ACTIVE);
+		validateAlertResolution(deviceData, true, IAlarmConstants.ACTIVE);
 	}
 
 	@Test
@@ -506,12 +511,12 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		Thread.sleep(1000);
 	}
 
-	private void validateAlertResolution(DeviceData deviceData, int expectedState) {
+	private void validateAlertResolution(DeviceData deviceData, boolean isAlarmFromNonUpdate, int expectedState) {
 		Optional<Alarm> alarm = alarmComponent.alarmConditionDetected(
 				TestUtils.getDevice().getClientId(),
 				TestUtils.getDevice().getId(),
 				TestUtils.getDevice().getSiteId(),
-				"Test alarm!");
+				isAlarmFromNonUpdate ? NO_DATA_RECENTLY + System.currentTimeMillis() : "Test alarm!");
 		assertTrue(alarm.isPresent());
 		assertEquals(IAlarmConstants.ACTIVE, alarm.get().getState());
 		alarmComponent.resolveActiveAlarms(deviceData);
@@ -519,6 +524,7 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 				alarm.get().getAlarmId(), TestUtils.getDevice().getClientId());
 		assertTrue(alarm.isPresent());
 		assertEquals(expectedState, alarm.get().getState());
+		alarmComponent.deleteAlarm(alarm.get().getAlarmId(), alarm.get().getCustomerId());
 	}
 
 	@SneakyThrows
