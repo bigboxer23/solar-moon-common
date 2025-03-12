@@ -11,4 +11,6 @@ public interface IAlarmConstants {
 	int RESOLVED = 0;
 
 	int ACTIVE = 1;
+
+	String NO_DATA_RECENTLY = "No data recently from device. Last data: ";
 }
