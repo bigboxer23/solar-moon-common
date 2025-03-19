@@ -27,6 +27,11 @@ public class TestPirateWeatherComponent implements IComponentRegistry, TestConst
 		});
 	}
 
+	@Test
+	public void testLastUpdate() {
+		assertTrue(weatherComponent.getLastUpdate(testLatitude, testLongitude) > 0);
+	}
+
 	/*@Test
 	public void fetchNewWeather() {
 		weatherComponent.fetchNewWeather();
