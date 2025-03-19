@@ -23,7 +23,7 @@ public class CachingPirateWeatherComponent extends PirateWeatherComponent {
 
 	@Override
 	public long getLastUpdate(double latitude, double longitude) {
-		Long timestamp = lastUpdateCache.getIfPresent(latitude + ":" + longitude);
+		Long timestamp = lastUpdateCache.get(latitude + ":" + longitude);
 		return timestamp != null ? timestamp : 0L;
 	}
 

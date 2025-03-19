@@ -46,7 +46,16 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 		}
 		if (getLastUpdate(site.getLatitude(), site.getLongitude())
 				< (System.currentTimeMillis() - (TimeConstants.HOUR + TimeConstants.THIRTY_MINUTES))) {
-			log.warn("Stale weather data, not stamping " + site.getLatitude() + "," + site.getLongitude());
+			log.warn("Stale weather data, not stamping "
+					+ site.getLatitude()
+					+ ","
+					+ site.getLongitude()
+					+ " "
+					+ getLastUpdate(site.getLatitude(), site.getLongitude())
+					+ " "
+					+ System.currentTimeMillis()
+					+ " "
+					+ (System.currentTimeMillis() - (TimeConstants.HOUR + TimeConstants.THIRTY_MINUTES)));
 			return;
 		}
 		if (deviceData.getDate().getTime()
@@ -89,8 +98,11 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 								.orElse(true)
 						|| isTopOfHour) {
 					log.info("fetching weather data for " + site.getLatitude() + "," + site.getLongitude());
-					Optional<PirateWeatherDataResponse> response = RetryingCommand.execute(
-							() -> {
+					Optional<PirateWeatherDataResponse> response = RetryingCommand.builder()
+							.identifier(site.getLatitude() + ":" + site.getLongitude())
+							.waitInSeconds(2)
+							.numberOfRetriesBeforeFailure(3)
+							.buildAndExecute(() -> {
 								Optional<PirateWeatherDataResponse> r =
 										fetchForecastData(site.getLatitude(), site.getLongitude());
 								if (r.isEmpty()) {
@@ -98,11 +110,7 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 											"fetchNewWeather " + site.getLatitude() + ":" + site.getLongitude());
 								}
 								return r;
-							},
-							site.getLatitude() + ":" + site.getLongitude(),
-							2,
-							3,
-							null);
+							});
 					response.ifPresent(w -> updateWeather(site.getLatitude(), site.getLongitude(), w.getCurrently()));
 				}
 			} catch (Exception e) {
