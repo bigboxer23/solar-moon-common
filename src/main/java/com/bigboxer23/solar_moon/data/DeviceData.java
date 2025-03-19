@@ -233,10 +233,11 @@ public class DeviceData {
 			case null -> -1;
 			case Integer aI -> aI;
 			case Float aV -> aV;
-			default -> Optional.of(value)
-					.map(val -> (Double) val)
-					.map(Double::floatValue)
-					.orElse(null);
+			default ->
+				Optional.of(value)
+						.map(val -> (Double) val)
+						.map(Double::floatValue)
+						.orElse(null);
 		};
 	}
 }

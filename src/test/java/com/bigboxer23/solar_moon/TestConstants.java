@@ -32,17 +32,20 @@ public interface TestConstants {
 			<?xml version="1.0" encoding="UTF-8" ?>
 			<DAS>
 			<mode>LOGFILEUPLOAD</mode>
-			<name>"""
+			<name>\
+			"""
 					+ serialNumber
 					+ """
 					A1</name>
-					<serial>"""
+					<serial>\
+					"""
 					+ serialNumber
 					+ """
 					</serial>
 					<devices>
 					<device>
-					<name>"""
+					<name>\
+					"""
 					+ device1Name
 					+ """
 					</name>
@@ -52,7 +55,8 @@ public interface TestConstants {
 					<numpoints>17</numpoints>
 					<records>
 					<record>
-					<time zone="UTC">"""
+					<time zone="UTC">\
+					"""
 					+ date
 					+ """
 					</time>
@@ -82,7 +86,8 @@ public interface TestConstants {
 					</records>
 					</device>
 					</devices>
-					</DAS>""";
+					</DAS>\
+					""";
 
 	String device1Xml = "<DAS>\n"
 			+ "<mode>LOGFILEUPLOAD</mode>"
@@ -187,7 +192,8 @@ public interface TestConstants {
 </records>
 </device>
 </devices>
-</DAS>""";
+</DAS>\
+""";
 	String device2Xml = "<DAS>\n"
 			+ "<mode>LOGFILEUPLOAD</mode>\n"
 			+ "<name>xxxxC600xxxx</name>\n"
@@ -298,7 +304,8 @@ public interface TestConstants {
 			<DAS>
 			<mode>STATUS</mode>
 			<name>001EC60007B2</name>
-			</DAS>""";
+			</DAS>\
+			""";
 
 	String device2XmlNull = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
 			+ "<DAS>\n"
