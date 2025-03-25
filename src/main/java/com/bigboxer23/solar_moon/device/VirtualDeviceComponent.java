@@ -74,7 +74,7 @@ public class VirtualDeviceComponent {
 		OpenSearchUtils.waitForIndexing();
 		int openSearchDeviceCount = IComponentRegistry.OSComponent.getSiteDevicesCountByTimePeriod(
 				device.getCustomerId(), device.getSiteId(), device.getDate());
-		if (devices.size() - 1 != openSearchDeviceCount) {
+		if (devices.stream().filter(d -> !d.isDisabled()).toList().size() - 1 != openSearchDeviceCount) {
 			log.debug("not calculating site "
 					+ device.getSiteId()
 					+ ". Only "
