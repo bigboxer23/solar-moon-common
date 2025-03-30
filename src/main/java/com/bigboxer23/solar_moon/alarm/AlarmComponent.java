@@ -431,6 +431,10 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			log.info("OpenSearch failures seen within last 30m so ignoring alerting while system" + " recovers.");
 			return true;
 		}
+		if (device.isDeviceSite()) {
+			log.debug("site device, shouldn't throw any alarms");
+			return true;
+		}
 		try {
 			List<DeviceData> historicData = IComponentRegistry.OSComponent.getRecentDeviceData(
 					device.getClientId(), device.getId(), TimeConstants.HOUR * 2);
@@ -471,14 +475,15 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				log.info("average uv conditions are very low, panel may be OK " + uvIndex);
 				return true;
 			}
-			boolean hasRain = historicData.stream()
-					.anyMatch(data -> IWeatherConstants.RAIN.equalsIgnoreCase(data.getWeatherSummary()));
+			boolean hasPrecipitation = historicData.stream()
+					.anyMatch(data -> IWeatherConstants.RAIN.equalsIgnoreCase(data.getWeatherSummary())
+							|| IWeatherConstants.SNOW.equalsIgnoreCase(data.getWeatherSummary()));
 			double precipIntensity = historicData.stream()
 					.map(DeviceData::getPrecipitationIntensity)
 					.mapToDouble(Double::valueOf)
 					.average()
 					.orElse(-1);
-			if (hasRain && precipIntensity > .01) {
+			if (hasPrecipitation && precipIntensity > .01) {
 				log.info("rain recently, panel may be OK " + precipIntensity);
 				return true;
 			}
@@ -486,16 +491,14 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 				log.info("site devices all report low power, panel(s) may be OK");
 				return true;
 			}
-			log.warn("Device not generating power "
-					+ historicData.size()
-					+ ": "
-					+ isDarkAdjacent
-					+ ": "
-					+ averageRealPower
-					+ ": "
-					+ uvIndex
-					+ ": "
-					+ precipIntensity);
+			log.warn(
+					"Device not generating power {}: {}: {}: {}: {}: {}",
+					historicData.size(),
+					isDarkAdjacent,
+					averageRealPower,
+					uvIndex,
+					precipIntensity,
+					hasPrecipitation);
 			return false;
 		} catch (IOException e) {
 			log.error("isDeviceGeneratingPower", e);
@@ -528,12 +531,11 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 						siteDevice.getId(), OpenSearchQueries.getDeviceIdQuery(siteDevice.getId()));
 				hasValidSiteDeviceData = hasValidSiteDeviceData || siteDeviceData != null;
 				if (siteDeviceData != null && siteDeviceData.getTotalRealPower() > 0.25) {
-					log.info("average production over .25kW detected on site device"
-							+ siteDevice.getId()
-							+ " : "
-							+ siteDeviceData.getTotalRealPower()
-							+ " : "
-							+ siteDeviceData.getDate());
+					log.info(
+							"average production over .25kW detected on site device {} : {} : {}",
+							siteDevice.getId(),
+							siteDeviceData.getTotalRealPower(),
+							siteDeviceData.getDate());
 					return true;
 				}
 			}
