@@ -399,7 +399,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 					data.getCustomerId(),
 					data.getDeviceId(),
 					data.getSiteId(),
-					"No data recently from device.  Last data: "
+					NO_DATA_RECENTLY
 							+ data.getDate().getTime());
 		}
 		// Inspect device, weather, site data
