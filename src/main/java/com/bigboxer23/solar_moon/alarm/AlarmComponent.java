@@ -399,8 +399,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 					data.getCustomerId(),
 					data.getDeviceId(),
 					data.getSiteId(),
-					NO_DATA_RECENTLY
-							+ data.getDate().getTime());
+					NO_DATA_RECENTLY + data.getDate().getTime());
 		}
 		// Inspect device, weather, site data
 		if (!isDeviceOK(device, data, isOpenSearchOk)) {
