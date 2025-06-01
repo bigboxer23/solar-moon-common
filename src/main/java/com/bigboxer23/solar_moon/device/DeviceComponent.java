@@ -211,6 +211,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 			device.setSiteId(device.getId());
 		}
 		logAction("add", device.getId(), device.getSiteId());
+		device.markCreated();
 		getTable().putItem(device);
 		return device;
 	}
@@ -239,6 +240,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		}
 		// TODO: could more efficiently update child devices?
 		maybeUpdateLocationData(device);
+		device.markUpdated();
 		return Optional.ofNullable(getTable().updateItem(builder -> builder.item(device)));
 	}
 
