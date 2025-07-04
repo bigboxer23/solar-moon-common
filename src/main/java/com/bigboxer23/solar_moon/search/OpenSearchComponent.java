@@ -20,6 +20,7 @@ import org.opensearch.client.json.jackson.JacksonJsonpMapper;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.*;
 import org.opensearch.client.opensearch._types.aggregations.Aggregate;
+import org.opensearch.client.opensearch._types.aggregations.MaxAggregate;
 import org.opensearch.client.opensearch._types.aggregations.StringTermsBucket;
 import org.opensearch.client.opensearch._types.query_dsl.FieldAndFormat;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
@@ -468,8 +469,13 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		search.setDeviceId(deviceId);
 		search.setEndDate(end.getTime());
 		search.setStartDate(end.getTime() - offset);
-		return Double.valueOf(search(search).aggregations().get("max").max().value())
-				.floatValue();
+
+		return Optional.ofNullable(search(search).aggregations().get("max"))
+				.filter(a -> a._kind() == Aggregate.Kind.Max)
+				.map(Aggregate::max)
+				.map(MaxAggregate::value)
+				.map(Double::floatValue)
+				.orElse(0f);
 	}
 
 	public boolean isOpenSearchAvailable() {

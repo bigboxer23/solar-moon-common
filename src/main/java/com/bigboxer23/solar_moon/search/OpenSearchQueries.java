@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import org.opensearch.client.json.JsonData;
 import org.opensearch.client.opensearch._types.*;
 import org.opensearch.client.opensearch._types.aggregations.*;
@@ -239,7 +241,6 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 	}
 
 	public static SearchRequest.Builder getStackedTimeSeriesBuilder(String timezone, String bucketSize) {
-
 		return getBaseBuilder(0, false)
 				.aggregations(
 						"2",
@@ -247,21 +248,16 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 								.dateHistogram(timestampAggregation(timezone, bucketSize))
 								.aggregations(
 										"terms",
-										new Aggregation.Builder()
-												.terms(new TermsAggregation.Builder()
-														.field(getKeywordField(DEVICE_ID))
-														.order(Collections.singletonList(
-																Collections.singletonMap("1", SortOrder.Desc)))
-														.size(50)
-														.build())
-												.aggregations(
+										buildTermsAggregation(
+												DEVICE_ID,
+												50,
+												Collections.singletonList(
+														Collections.singletonMap("1", SortOrder.Desc)),
+												Collections.singletonMap(
 														"1",
 														new Aggregation.Builder()
-																.avg(new AverageAggregation.Builder()
-																		.field(TOTAL_REAL_POWER)
-																		.build())
-																.build())
-												.build())
+																.avg(a -> a.field(TOTAL_REAL_POWER))
+																.build())))
 								.build());
 	}
 
@@ -307,8 +303,20 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 	}
 
 	private static Aggregation buildTermsAggregation(String field, int size) {
+		return buildTermsAggregation(field, size, null, null);
+	}
+
+	private static Aggregation buildTermsAggregation(
+			String field, int size, List<Map<String, SortOrder>> order, Map<String, Aggregation> subAggregations) {
 		return new Aggregation.Builder()
-				.terms(t -> t.field(getKeywordField(field)).size(size))
+				.terms(t -> {
+					t.field(getKeywordField(field)).size(size);
+					if (order != null && !order.isEmpty()) {
+						t.order(order);
+					}
+					return t;
+				})
+				.aggregations(subAggregations)
 				.build();
 	}
 
