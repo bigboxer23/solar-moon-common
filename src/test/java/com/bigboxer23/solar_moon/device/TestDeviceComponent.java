@@ -9,6 +9,7 @@ import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import java.util.List;
 import java.util.Optional;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -110,16 +111,31 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 	public void addDevice() {
 		Device device = TestUtils.getDevice();
 		assertNull(deviceComponent.addDevice(device));
-		assertNull(deviceComponent.addDevice(
-				new Device(TokenGenerator.generateNewToken(), device.getClientId(), device.getDeviceName())));
 
-		// Test new site gets siteId automatically stamped
+		Device newDevice =
+				new Device(TokenGenerator.generateNewToken(), device.getClientId(), device.getDeviceName() + "new");
+		long before = System.currentTimeMillis();
+		Device addedDevice = deviceComponent.addDevice(newDevice);
+		long after = System.currentTimeMillis();
+
+		assertNotNull(addedDevice);
+		assertTrue(
+				addedDevice.getCreatedAt() >= before && addedDevice.getCreatedAt() <= after,
+				"createdAt should be set between before and after timestamps");
+		assertTrue(addedDevice.getUpdatedAt() >= addedDevice.getCreatedAt(), "updatedAt should be >= createdAt");
+		assertEquals(
+				addedDevice.getCreatedAt(),
+				addedDevice.getUpdatedAt(),
+				"createdAt and updatedAt should be equal on creation");
+
 		Device siteDevice = new Device(
 				TokenGenerator.generateNewToken(), device.getClientId(), device.getDeviceName() + "siteTest");
 		siteDevice.setSite("temporary");
-		assertNotNull(deviceComponent.addDevice(siteDevice).getSiteId());
+		Device addedSite = deviceComponent.addDevice(siteDevice);
+		assertNotNull(addedSite.getSiteId());
 	}
 
+	@SneakyThrows
 	@Test
 	public void updateDevice() {
 		Device device = TestUtils.getDevice();
@@ -128,6 +144,14 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 		assertNotNull(deviceComponent.addDevice(device2));
 		device.setDeviceName("temp");
 		device.setName("temp");
+		long oldUpdatedAt = device.getUpdatedAt();
+		Thread.sleep(2);
+		Optional<Device> updated = deviceComponent.updateDevice(device);
+		assertTrue(updated.isPresent());
+		assertTrue(updated.get().getUpdatedAt() > oldUpdatedAt, "updatedAt should increase after update");
+		assertEquals(
+				device.getCreatedAt(), updated.get().getCreatedAt(), "createdAt should stay the same after update");
+
 		assertTrue(deviceComponent.updateDevice(device).isPresent());
 
 		device2.setDeviceName(device.getDeviceName());
