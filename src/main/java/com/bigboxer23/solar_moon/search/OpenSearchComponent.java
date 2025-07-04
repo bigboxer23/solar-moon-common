@@ -8,12 +8,13 @@ import com.bigboxer23.utils.properties.PropertyUtils;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.hc.client5.http.auth.AuthScope;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
+import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
+import org.apache.hc.core5.http.HttpHost;
 import org.opensearch.client.ResponseException;
 import org.opensearch.client.RestClient;
 import org.opensearch.client.json.jackson.JacksonJsonpMapper;
@@ -486,10 +487,11 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		return true;
 	}
 
+	@SneakyThrows
 	private OpenSearchClient getClient() {
 		if (client == null) {
-			final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-			credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(user, pass));
+			final BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+			credentialsProvider.setCredentials(new AuthScope(null, -1), new UsernamePasswordCredentials(user, pass.toCharArray()));
 			final RestClient restClient = RestClient.builder(HttpHost.create(openSearchUrl))
 					.setHttpClientConfigCallback(
 							httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider))

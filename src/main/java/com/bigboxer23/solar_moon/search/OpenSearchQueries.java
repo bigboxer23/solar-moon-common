@@ -145,7 +145,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 	public static Script getUpdateScript(String field, Object value) {
 		return new Script.Builder()
 				.inline(new InlineScript.Builder()
-						.lang("painless")
+						.lang(builder -> builder.builtin(BuiltinScriptLanguage.Painless))
 						.source("ctx._source['" + field + "'] =" + " params.newValue")
 						.params("newValue", JsonData.of(value))
 						.build())
@@ -197,34 +197,31 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 
 	public static SearchRequest.Builder getWeatherSummaryFacet() {
 		return getBaseBuilder(0, false)
-				.aggregations(
-						"terms",
-						AggregationBuilders.terms()
+				.aggregations("terms", new Aggregation.Builder()
+						.terms(new TermsAggregation.Builder()
 								.field(getKeywordField(MeterConstants.WEATHER_SUMMARY))
 								.size(40)
-								.build()
-								._toAggregation());
+								.build())
+						.build());
 	}
 
 	public static SearchRequest.Builder appendInformationErrorsFacet(SearchRequest.Builder builder) {
 		return builder.aggregations(
 				MeterConstants.INFORMATIONAL_ERROR_STRING,
-				AggregationBuilders.terms()
-						.field(getKeywordField(MeterConstants.INFORMATIONAL_ERROR_STRING))
-						.size(15)
-						.build()
-						._toAggregation());
+				new Aggregation.Builder()
+						.terms(new TermsAggregation.Builder()
+								.field(getKeywordField(MeterConstants.INFORMATIONAL_ERROR_STRING))
+								.size(15)
+								.build())
+						.build());
 	}
 
 	public static SearchRequest.Builder geDeviceIdFacet() {
 		return getBaseBuilder(0, false)
-				.aggregations(
-						"terms",
-						AggregationBuilders.terms()
+				.aggregations("terms", a -> a
+						.terms(t -> t
 								.field(getKeywordField(MeterConstants.DEVICE_ID))
-								.size(1000)
-								.build()
-								._toAggregation());
+								.size(1000)));
 	}
 
 	public static SearchRequest.Builder getDataSearch(int offset, int size, boolean includeSource, boolean sortASC) {
