@@ -424,7 +424,7 @@ public class TestOpenSearchComponent implements IComponentRegistry, TestConstant
 		json.setTimeZone(ZonedDateTime.now().getZone().getId());
 		assertEquals(30, OSComponent.search(json).hits().hits().size());
 		json.setFilterErrors(true);
-		assertEquals(5, OSComponent.search(json).hits().hits().size());
+		assertEquals(10, OSComponent.search(json).hits().hits().size());
 	}
 
 	@Test

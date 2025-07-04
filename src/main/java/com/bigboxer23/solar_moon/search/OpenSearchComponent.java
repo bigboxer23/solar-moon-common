@@ -8,7 +8,6 @@ import com.bigboxer23.utils.properties.PropertyUtils;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.auth.AuthScope;
@@ -430,7 +429,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	public List<StringTermsBucket> getDevicesFacet(SearchJSON searchJSON) throws IOException {
 		return getClient()
 				.search(
-						OpenSearchQueries.geDeviceIdFacet()
+						OpenSearchQueries.getDeviceIdFacet()
 								.query(getQuery(searchJSON))
 								.build(),
 						Map.class)
@@ -491,7 +490,8 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	private OpenSearchClient getClient() {
 		if (client == null) {
 			final BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-			credentialsProvider.setCredentials(new AuthScope(null, -1), new UsernamePasswordCredentials(user, pass.toCharArray()));
+			credentialsProvider.setCredentials(
+					new AuthScope(null, -1), new UsernamePasswordCredentials(user, pass.toCharArray()));
 			final RestClient restClient = RestClient.builder(HttpHost.create(openSearchUrl))
 					.setHttpClientConfigCallback(
 							httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider))

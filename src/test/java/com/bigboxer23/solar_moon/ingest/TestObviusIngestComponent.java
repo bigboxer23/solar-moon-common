@@ -89,8 +89,8 @@ public class TestObviusIngestComponent implements TestConstants, IComponentRegis
 		obviousIngestComponent.handleLinkedBody(LINKED_DEVICE_XML, CUSTOMER_ID);
 		Optional<LinkedDevice> linkedDevice = linkedDeviceComponent.queryBySerialNumber(serialNumber, CUSTOMER_ID);
 		assertTrue(linkedDevice.isPresent());
-		assertEquals("0", linkedDevice.get().getCriticalAlarm());
-		assertEquals("0", linkedDevice.get().getInformativeAlarm());
+		assertEquals(0, linkedDevice.get().getCriticalAlarm());
+		assertEquals(0, linkedDevice.get().getInformativeAlarm());
 
 		obviousIngestComponent.handleLinkedBody(
 				LINKED_DEVICE_XML
@@ -103,8 +103,8 @@ public class TestObviusIngestComponent implements TestConstants, IComponentRegis
 				CUSTOMER_ID);
 		linkedDevice = linkedDeviceComponent.queryBySerialNumber(serialNumber, CUSTOMER_ID);
 		assertTrue(linkedDevice.isPresent());
-		assertEquals("0", linkedDevice.get().getCriticalAlarm());
-		assertEquals("0", linkedDevice.get().getInformativeAlarm());
+		assertEquals(0, linkedDevice.get().getCriticalAlarm());
+		assertEquals(0, linkedDevice.get().getInformativeAlarm());
 	}
 
 	@Test
