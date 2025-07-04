@@ -3,7 +3,7 @@ package com.bigboxer23.solar_moon.device;
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.Subscription;
-import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
+import com.bigboxer23.solar_moon.dynamodb.AuditableAbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.subscription.SubscriptionComponent;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.util.Collections;
@@ -17,7 +17,8 @@ import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 @Slf4j
-public class DeviceComponent extends AbstractDynamodbComponent<Device> {
+public class DeviceComponent extends AuditableAbstractDynamodbComponent<Device>
+{
 
 	public static final String NO_SITE = "No Site"; // TODO:set as site id instead of name (or also as name)
 
@@ -211,8 +212,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 			device.setSiteId(device.getId());
 		}
 		logAction("add", device.getId(), device.getSiteId());
-		getTable().putItem(device);
-		return device;
+		return add(device);
 	}
 
 	public boolean isValidUpdate(Device device) {
@@ -239,7 +239,7 @@ public class DeviceComponent extends AbstractDynamodbComponent<Device> {
 		}
 		// TODO: could more efficiently update child devices?
 		maybeUpdateLocationData(device);
-		return Optional.ofNullable(getTable().updateItem(builder -> builder.item(device)));
+		return update(device);
 	}
 
 	public void deleteDevice(String id, String customerId) {

@@ -12,7 +12,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 @Schema(
 		description = "data object representing a solar energy device",
 		requiredProperties = {"id", "clientId"})
-public class Device {
+public class Device extends AuditableEntity {
 	public static final String NAME_INDEX = "name-clientId-index";
 
 	public static final String DEVICE_NAME_INDEX = "deviceName-clientId-index";
