@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.TestUtils;
 import com.bigboxer23.solar_moon.alarm.IAlarmConstants;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.zone.ZoneRulesException;
 import java.util.Date;
 import org.junit.jupiter.api.AfterAll;
@@ -21,7 +24,12 @@ public class TestTimeUtils {
 	@Test
 	public void get15mRoundedDate() {
 		Date rounded = TimeUtils.get15mRoundedDate();
-		assertTrue(rounded.getMinutes() == 0 || rounded.getMinutes() == 15 || rounded.getMinutes() == 45);
+		LocalDateTime localDateTime = Instant.ofEpochMilli(rounded.getTime())
+				.atZone(ZoneId.systemDefault())
+				.toLocalDateTime();
+		int minute = localDateTime.getMinute();
+		System.out.println("minute: " + minute);
+		assertTrue(minute == 0 || minute == 15 || minute == 30 || minute == 45);
 	}
 
 	/** Assumes to run in CST */

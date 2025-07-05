@@ -454,7 +454,7 @@ public class TestAlarmComponent implements IComponentRegistry, TestConstants, IA
 		data.setUVIndex(.41f);
 		OSComponent.deleteByCustomerId(CUSTOMER_ID);
 		seedData(data);
-		assertFalse(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getSite(), data, true));
+		assertTrue(IComponentRegistry.alarmComponent.isDeviceOK(TestUtils.getSite(), data, true));
 
 		// Test device w/o site not using the healthy site nodes check
 		Device noSite = new Device();

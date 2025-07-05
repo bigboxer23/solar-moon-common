@@ -295,18 +295,20 @@ public class TestDeviceComponent implements IComponentRegistry, TestConstants {
 	@Test
 	public void deviceLocationUpdate() {
 		Device site = TestUtils.getSite();
-		assertEquals(-1, site.getLatitude());
-		assertEquals(-1, site.getLongitude());
+		assertEquals(TestUtils.testLatitude, site.getLatitude());
+		assertEquals(TestUtils.testLongitude, site.getLongitude());
 		site.setCity("Minneapolis");
-		deviceComponent.updateDevice(site).ifPresent(s -> assertEquals(-1, s.getLatitude()));
+		deviceComponent.updateDevice(site).ifPresent(s -> assertEquals(TestUtils.testLatitude, s.getLatitude()));
 		site.setState("MN");
-		deviceComponent.updateDevice(site).ifPresent(s -> assertEquals(-1, s.getLatitude()));
+		deviceComponent.updateDevice(site).ifPresent(s -> assertEquals(TestUtils.testLatitude, s.getLatitude()));
 		site.setCountry("USA");
-		deviceComponent.updateDevice(site).ifPresent(s -> assertEquals(44.97902, s.getLatitude()));
+		deviceComponent.updateDevice(site).ifPresent(s -> assertEquals(TestUtils.testLatitude, s.getLatitude()));
 
 		site = TestUtils.getDevice();
-		site.setCity("Minneapolis");
-		site.setState("MN");
+		site.setLatitude(-1);
+		site.setLongitude(-1);
+		site.setCity("New York City");
+		site.setState("NY");
 		site.setCountry("USA");
 		deviceComponent.updateDevice(site).ifPresent(d -> assertEquals(-1, d.getLatitude()));
 	}

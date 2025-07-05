@@ -22,17 +22,18 @@ public class TestMappingComponent implements IComponentRegistry, TestConstants, 
 		assertFalse(map.isPresent());
 
 		// Test good add
-		map = mappingComponent.addMapping(CUSTOMER_ID, AVG_VOLT, TEST_MAPPING);
+		map = mappingComponent.addMapping(CUSTOMER_ID, VOLTAGE_LABEL, TEST_MAPPING);
 		assertTrue(map.isPresent());
 
 		// Test dup add
-		map = mappingComponent.addMapping(CUSTOMER_ID, AVG_CURRENT, TEST_MAPPING);
+		map = mappingComponent.addMapping(CUSTOMER_ID, CURRENT_LABEL, TEST_MAPPING);
 		assertFalse(map.isPresent());
 		assertEquals(1, mappingComponent.getMappings(CUSTOMER_ID).size());
-		assertEquals(AVG_VOLT, mappingComponent.getMappings(CUSTOMER_ID).get(0).getAttribute());
+		assertEquals(
+				VOLTAGE_LABEL, mappingComponent.getMappings(CUSTOMER_ID).get(0).getAttribute());
 
 		// Test add'n good add
-		mappingComponent.addMapping(CUSTOMER_ID, AVG_VOLT, TEST_MAPPING + 1);
+		mappingComponent.addMapping(CUSTOMER_ID, VOLTAGE_LABEL, TEST_MAPPING + 1);
 		assertEquals(2, mappingComponent.getMappings(CUSTOMER_ID).size());
 
 		// Test bad delete

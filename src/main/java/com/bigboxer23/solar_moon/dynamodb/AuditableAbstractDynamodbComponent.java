@@ -1,12 +1,11 @@
 package com.bigboxer23.solar_moon.dynamodb;
 
 import com.bigboxer23.solar_moon.data.AuditableEntity;
-
 import java.util.Optional;
 
 /** */
-public abstract class AuditableAbstractDynamodbComponent<T extends AuditableEntity> extends AbstractDynamodbComponent<T>
-{
+public abstract class AuditableAbstractDynamodbComponent<T extends AuditableEntity>
+		extends AbstractDynamodbComponent<T> {
 	public T add(T entity) {
 		entity.markCreated();
 		getTable().putItem(entity);

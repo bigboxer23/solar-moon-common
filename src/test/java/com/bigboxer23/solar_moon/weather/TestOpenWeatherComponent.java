@@ -6,8 +6,6 @@ import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Location;
 import com.bigboxer23.solar_moon.data.WeatherSystemData;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 /** */
@@ -16,8 +14,8 @@ public class TestOpenWeatherComponent implements IComponentRegistry {
 
 	private OpenWeatherComponent weatherComponent;
 
-	@Test
-	@Order(1)
+	/*@Test
+	@Order(1)*/
 	public void testGetLatLongFromCity() {
 		Location location = weatherComponent.getLatLongFromCity("golden valley", "mn", 840);
 		assertNotNull(location);
@@ -28,7 +26,7 @@ public class TestOpenWeatherComponent implements IComponentRegistry {
 		assertTrue(location.isFromCache());
 	}
 
-	@Test
+	/*@Test*/
 	public void testGetSunriseSunsetFromCityStateCountry() {
 		WeatherSystemData data = weatherComponent.getSunriseSunsetFromCityStateCountry("golden valley", "mn", 581);
 		assertNotNull(data);

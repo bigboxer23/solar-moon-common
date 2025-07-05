@@ -17,8 +17,7 @@ import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 @Slf4j
-public class DeviceComponent extends AuditableAbstractDynamodbComponent<Device>
-{
+public class DeviceComponent extends AuditableAbstractDynamodbComponent<Device> {
 
 	public static final String NO_SITE = "No Site"; // TODO:set as site id instead of name (or also as name)
 
