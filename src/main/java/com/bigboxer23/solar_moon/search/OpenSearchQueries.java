@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import org.opensearch.client.json.JsonData;
 import org.opensearch.client.opensearch._types.*;
 import org.opensearch.client.opensearch._types.aggregations.*;
@@ -145,7 +147,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 	public static Script getUpdateScript(String field, Object value) {
 		return new Script.Builder()
 				.inline(new InlineScript.Builder()
-						.lang("painless")
+						.lang(builder -> builder.builtin(BuiltinScriptLanguage.Painless))
 						.source("ctx._source['" + field + "'] =" + " params.newValue")
 						.params("newValue", JsonData.of(value))
 						.build())
@@ -197,34 +199,17 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 
 	public static SearchRequest.Builder getWeatherSummaryFacet() {
 		return getBaseBuilder(0, false)
-				.aggregations(
-						"terms",
-						AggregationBuilders.terms()
-								.field(getKeywordField(MeterConstants.WEATHER_SUMMARY))
-								.size(40)
-								.build()
-								._toAggregation());
+				.aggregations("terms", buildTermsAggregation(MeterConstants.WEATHER_SUMMARY, 40));
 	}
 
 	public static SearchRequest.Builder appendInformationErrorsFacet(SearchRequest.Builder builder) {
 		return builder.aggregations(
 				MeterConstants.INFORMATIONAL_ERROR_STRING,
-				AggregationBuilders.terms()
-						.field(getKeywordField(MeterConstants.INFORMATIONAL_ERROR_STRING))
-						.size(15)
-						.build()
-						._toAggregation());
+				buildTermsAggregation(MeterConstants.INFORMATIONAL_ERROR_STRING, 15));
 	}
 
-	public static SearchRequest.Builder geDeviceIdFacet() {
-		return getBaseBuilder(0, false)
-				.aggregations(
-						"terms",
-						AggregationBuilders.terms()
-								.field(getKeywordField(MeterConstants.DEVICE_ID))
-								.size(1000)
-								.build()
-								._toAggregation());
+	public static SearchRequest.Builder getDeviceIdFacet() {
+		return getBaseBuilder(0, false).aggregations("terms", buildTermsAggregation(MeterConstants.DEVICE_ID, 1000));
 	}
 
 	public static SearchRequest.Builder getDataSearch(int offset, int size, boolean includeSource, boolean sortASC) {
@@ -256,36 +241,23 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 	}
 
 	public static SearchRequest.Builder getStackedTimeSeriesBuilder(String timezone, String bucketSize) {
-
 		return getBaseBuilder(0, false)
 				.aggregations(
 						"2",
 						new Aggregation.Builder()
-								.dateHistogram(AggregationBuilders.dateHistogram()
-										.field(TIMESTAMP)
-										.fixedInterval(new Time.Builder()
-												.time(bucketSize)
-												.build())
-										.timeZone(timezone)
-										.minDocCount(1)
-										.build())
+								.dateHistogram(timestampAggregation(timezone, bucketSize))
 								.aggregations(
 										"terms",
-										new Aggregation.Builder()
-												.terms(new TermsAggregation.Builder()
-														.field(getKeywordField(DEVICE_ID))
-														.order(Collections.singletonList(
-																Collections.singletonMap("1", SortOrder.Desc)))
-														.size(50)
-														.build())
-												.aggregations(
+										buildTermsAggregation(
+												DEVICE_ID,
+												50,
+												Collections.singletonList(
+														Collections.singletonMap("1", SortOrder.Desc)),
+												Collections.singletonMap(
 														"1",
 														new Aggregation.Builder()
-																.avg(new AverageAggregation.Builder()
-																		.field(TOTAL_REAL_POWER)
-																		.build())
-																.build())
-												.build())
+																.avg(a -> a.field(TOTAL_REAL_POWER))
+																.build())))
 								.build());
 	}
 
@@ -294,14 +266,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.aggregations(
 						"2",
 						new Aggregation.Builder()
-								.dateHistogram(AggregationBuilders.dateHistogram()
-										.field(TIMESTAMP)
-										.fixedInterval(new Time.Builder()
-												.time(bucketSize)
-												.build())
-										.timeZone(timezone)
-										.minDocCount(1)
-										.build())
+								.dateHistogram(timestampAggregation(timezone, bucketSize))
 								.aggregations(
 										"1",
 										new Aggregation.Builder()
@@ -317,14 +282,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.aggregations(
 						"2",
 						new Aggregation.Builder()
-								.dateHistogram(AggregationBuilders.dateHistogram()
-										.field(TIMESTAMP)
-										.fixedInterval(new Time.Builder()
-												.time(bucketSize)
-												.build())
-										.timeZone(timezone)
-										.minDocCount(1)
-										.build())
+								.dateHistogram(timestampAggregation(timezone, bucketSize))
 								.aggregations(
 										"1",
 										new Aggregation.Builder()
@@ -333,6 +291,33 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 														.build())
 												.build())
 								.build());
+	}
+
+	private static DateHistogramAggregation timestampAggregation(String timezone, String bucketSize) {
+		return new DateHistogramAggregation.Builder()
+				.field(TIMESTAMP)
+				.fixedInterval(new Time.Builder().time(bucketSize).build())
+				.timeZone(timezone)
+				.minDocCount(1)
+				.build();
+	}
+
+	private static Aggregation buildTermsAggregation(String field, int size) {
+		return buildTermsAggregation(field, size, null, null);
+	}
+
+	private static Aggregation buildTermsAggregation(
+			String field, int size, List<Map<String, SortOrder>> order, Map<String, Aggregation> subAggregations) {
+		return new Aggregation.Builder()
+				.terms(t -> {
+					t.field(getKeywordField(field)).size(size);
+					if (order != null && !order.isEmpty()) {
+						t.order(order);
+					}
+					return t;
+				})
+				.aggregations(subAggregations != null ? subAggregations : Collections.emptyMap())
+				.build();
 	}
 
 	public static SearchRequest.Builder getMaxCurrentBuilder() {
@@ -398,14 +383,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.aggregations(
 						"2",
 						new Aggregation.Builder()
-								.dateHistogram(AggregationBuilders.dateHistogram()
-										.field(TIMESTAMP)
-										.fixedInterval(new Time.Builder()
-												.time(bucketSize)
-												.build())
-										.timeZone(timezone)
-										.minDocCount(1)
-										.build())
+								.dateHistogram(timestampAggregation(timezone, bucketSize))
 								.aggregations(
 										"1",
 										new Aggregation.Builder()

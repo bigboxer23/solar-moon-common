@@ -8,18 +8,19 @@ import com.bigboxer23.utils.properties.PropertyUtils;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.hc.client5.http.auth.AuthScope;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
+import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
+import org.apache.hc.core5.http.HttpHost;
 import org.opensearch.client.ResponseException;
 import org.opensearch.client.RestClient;
 import org.opensearch.client.json.jackson.JacksonJsonpMapper;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.*;
 import org.opensearch.client.opensearch._types.aggregations.Aggregate;
+import org.opensearch.client.opensearch._types.aggregations.MaxAggregate;
 import org.opensearch.client.opensearch._types.aggregations.StringTermsBucket;
 import org.opensearch.client.opensearch._types.query_dsl.FieldAndFormat;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
@@ -429,7 +430,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	public List<StringTermsBucket> getDevicesFacet(SearchJSON searchJSON) throws IOException {
 		return getClient()
 				.search(
-						OpenSearchQueries.geDeviceIdFacet()
+						OpenSearchQueries.getDeviceIdFacet()
 								.query(getQuery(searchJSON))
 								.build(),
 						Map.class)
@@ -468,8 +469,13 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		search.setDeviceId(deviceId);
 		search.setEndDate(end.getTime());
 		search.setStartDate(end.getTime() - offset);
-		return Double.valueOf(search(search).aggregations().get("max").max().value())
-				.floatValue();
+
+		return Optional.ofNullable(search(search).aggregations().get("max"))
+				.filter(a -> a._kind() == Aggregate.Kind.Max)
+				.map(Aggregate::max)
+				.map(MaxAggregate::value)
+				.map(Double::floatValue)
+				.orElse(0f);
 	}
 
 	public boolean isOpenSearchAvailable() {
@@ -486,10 +492,12 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		return true;
 	}
 
+	@SneakyThrows
 	private OpenSearchClient getClient() {
 		if (client == null) {
-			final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-			credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(user, pass));
+			final BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+			credentialsProvider.setCredentials(
+					new AuthScope(null, -1), new UsernamePasswordCredentials(user, pass.toCharArray()));
 			final RestClient restClient = RestClient.builder(HttpHost.create(openSearchUrl))
 					.setHttpClientConfigCallback(
 							httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
