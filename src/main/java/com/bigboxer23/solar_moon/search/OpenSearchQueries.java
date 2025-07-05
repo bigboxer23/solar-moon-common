@@ -316,7 +316,7 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 					}
 					return t;
 				})
-				.aggregations(subAggregations)
+				.aggregations(subAggregations != null ? subAggregations : Collections.emptyMap())
 				.build();
 	}
 

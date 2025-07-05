@@ -135,7 +135,8 @@ public class TestLinkedDeviceComponent implements IComponentRegistry, ISolectria
 				linkedDeviceComponent.queryBySerialNumber(TestUtils.getDevice().getSerialNumber(), CUSTOMER_ID);
 		assertTrue(dbLinkedDevice.isPresent());
 		assertEquals(1, dbLinkedDevice.get().getDate());
-		assertEquals("1234", dbLinkedDevice.get().getCriticalAlarm());
+		assertEquals(
+				ISolectriaConstants.AC_Contactor_Opened, dbLinkedDevice.get().getCriticalAlarm());
 	}
 
 	@Test
