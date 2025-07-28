@@ -3,10 +3,7 @@ package com.bigboxer23.solar_moon.search;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import org.opensearch.client.json.JsonData;
 import org.opensearch.client.opensearch._types.*;
 import org.opensearch.client.opensearch._types.aggregations.*;
@@ -97,6 +94,21 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.toQuery();
 	}
 
+	public static Query isErrorLog() {
+		return QueryBuilders.match()
+				.field(getKeywordField("level"))
+				.query(builder -> builder.stringValue("ERROR"))
+				.build()
+				.toQuery();
+	}
+
+	public static List<Query> getErrorLogSearch(Date startDate, Date endDate) {
+		List<Query> filters = new ArrayList<>();
+		filters.add(OpenSearchQueries.getDateRangeQuery(startDate, endDate));
+		filters.add(isErrorLog());
+		return filters;
+	}
+
 	public static Query getDateRangeQuery(Date date) {
 		LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 		return QueryBuilders.range()
@@ -158,6 +170,10 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 		return new SearchRequest.Builder().index(Collections.singletonList(INDEX_NAME));
 	}
 
+	public static SearchRequest.Builder getLogSearchRequestBuilder() {
+		return new SearchRequest.Builder().index(Collections.singletonList(LOGS_INDEX_NAME + "*"));
+	}
+
 	public static UpdateByQueryRequest.Builder getUpdateByQueryRequestBuilder() {
 		return new UpdateByQueryRequest.Builder().index(Collections.singletonList(INDEX_NAME));
 	}
@@ -177,6 +193,20 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 						.order(SortOrder.Desc)
 						.build())
 				.build();
+	}
+
+	public static SearchRequest.Builder getLogSearchBuilder(int count) {
+		return getLogSearchRequestBuilder()
+				.storedFields("*")
+				.size(count)
+				.sort(sortByTimeStampDesc())
+				.docvalueFields(new FieldAndFormat.Builder()
+						.field(TIMESTAMP)
+						.format("date_time")
+						.build())
+				.source(new SourceConfig.Builder()
+						.filter(new SourceFilter.Builder().excludes("a").build())
+						.build());
 	}
 
 	private static SearchRequest.Builder getBaseBuilder(int count, boolean includeSource) {

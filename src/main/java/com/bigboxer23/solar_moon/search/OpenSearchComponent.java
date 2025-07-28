@@ -2,6 +2,7 @@ package com.bigboxer23.solar_moon.search;
 
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
+import com.bigboxer23.solar_moon.ops.LogEntry;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TimeUtils;
 import com.bigboxer23.utils.properties.PropertyUtils;
@@ -265,6 +266,20 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		}
 	}
 
+	public SearchResponse<LogEntry> searchLogs(SearchJSON searchJSON) {
+		try {
+			return getClient()
+					.search(
+							OpenSearchQueries.getLogSearchBuilder(25)
+									.query(getLogQuery(searchJSON))
+									.build(),
+							LogEntry.class);
+		} catch (IOException e) {
+			log.error("searchLogs: ", e);
+		}
+		return null;
+	}
+
 	public SearchResponse<DeviceData> search(SearchJSON searchJSON) {
 		try {
 			return getClient()
@@ -317,6 +332,13 @@ public class OpenSearchComponent implements OpenSearchConstants {
 						.mapToDouble(a -> a)
 						.average()
 						.orElse(-1);
+	}
+
+	private Query getLogQuery(SearchJSON searchJSON) {
+		return QueryBuilders.bool()
+				.filter(OpenSearchQueries.getErrorLogSearch(searchJSON.getJavaStartDate(), searchJSON.getJavaEndDate()))
+				.build()
+				.toQuery();
 	}
 
 	private Query getQuery(SearchJSON searchJSON) {
