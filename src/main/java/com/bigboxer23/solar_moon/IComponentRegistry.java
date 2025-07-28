@@ -15,6 +15,7 @@ import com.bigboxer23.solar_moon.location.LocationComponent;
 import com.bigboxer23.solar_moon.maintenance.MaintenanceComponent;
 import com.bigboxer23.solar_moon.mapping.MappingComponent;
 import com.bigboxer23.solar_moon.notifications.NotificationComponent;
+import com.bigboxer23.solar_moon.ops.LogMonitorComponent;
 import com.bigboxer23.solar_moon.search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.search.status.OpenSearchStatusComponent;
 import com.bigboxer23.solar_moon.subscription.SubscriptionComponent;
@@ -58,6 +59,8 @@ public interface IComponentRegistry {
 	SMAIngestComponent smaIngestComponent = new SMAIngestComponent();
 
 	SMAS3CleanupComponent smaCleanupComponent = new SMAS3CleanupComponent();
+
+	LogMonitorComponent logMonitorComponent = new LogMonitorComponent();
 
 	MaintenanceComponent maintenanceComponent = new MaintenanceComponent();
 
