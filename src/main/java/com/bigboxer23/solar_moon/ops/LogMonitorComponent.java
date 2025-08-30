@@ -4,6 +4,9 @@ import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.notifications.SupportEmailTemplateContent;
 import com.bigboxer23.solar_moon.search.SearchJSON;
 import com.bigboxer23.solar_moon.util.TimeConstants;
+import com.bigboxer23.utils.properties.PropertyUtils;
+import java.util.Collections;
+
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.StringEscapeUtils;
@@ -20,9 +23,18 @@ public class LogMonitorComponent implements IComponentRegistry {
 		SearchJSON search = new SearchJSON();
 		search.setEndDate(System.currentTimeMillis());
 		search.setStartDate(System.currentTimeMillis() - (4 * TimeConstants.HOUR));
-		return OSComponent.searchLogs(search).hits().hits().stream()
-				.map(Hit::source)
-				.toList();
+		try {
+			var searchResult = OSComponent.searchLogs(search);
+			if (searchResult == null
+					|| searchResult.hits() == null
+					|| searchResult.hits().hits() == null) {
+				return Collections.emptyList();
+			}
+			return searchResult.hits().hits().stream().map(Hit::source).toList();
+		} catch (Exception e) {
+			log.error("Error fetching error logs", e);
+			return Collections.emptyList();
+		}
 	}
 
 	protected void sendSupportEmail(SupportEmailTemplateContent email) {
@@ -34,7 +46,10 @@ public class LogMonitorComponent implements IComponentRegistry {
 			return;
 		}
 		SupportEmailTemplateContent email = new SupportEmailTemplateContent(
-				"Some Errors have occurred!", "support@solarmoonanalytics.com", generateBody(errorLogs), "");
+				"Please review these errors.",
+				PropertyUtils.getProperty("emailer.support"),
+				generateBody(errorLogs),
+				"");
 		sendSupportEmail(email); // <— call the seam
 	}
 
@@ -52,13 +67,14 @@ public class LogMonitorComponent implements IComponentRegistry {
 		for (LogEntry log : errorLogs) {
 			body.append("<tr>")
 					.append("<td>")
-					.append(StringEscapeUtils.escapeHtml4(log.getDate().toString()))
+					.append(StringEscapeUtils.escapeHtml4(
+							log.getDate() != null ? log.getDate().toString() : ""))
 					.append("</td>")
 					.append("<td>")
-					.append(StringEscapeUtils.escapeHtml4(log.getServiceName()))
+					.append(StringEscapeUtils.escapeHtml4(log.getServiceName() != null ? log.getServiceName() : ""))
 					.append("</td>")
 					.append("<td>")
-					.append(StringEscapeUtils.escapeHtml4(log.getMessage()))
+					.append(StringEscapeUtils.escapeHtml4(log.getMessage() != null ? log.getMessage() : ""))
 					.append("</td>")
 					.append("<td>")
 					.append(

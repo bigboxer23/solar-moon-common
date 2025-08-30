@@ -6,8 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.TestConstants;
 import com.bigboxer23.solar_moon.alarm.ISolectriaConstants;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -63,5 +61,43 @@ public class TestLogMonitorComponent implements IComponentRegistry, TestConstant
 		TestableLogMonitorComponent component = new TestableLogMonitorComponent();
 		String html = component.generateBody(Collections.emptyList());
 		assertEquals(251, html.length(), "Should render a friendly empty message");
+	}
+
+	@Test
+	public void fetchErrorLogsForLastFourHour_handlesNullSearchResult() {
+		TestableLogMonitorComponent component = new TestableLogMonitorComponent() {
+			@Override
+			protected List<LogEntry> fetchErrorLogsForLastFourHour() {
+				return Collections.emptyList();
+			}
+		};
+
+		List<LogEntry> result = component.fetchErrorLogsForLastFourHour();
+
+		assertTrue(result.isEmpty(), "Should return empty list when search fails");
+	}
+
+	@Test
+	public void generateBody_handlesNullAndEmptyFields() {
+		LogEntry entryWithNulls = new LogEntry();
+		entryWithNulls.setDate(null);
+		entryWithNulls.setServiceName(null);
+		entryWithNulls.setMessage(null);
+		entryWithNulls.setStackTrace(null);
+
+		LogEntry entryWithEmpties = new LogEntry();
+		entryWithEmpties.setDate(new Date());
+		entryWithEmpties.setServiceName("");
+		entryWithEmpties.setMessage("");
+		entryWithEmpties.setStackTrace("");
+
+		List<LogEntry> logs = Arrays.asList(entryWithNulls, entryWithEmpties);
+
+		TestableLogMonitorComponent component = new TestableLogMonitorComponent();
+		String html = component.generateBody(logs);
+
+		assertTrue(html.contains("<table"), "Should generate valid HTML table");
+		assertTrue(html.contains("</table>"), "Should close HTML table");
+		assertTrue(html.contains("<tr>"), "Should have table rows");
 	}
 }
