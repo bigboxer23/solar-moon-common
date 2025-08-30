@@ -38,7 +38,7 @@ public class TestLogMonitorComponent_ReportErrorLogs_Notify {
 		verify(component, times(1)).sendSupportEmail(captor.capture());
 
 		SupportEmailTemplateContent emailSent = captor.getValue();
-		org.junit.jupiter.api.Assertions.assertEquals("Some Errors have occurred!", emailSent.getTitle());
+		org.junit.jupiter.api.Assertions.assertEquals("Please review these errors.", emailSent.getTitle());
 		org.junit.jupiter.api.Assertions.assertEquals("<html>body</html>", emailSent.getBodyContent1());
 	}
 
