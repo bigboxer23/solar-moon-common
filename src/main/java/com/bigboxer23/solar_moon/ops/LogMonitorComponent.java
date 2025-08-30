@@ -6,7 +6,6 @@ import com.bigboxer23.solar_moon.search.SearchJSON;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.utils.properties.PropertyUtils;
 import java.util.Collections;
-
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.StringEscapeUtils;
@@ -20,6 +19,7 @@ public class LogMonitorComponent implements IComponentRegistry {
 	}
 
 	protected List<LogEntry> fetchErrorLogsForLastFourHour() {
+		log.info("checking error logs for last four hour");
 		SearchJSON search = new SearchJSON();
 		search.setEndDate(System.currentTimeMillis());
 		search.setStartDate(System.currentTimeMillis() - (4 * TimeConstants.HOUR));
