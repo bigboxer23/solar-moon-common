@@ -19,6 +19,8 @@ public class Subscription {
 
 	private long joinDate;
 
+	private long manualSubscriptionDate;
+
 	public Subscription() {}
 
 	public Subscription(String customerId, int packs, long joinDate) {
