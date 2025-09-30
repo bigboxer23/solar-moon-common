@@ -29,7 +29,7 @@ public class SMADevice implements ISMAIngestConstants {
 	public void addRecord(SMARecord record) {
 		if (getDevice() == null) {
 			setDeviceName(record.getDevice());
-			setDevice(IComponentRegistry.generationComponent.findDeviceFromDeviceName(customerId, deviceName));
+			setDevice(IComponentRegistry.generationComponent.findDeviceFromDeviceNameFuzzy(customerId, deviceName));
 			if (getDevice() == null) {
 				log.error("cannot add record, no device created (licensing?)");
 				return;
