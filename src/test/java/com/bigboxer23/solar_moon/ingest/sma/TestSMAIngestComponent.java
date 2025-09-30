@@ -238,4 +238,46 @@ public class TestSMAIngestComponent implements TestConstants, IComponentRegistry
 		parsed = smaIngestComponent.getDateFromSMAS3Path("/20240701");
 		assertFalse(parsed.isPresent());
 	}
+
+	@Test
+	public void testProcessChildNodeDeviceExtraction() throws Exception {
+		String xmlWith9Digits = "<Device><Key>123456789:Total"
+				+ " yield</Key><Timestamp>2024-03-06T12:00:00</Timestamp><Mean>1000</Mean></Device>";
+		SMARecord record = parseXMLNode(xmlWith9Digits);
+		assertEquals("123456789", record.getDevice());
+		assertEquals("Total yield", record.getAttributeName());
+		assertEquals("2024-03-06T12:00:00", record.getTimestamp());
+		assertEquals("1000", record.getValue());
+
+		String xmlWithEmbedded9Digits =
+				"<Device><Key>SN:987654321:Power</Key><Timestamp>2024-03-06T12:15:00</Timestamp><Mean>5000</Mean></Device>";
+		record = parseXMLNode(xmlWithEmbedded9Digits);
+		assertEquals("987654321", record.getDevice());
+		assertEquals("Power", record.getAttributeName());
+
+		String xmlWithoutDigits = "<Device><Key>SN: XXXXX:Total"
+				+ " yield</Key><Timestamp>2024-03-06T12:30:00</Timestamp><Mean>2000</Mean></Device>";
+		record = parseXMLNode(xmlWithoutDigits);
+		assertEquals("SN: XXXXX", record.getDevice());
+		assertEquals("Total yield", record.getAttributeName());
+
+		String xmlWith8Digits =
+				"<Device><Key>12345678:Power</Key><Timestamp>2024-03-06T12:45:00</Timestamp><Mean>3000</Mean></Device>";
+		record = parseXMLNode(xmlWith8Digits);
+		assertEquals("12345678", record.getDevice());
+		assertEquals("Power", record.getAttributeName());
+
+		String xmlWith10Digits =
+				"<Device><Key>1234567890:Power</Key><Timestamp>2024-03-06T13:00:00</Timestamp><Mean>4000</Mean></Device>";
+		record = parseXMLNode(xmlWith10Digits);
+		assertEquals("1234567890", record.getDevice());
+		assertEquals("Power", record.getAttributeName());
+	}
+
+	private SMARecord parseXMLNode(String xml) throws Exception {
+		org.w3c.dom.Document doc = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+				.newDocumentBuilder()
+				.parse(new org.xml.sax.InputSource(new java.io.StringReader(xml)));
+		return smaIngestComponent.processChildNode(doc.getDocumentElement());
+	}
 }

@@ -13,6 +13,8 @@ import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
@@ -34,6 +36,8 @@ import software.amazon.awssdk.utils.StringUtils;
 @Slf4j
 public class SMAIngestComponent implements ISMAIngestConstants {
 	private final SimpleDateFormat smaFtpFolderDateFormatter = new SimpleDateFormat("yyyyMMdd");
+
+	private static final Pattern NINE_DIGIT_PATTERN = Pattern.compile("\\b\\d{9}\\b");
 
 	private static S3Client s3;
 
@@ -252,13 +256,18 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		return data;
 	}
 
-	private SMARecord processChildNode(Node node) {
+	SMARecord processChildNode(Node node) {
 		SMARecord record = new SMARecord();
 		XMLUtil.iterableNodeList(node.getChildNodes()).forEach(childNode -> {
 			switch (childNode.getNodeName()) {
 				case KEY:
 					String content = childNode.getTextContent();
-					record.setDevice(content.substring(0, content.lastIndexOf(":")));
+					Matcher matcher = NINE_DIGIT_PATTERN.matcher(content);
+					if (matcher.find()) {
+						record.setDevice(matcher.group());
+					} else {
+						record.setDevice(content.substring(0, content.lastIndexOf(":")));
+					}
 					record.setAttributeName(content.substring(content.lastIndexOf(":") + 1));
 					break;
 				case TIMESTAMP:

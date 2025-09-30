@@ -92,13 +92,44 @@ public class IngestComponent implements MeterConstants {
 	}
 
 	public Device findDeviceFromDeviceName(String customerId, String deviceName) {
+		return findDeviceFromDeviceName(customerId, deviceName, false);
+	}
+
+	public Device findDeviceFromDeviceNameFuzzy(String customerId, String deviceName) {
+		return findDeviceFromDeviceName(customerId, deviceName, true);
+	}
+
+	private Device findDeviceFromDeviceName(String customerId, String deviceName, boolean fuzzy) {
 		if (StringUtils.isEmpty(customerId) || StringUtils.isEmpty(deviceName)) {
 			log.warn("customer id or device name is null, can't find");
 			return null;
 		}
 		log.debug("finding device from device name/customer id " + deviceName + " " + customerId);
-		Device device = IComponentRegistry.deviceComponent
-				.findDeviceByDeviceName(customerId, deviceName)
+		Optional<Device> exactMatch = IComponentRegistry.deviceComponent.findDeviceByDeviceName(customerId, deviceName);
+
+		Device device = exactMatch
+				.or(() -> {
+					if (fuzzy) {
+						log.debug("Exact match not found, trying fuzzy match for " + deviceName);
+						Optional<Device> fuzzyMatch =
+								IComponentRegistry.deviceComponent.getDevicesForCustomerId(customerId).stream()
+										.filter(d -> !d.isDisabled())
+										.filter(d -> d.getDeviceName() != null
+												&& d.getDeviceName().contains(deviceName))
+										.findFirst();
+						if (fuzzyMatch.isPresent()) {
+							log.error("Fuzzy match found, updating device name from "
+									+ fuzzyMatch.get().getDeviceName()
+									+ " to "
+									+ deviceName);
+							Device updatedDevice = fuzzyMatch.get();
+							updatedDevice.setDeviceName(deviceName);
+							IComponentRegistry.deviceComponent.updateDevice(updatedDevice);
+							return fuzzyMatch;
+						}
+					}
+					return Optional.empty();
+				})
 				.orElseGet(() -> {
 					log.warn("New device found, " + deviceName);
 					return IComponentRegistry.deviceComponent.addDevice(
