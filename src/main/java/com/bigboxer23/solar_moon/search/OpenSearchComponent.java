@@ -1,5 +1,7 @@
 package com.bigboxer23.solar_moon.search;
 
+import static com.bigboxer23.solar_moon.util.PropertyConstants.*;
+
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import com.bigboxer23.solar_moon.ops.LogEntry;
@@ -48,9 +50,9 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	private final String pass;
 
 	public OpenSearchComponent() {
-		openSearchUrl = PropertyUtils.getProperty("opensearch.url");
-		user = PropertyUtils.getProperty("opensearch.user");
-		pass = PropertyUtils.getProperty("opensearch.pw");
+		openSearchUrl = PropertyUtils.getProperty(OPENSEARCH_URL);
+		user = PropertyUtils.getProperty(OPENSEARCH_USER);
+		pass = PropertyUtils.getProperty(OPENSEARCH_PASSWORD);
 	}
 
 	public void logData(Date fetchDate, List<DeviceData> deviceDatas) throws ResponseException {

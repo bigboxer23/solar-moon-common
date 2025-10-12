@@ -1,5 +1,7 @@
 package com.bigboxer23.solar_moon.notifications;
 
+import static com.bigboxer23.solar_moon.util.PropertyConstants.*;
+
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.utils.properties.PropertyUtils;
@@ -21,11 +23,11 @@ import software.amazon.awssdk.utils.StringUtils;
 public class NotificationComponent {
 	private static final MustacheFactory mf = new DefaultMustacheFactory("templates");
 
-	private static final String SENDER = PropertyUtils.getProperty("emailer.info");
+	private static final String SENDER = PropertyUtils.getProperty(EMAILER_INFO);
 
-	private final String recipientOverride = PropertyUtils.getProperty("recipient_override");
+	private final String recipientOverride = PropertyUtils.getProperty(RECIPIENT_OVERRIDE);
 
-	private final String additionalRecipient = PropertyUtils.getProperty("additional_recipient");
+	private final String additionalRecipient = PropertyUtils.getProperty(ADDITIONAL_RECIPIENT);
 
 	public void sendNotification(String recipient, String subject, EmailTemplateContent template) {
 		sendNotification(SENDER, recipient, subject, template);
@@ -41,7 +43,7 @@ public class NotificationComponent {
 		}
 		getRecipients(recipient).forEach(r -> {
 			try (SesClient client = SesClient.builder()
-					.region(Region.of(PropertyUtils.getProperty("aws.region")))
+					.region(Region.of(PropertyUtils.getProperty(AWS_REGION)))
 					.credentialsProvider(DefaultCredentialsProvider.create())
 					.build(); ) {
 				log.info("Sending email to " + recipient + " proxy:" + r);
@@ -79,7 +81,7 @@ public class NotificationComponent {
 
 	public void sendResponseMail(String recipient, String subject, String responseContent, String previousContent) {
 		IComponentRegistry.notificationComponent.sendNotification(
-				PropertyUtils.getProperty("emailer.support"),
+				PropertyUtils.getProperty(EMAILER_SUPPORT),
 				recipient,
 				subject,
 				new SupportEmailTemplateContent(

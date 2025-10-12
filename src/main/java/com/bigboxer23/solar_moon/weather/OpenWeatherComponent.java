@@ -1,5 +1,7 @@
 package com.bigboxer23.solar_moon.weather;
 
+import static com.bigboxer23.solar_moon.util.PropertyConstants.OPENWEATHERMAP_API;
+
 import com.bigboxer23.solar_moon.data.Location;
 import com.bigboxer23.solar_moon.data.WeatherData;
 import com.bigboxer23.solar_moon.data.WeatherSystemData;
@@ -32,7 +34,7 @@ public class OpenWeatherComponent {
 	private final Moshi moshi = new Moshi.Builder().build();
 
 	public OpenWeatherComponent() {
-		openWeatherMapAPIKey = PropertyUtils.getProperty("openweathermap.api");
+		openWeatherMapAPIKey = PropertyUtils.getProperty(OPENWEATHERMAP_API);
 	}
 
 	private Map<String, WeatherSystemData> weatherCache =
