@@ -1,5 +1,7 @@
 package com.bigboxer23.solar_moon.ops;
 
+import static com.bigboxer23.solar_moon.util.PropertyConstants.EMAILER_SUPPORT;
+
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.notifications.SupportEmailTemplateContent;
 import com.bigboxer23.solar_moon.search.SearchJSON;
@@ -46,10 +48,7 @@ public class LogMonitorComponent implements IComponentRegistry {
 			return;
 		}
 		SupportEmailTemplateContent email = new SupportEmailTemplateContent(
-				"Please review these errors.",
-				PropertyUtils.getProperty("emailer.support"),
-				generateBody(errorLogs),
-				"");
+				"Please review these errors.", PropertyUtils.getProperty(EMAILER_SUPPORT), generateBody(errorLogs), "");
 		sendSupportEmail(email); // <— call the seam
 	}
 

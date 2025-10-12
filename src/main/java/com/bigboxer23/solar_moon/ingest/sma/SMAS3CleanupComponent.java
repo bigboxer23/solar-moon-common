@@ -1,5 +1,7 @@
 package com.bigboxer23.solar_moon.ingest.sma;
 
+import static com.bigboxer23.solar_moon.util.PropertyConstants.FTP_S3_BUCKET;
+
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.utils.properties.PropertyUtils;
 import java.util.List;
@@ -11,7 +13,7 @@ import software.amazon.awssdk.services.s3.model.*;
 /** Contains logic to look through S3 bucket and cleanup/remove any empty directory structure */
 @Slf4j
 public class SMAS3CleanupComponent {
-	private final String bucket = PropertyUtils.getProperty("ftp.s3.bucket");
+	private final String bucket = PropertyUtils.getProperty(FTP_S3_BUCKET);
 
 	protected S3Client getS3Client() {
 		return IComponentRegistry.smaIngestComponent.getS3Client();

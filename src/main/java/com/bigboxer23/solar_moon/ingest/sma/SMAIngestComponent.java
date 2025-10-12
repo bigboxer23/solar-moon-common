@@ -1,5 +1,8 @@
 package com.bigboxer23.solar_moon.ingest.sma;
 
+import static com.bigboxer23.solar_moon.util.PropertyConstants.AWS_REGION;
+import static com.bigboxer23.solar_moon.util.PropertyConstants.FTP_S3_BUCKET;
+
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
@@ -41,12 +44,12 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 
 	private static S3Client s3;
 
-	private final String bucket = PropertyUtils.getProperty("ftp.s3.bucket");
+	private final String bucket = PropertyUtils.getProperty(FTP_S3_BUCKET);
 
 	public S3Client getS3Client() {
 		if (s3 == null) {
 			s3 = S3Client.builder()
-					.region(Region.of(PropertyUtils.getProperty("aws.region")))
+					.region(Region.of(PropertyUtils.getProperty(AWS_REGION)))
 					.build();
 		}
 		return s3;

@@ -1,5 +1,7 @@
 package com.bigboxer23.solar_moon.location;
 
+import static com.bigboxer23.solar_moon.util.PropertyConstants.AWS_LOCATION_INDEX;
+
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.util.TimezoneMapper;
@@ -27,7 +29,7 @@ public class LocationComponent {
 			SearchPlaceIndexForTextResponse response =
 					client.searchPlaceIndexForText(SearchPlaceIndexForTextRequest.builder()
 							.text(locationString)
-							.indexName(PropertyUtils.getProperty("aws.location.index"))
+							.indexName(PropertyUtils.getProperty(AWS_LOCATION_INDEX))
 							.build());
 			if (!response.hasResults()) {
 				return Optional.empty();

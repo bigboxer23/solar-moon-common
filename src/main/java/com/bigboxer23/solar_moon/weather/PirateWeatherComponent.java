@@ -1,5 +1,7 @@
 package com.bigboxer23.solar_moon.weather;
 
+import static com.bigboxer23.solar_moon.util.PropertyConstants.PIRATE_WEATHER_API;
+
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
@@ -24,7 +26,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 /** */
 @Slf4j
 public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeatherData> {
-	private static final String API_KEY = PropertyUtils.getProperty("pirate.weather.api");
+	private static final String API_KEY = PropertyUtils.getProperty(PIRATE_WEATHER_API);
 
 	private static final String FORCAST_URL =
 			"https://api.pirateweather.net/forecast/" + API_KEY + "/{0}%2C{1}?exclude=minutely%2Chourly%2Cdaily";
