@@ -275,19 +275,20 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.aggregations(
 						"2",
 						new Aggregation.Builder()
-								.dateHistogram(timestampAggregation(timezone, bucketSize))
-								.aggregations(
-										"terms",
-										buildTermsAggregation(
-												DEVICE_ID,
-												50,
-												Collections.singletonList(
-														Collections.singletonMap("1", SortOrder.Desc)),
-												Collections.singletonMap(
-														"1",
-														new Aggregation.Builder()
-																.avg(a -> a.field(TOTAL_REAL_POWER))
-																.build())))
+								.dateHistogram(timestampAggregation(timezone, bucketSize)
+										.aggregations(
+												"terms",
+												buildTermsAggregation(
+														DEVICE_ID,
+														50,
+														Collections.singletonList(
+																Collections.singletonMap("1", SortOrder.Desc)),
+														Collections.singletonMap(
+																"1",
+																new Aggregation.Builder()
+																		.avg(a -> a.field(TOTAL_REAL_POWER))
+																		.build())))
+										.build())
 								.build());
 	}
 
@@ -296,14 +297,15 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.aggregations(
 						"2",
 						new Aggregation.Builder()
-								.dateHistogram(timestampAggregation(timezone, bucketSize))
-								.aggregations(
-										"1",
-										new Aggregation.Builder()
-												.avg(new AverageAggregation.Builder()
-														.field(TOTAL_REAL_POWER)
+								.dateHistogram(timestampAggregation(timezone, bucketSize)
+										.aggregations(
+												"1",
+												new Aggregation.Builder()
+														.avg(new AverageAggregation.Builder()
+																.field(TOTAL_REAL_POWER)
+																.build())
 														.build())
-												.build())
+										.build())
 								.build());
 	}
 
@@ -312,24 +314,24 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.aggregations(
 						"2",
 						new Aggregation.Builder()
-								.dateHistogram(timestampAggregation(timezone, bucketSize))
-								.aggregations(
-										"1",
-										new Aggregation.Builder()
-												.max(new MaxAggregation.Builder()
-														.field(TOTAL_REAL_POWER)
+								.dateHistogram(timestampAggregation(timezone, bucketSize)
+										.aggregations(
+												"1",
+												new Aggregation.Builder()
+														.max(new MaxAggregation.Builder()
+																.field(TOTAL_REAL_POWER)
+																.build())
 														.build())
-												.build())
+										.build())
 								.build());
 	}
 
-	private static DateHistogramAggregation timestampAggregation(String timezone, String bucketSize) {
+	private static DateHistogramAggregation.Builder timestampAggregation(String timezone, String bucketSize) {
 		return new DateHistogramAggregation.Builder()
 				.field(TIMESTAMP)
 				.fixedInterval(new Time.Builder().time(bucketSize).build())
 				.timeZone(timezone)
-				.minDocCount(1)
-				.build();
+				.minDocCount(1);
 	}
 
 	private static Aggregation buildTermsAggregation(String field, int size) {
@@ -344,9 +346,11 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 					if (order != null && !order.isEmpty()) {
 						t.order(order);
 					}
+					if (subAggregations != null && !subAggregations.isEmpty()) {
+						t.aggregations(subAggregations);
+					}
 					return t;
 				})
-				.aggregations(subAggregations != null ? subAggregations : Collections.emptyMap())
 				.build();
 	}
 
@@ -413,14 +417,15 @@ public class OpenSearchQueries implements OpenSearchConstants, MeterConstants {
 				.aggregations(
 						"2",
 						new Aggregation.Builder()
-								.dateHistogram(timestampAggregation(timezone, bucketSize))
-								.aggregations(
-										"1",
-										new Aggregation.Builder()
-												.sum(new SumAggregation.Builder()
-														.field(ENG_CONS)
+								.dateHistogram(timestampAggregation(timezone, bucketSize)
+										.aggregations(
+												"1",
+												new Aggregation.Builder()
+														.sum(new SumAggregation.Builder()
+																.field(ENG_CONS)
+																.build())
 														.build())
-												.build())
+										.build())
 								.build());
 	}
 }
