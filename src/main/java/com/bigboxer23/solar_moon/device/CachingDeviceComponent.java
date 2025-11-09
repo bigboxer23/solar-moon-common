@@ -66,4 +66,15 @@ public class CachingDeviceComponent extends DeviceComponent {
 		deviceCache.invalidate(customerId + ":" + deviceId);
 		devicesBySiteIdCache.invalidate(customerId + ":" + siteId);
 	}
+
+	@Override
+	public void deleteDevicesByCustomerId(String customerId) {
+		super.deleteDevicesByCustomerId(customerId);
+		invalidateAllForCustomer(customerId);
+	}
+
+	public void invalidateAllForCustomer(String customerId) {
+		deviceCache.invalidateAll();
+		devicesBySiteIdCache.invalidateAll();
+	}
 }
