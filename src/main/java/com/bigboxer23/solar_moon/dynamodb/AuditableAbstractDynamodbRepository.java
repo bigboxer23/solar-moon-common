@@ -4,7 +4,7 @@ import com.bigboxer23.solar_moon.data.AuditableEntity;
 import java.util.Optional;
 
 /** */
-public abstract class AuditableAbstractDynamodbComponent<T extends AuditableEntity>
+public abstract class AuditableAbstractDynamodbRepository<T extends AuditableEntity>
 		extends AbstractDynamodbComponent<T> {
 	public T add(T entity) {
 		entity.markCreated();
