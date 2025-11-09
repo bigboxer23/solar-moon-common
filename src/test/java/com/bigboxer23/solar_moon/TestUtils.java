@@ -10,6 +10,7 @@ import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.data.LinkedDevice;
+import com.bigboxer23.solar_moon.device.CachingDeviceComponent;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import com.bigboxer23.solar_moon.search.OpenSearchUtils;
 import com.bigboxer23.solar_moon.search.SearchJSON;
@@ -105,6 +106,9 @@ public class TestUtils implements IComponentRegistry, TestConstants {
 	public static Device setupSite(String customerId) {
 		device = null;
 		site = null;
+		if (deviceComponent instanceof CachingDeviceComponent cachingComponent) {
+			cachingComponent.invalidateAllForCustomer(customerId);
+		}
 		nukeCustomerId(customerId);
 		if (CUSTOMER_ID.equals(customerId)) {
 			subscriptionComponent.updateSubscription(customerId, 1);
