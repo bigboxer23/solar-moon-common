@@ -3,7 +3,8 @@ package com.bigboxer23.solar_moon.aggregated.sites;
 import com.bigboxer23.solar_moon.data.Alarm;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
-import com.bigboxer23.solar_moon.subscription.IHasSubscriptionDate;
+import com.bigboxer23.solar_moon.data.Subscription;
+import com.bigboxer23.solar_moon.subscription.IHasSubscription;
 import java.util.List;
 import java.util.Map;
 import lombok.Data;
@@ -11,7 +12,7 @@ import org.opensearch.client.opensearch.core.SearchResponse;
 
 /** */
 @Data
-public class SitesSiteData implements IHasSubscriptionDate {
+public class SitesSiteData implements IHasSubscription {
 	private Device site;
 
 	private SearchResponse<DeviceData> weeklyMaxPower;
@@ -38,5 +39,5 @@ public class SitesSiteData implements IHasSubscriptionDate {
 
 	private Map<String, SearchResponse<DeviceData>> deviceWeeklyMaxPower;
 
-	private long trialDate = -1;
+	private Subscription subscription;
 }
