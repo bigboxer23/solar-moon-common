@@ -10,8 +10,7 @@ import lombok.Data;
 
 /** */
 @Data
-public class OverviewData implements IHasSubscription
-{
+public class OverviewData implements IHasSubscription {
 	public OverviewData(List<Device> devices, List<Alarm> alarms) {
 		setDevices(devices);
 		setAlarms(alarms);

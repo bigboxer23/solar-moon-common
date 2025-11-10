@@ -38,12 +38,12 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 						.stream()
 						.findFirst()
 						.flatMap((page) -> page.items().stream().findFirst())
-				.map(subscription -> {
-					if (subscription.getPacks() > 0) {
-						subscription.setJoinDate(-1L);
-					}
-					return subscription;
-				})
+						.map(subscription -> {
+							if (subscription.getPacks() > 0) {
+								subscription.setJoinDate(-1L);
+							}
+							return subscription;
+						})
 				: Optional.empty();
 	}
 
