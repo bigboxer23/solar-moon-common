@@ -38,6 +38,12 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 						.stream()
 						.findFirst()
 						.flatMap((page) -> page.items().stream().findFirst())
+				.map(subscription -> {
+					if (subscription.getPacks() > 0) {
+						subscription.setJoinDate(-1L);
+					}
+					return subscription;
+				})
 				: Optional.empty();
 	}
 
@@ -88,10 +94,9 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 	 * @param data
 	 * @param customerId
 	 */
-	public void addTrialDate(IHasSubscriptionDate data, String customerId) {
+	public void addTrialDate(IHasSubscription data, String customerId) {
 		if (data != null && data.getDevices().size() < SubscriptionComponent.TRIAL_DEVICE_COUNT) {
-			data.setTrialDate(
-					getSubscription(customerId).map(Subscription::getJoinDate).orElse(-1L));
+			data.setSubscription(getSubscription(customerId).orElse(null));
 		}
 	}
 }
