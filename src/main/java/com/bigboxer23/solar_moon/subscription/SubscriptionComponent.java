@@ -94,7 +94,7 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 	 * @param data
 	 * @param customerId
 	 */
-	public void addTrialDate(IHasSubscription data, String customerId) {
+	public void addSubscriptionInformation(IHasSubscription data, String customerId) {
 		if (data != null && data.getDevices().size() < SubscriptionComponent.TRIAL_DEVICE_COUNT) {
 			data.setSubscription(getSubscription(customerId).orElse(null));
 		}

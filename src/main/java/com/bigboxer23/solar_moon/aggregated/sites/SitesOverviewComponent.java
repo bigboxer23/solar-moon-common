@@ -30,7 +30,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 				.map(site -> getSiteOverviewData(site, search))
 				.map(siteOverview -> fillExtendedSiteOverviewData(siteOverview, search))
 				.orElse(null);
-		subscriptionComponent.addTrialDate(data, search.getCustomerId());
+		subscriptionComponent.addSubscriptionInformation(data, search.getCustomerId());
 		return data;
 	}
 
