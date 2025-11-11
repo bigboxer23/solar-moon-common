@@ -2,25 +2,22 @@ package com.bigboxer23.solar_moon.customer;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Customer;
-import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
-/** */
 @Slf4j
-public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
-	@Override
-	protected String getTableName() {
-		return "customer";
-	}
+public class CustomerComponent {
 
-	@Override
-	protected Class<Customer> getObjectClass() {
-		return Customer.class;
+	private CustomerRepository repository;
+
+	protected CustomerRepository getRepository() {
+		if (repository == null) {
+			repository = new DynamoDbCustomerRepository();
+		}
+		return repository;
 	}
 
 	public Optional<Customer> addCustomer(String email, String customerId, String name, String stripeCustomerId) {
@@ -39,7 +36,7 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 		Customer customer = new Customer(customerId, email, TokenGenerator.generateNewToken(), name);
 		customer.setStripeCustomerId(stripeCustomerId);
 		log.info("Adding customer " + email);
-		getTable().putItem(customer);
+		getRepository().add(customer);
 		IComponentRegistry.smaIngestComponent.handleAccessKeyChange(null, customer.getAccessKey());
 		return Optional.of(customer);
 	}
@@ -64,7 +61,7 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			}
 		});
 		// TODO:validation
-		getTable().updateItem(builder -> builder.item(customer));
+		getRepository().update(customer);
 		if (customer.isAccessKeyChangeRequested()) {
 			IComponentRegistry.smaIngestComponent.handleAccessKeyChange(
 					findCustomerByCustomerId(customer.getCustomerId())
@@ -75,13 +72,7 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 	}
 
 	public Optional<Customer> findCustomerByEmail(String email) {
-		return !StringUtils.isBlank(email)
-				? this.getTable()
-						.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(email)))
-						.stream()
-						.findFirst()
-						.flatMap((page) -> page.items().stream().findFirst())
-				: Optional.empty();
+		return getRepository().findCustomerByEmail(email);
 	}
 
 	public void deleteCustomerByEmail(String email) {
@@ -99,42 +90,20 @@ public class CustomerComponent extends AbstractDynamodbComponent<Customer> {
 			IComponentRegistry.OSComponent.deleteByCustomerId(customerId);
 			IComponentRegistry.smaIngestComponent.handleAccessKeyChange(c.getAccessKey(), null);
 
-			getTable().deleteItem(c);
+			getRepository().delete(c);
 		});
 	}
 
 	public Optional<Customer> findCustomerByCustomerId(String customerId) {
-		return customerId == null || customerId.isEmpty()
-				? Optional.empty()
-				: this.getTable()
-						.index(Customer.CUSTOMER_ID_INDEX)
-						.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(customerId)))
-						.stream()
-						.findFirst()
-						.flatMap((page) -> page.items().stream().findFirst());
+		return getRepository().findCustomerByCustomerId(customerId);
 	}
 
 	public Optional<Customer> findCustomerByStripeCustomerId(String stripeCustomerId) {
-		return stripeCustomerId != null && !stripeCustomerId.isEmpty()
-				? this.getTable()
-						.index(Customer.STRIPE_CUSTOMER_ID_INDEX)
-						.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(stripeCustomerId)))
-						.stream()
-						.findFirst()
-						.flatMap((page) -> page.items().stream().findFirst())
-				: Optional.empty();
+		return getRepository().findCustomerByStripeCustomerId(stripeCustomerId);
 	}
 
 	public Optional<Customer> findCustomerIdByAccessKey(String accessKey) {
-		if (accessKey == null || accessKey.isEmpty()) {
-			return Optional.empty();
-		}
-		return getTable()
-				.index(Customer.ACCESS_KEY_INDEX)
-				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(accessKey)))
-				.stream()
-				.findFirst()
-				.flatMap(page -> page.items().stream().findFirst());
+		return getRepository().findCustomerByAccessKey(accessKey);
 	}
 
 	private void logAction(String action, String customerId) {

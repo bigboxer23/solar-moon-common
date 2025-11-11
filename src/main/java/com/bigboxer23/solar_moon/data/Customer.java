@@ -2,17 +2,18 @@ package com.bigboxer23.solar_moon.data;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
 
-/** */
 @DynamoDbBean
 @Schema(
 		description = "data object representing a customer",
 		requiredProperties = {"email", "customerId", "accessKey"})
 @Data
-public class Customer {
+@EqualsAndHashCode(callSuper = true)
+public class Customer extends AuditableEntity {
 	public static final String ACCESS_KEY_INDEX = "accessKey-index";
 
 	public static final String CUSTOMER_ID_INDEX = "customerId-index";
