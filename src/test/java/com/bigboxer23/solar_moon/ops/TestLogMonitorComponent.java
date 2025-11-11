@@ -13,7 +13,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /** */
-public class TestLogMonitorComponent implements IComponentRegistry, TestConstants, ISolectriaConstants {
+public class TestLogMonitorComponent {
 	private static class TestableLogMonitorComponent extends LogMonitorComponent {
 		@Override
 		protected String generateBody(List<LogEntry> errorLogs) {
