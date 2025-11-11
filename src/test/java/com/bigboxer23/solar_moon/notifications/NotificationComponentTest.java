@@ -3,7 +3,8 @@ package com.bigboxer23.solar_moon.notifications;
 import com.bigboxer23.solar_moon.IComponentRegistry;
 
 /** */
-public class TestNotificationComponent {
+public class NotificationComponentTest
+{
 
 	public void sendNotification() {
 

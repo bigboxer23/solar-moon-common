@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-public class TestSolectriaErrorOracle implements ISolectriaConstants {
+public class SolectriaErrorOracleTest implements ISolectriaConstants {
 	@Test
 	public void rawErrorToCode() {
 		assertEquals(NOMINAL, SolectriaErrorOracle.rawErrorToCode(null));

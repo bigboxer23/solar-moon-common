@@ -6,7 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Date;
 import org.junit.jupiter.api.Test;
 
-public class TestLogEntry {
+public class LogEntryTest
+{
 
 	@Test
 	public void beanRoundTrip() {
