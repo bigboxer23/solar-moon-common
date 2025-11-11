@@ -28,6 +28,11 @@ class SMAS3CleanupComponentTest {
 			protected S3Client getS3Client() {
 				return mockS3Client;
 			}
+
+			@Override
+			protected String getBucket() {
+				return "test-bucket";
+			}
 		};
 	}
 

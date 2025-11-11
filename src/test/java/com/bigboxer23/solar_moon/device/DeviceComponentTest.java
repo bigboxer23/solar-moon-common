@@ -36,6 +36,22 @@ public class DeviceComponentTest {
 		protected DeviceRepository getRepository() {
 			return repository;
 		}
+
+		@Override
+		public void deleteDevice(String id, String customerId) {
+			Optional<Device> device = findDeviceById(id, customerId);
+			if (device.isEmpty()) {
+				return;
+			}
+			if (device.get().isDeviceSite()) {
+				getDevicesBySiteId(customerId, device.get().getId()).forEach(childDevice -> {
+					childDevice.setSite(NO_SITE);
+					childDevice.setSiteId(NO_SITE);
+					updateDevice(childDevice);
+				});
+			}
+			getRepository().delete(device.get());
+		}
 	}
 
 	@BeforeEach

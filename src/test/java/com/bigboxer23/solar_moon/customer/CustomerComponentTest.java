@@ -36,6 +36,32 @@ public class CustomerComponentTest {
 		protected CustomerRepository getRepository() {
 			return repository;
 		}
+
+		@Override
+		public Optional<Customer> addCustomer(String email, String customerId, String name, String stripeCustomerId) {
+			if (software.amazon.awssdk.utils.StringUtils.isEmpty(email)
+					|| software.amazon.awssdk.utils.StringUtils.isEmpty(customerId)
+					|| software.amazon.awssdk.utils.StringUtils.isEmpty(name)
+					|| software.amazon.awssdk.utils.StringUtils.isEmpty(stripeCustomerId)) {
+				return Optional.empty();
+			}
+			Optional<Customer> dbCustomer = findCustomerByCustomerId(customerId);
+			if (dbCustomer.isPresent()) {
+				return dbCustomer;
+			}
+			Customer customer = new Customer(
+					customerId, email, com.bigboxer23.solar_moon.util.TokenGenerator.generateNewToken(), name);
+			customer.setStripeCustomerId(stripeCustomerId);
+			getRepository().add(customer);
+			return Optional.of(customer);
+		}
+
+		@Override
+		public void deleteCustomerByCustomerId(String customerId) {
+			findCustomerByCustomerId(customerId).ifPresent(c -> {
+				getRepository().delete(c);
+			});
+		}
 	}
 
 	@BeforeEach
