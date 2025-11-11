@@ -13,9 +13,7 @@ import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** */
-// @ActiveProfiles("test")
-public class TestDeviceComponent implements IComponentRegistry, TestConstants {
+public class DeviceComponentIntegrationTest implements IComponentRegistry, TestConstants {
 	@Test
 	public void testFindDeviceByDeviceKey() {
 		assertNull(deviceComponent.findDeviceByDeviceKey(null));

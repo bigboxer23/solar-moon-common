@@ -12,8 +12,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-/** */
-public class TestSubscriptionComponent extends AbstractDynamodbComponent<Subscription>
+public class SubscriptionComponentIntegrationTest extends AbstractDynamodbComponent<Subscription>
 		implements IComponentRegistry, TestConstants {
 	@Test
 	public void testSubscription() {

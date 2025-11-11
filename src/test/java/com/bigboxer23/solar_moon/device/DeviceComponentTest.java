@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class TestDeviceComponentWithMockedRepository {
+public class DeviceComponentTest {
 
 	@Mock
 	private DeviceRepository mockRepository;
