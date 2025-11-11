@@ -13,7 +13,9 @@ import software.amazon.awssdk.services.s3.model.*;
 /** Contains logic to look through S3 bucket and cleanup/remove any empty directory structure */
 @Slf4j
 public class SMAS3CleanupComponent {
-	private final String bucket = PropertyUtils.getProperty(FTP_S3_BUCKET);
+	protected String getBucket() {
+		return PropertyUtils.getProperty(FTP_S3_BUCKET);
+	}
 
 	protected S3Client getS3Client() {
 		return IComponentRegistry.smaIngestComponent.getS3Client();
@@ -26,7 +28,7 @@ public class SMAS3CleanupComponent {
 		do {
 			ListObjectsV2Response response = getS3Client()
 					.listObjectsV2(ListObjectsV2Request.builder()
-							.bucket(bucket)
+							.bucket(getBucket())
 							.continuationToken(continuationToken)
 							.build());
 			for (S3Object object : response.contents()) {
@@ -35,7 +37,7 @@ public class SMAS3CleanupComponent {
 					log.info(count + " deleting " + object.key());
 					getS3Client()
 							.deleteObject(DeleteObjectRequest.builder()
-									.bucket(bucket)
+									.bucket(getBucket())
 									.key(object.key())
 									.build());
 				}
@@ -55,7 +57,7 @@ public class SMAS3CleanupComponent {
 		// Check if more than 1 object is found
 		for (S3Object s3Object : getS3Client()
 				.listObjectsV2(ListObjectsV2Request.builder()
-						.bucket(bucket)
+						.bucket(getBucket())
 						.prefix(folderKey)
 						.maxKeys(2)
 						.build())
@@ -81,7 +83,7 @@ public class SMAS3CleanupComponent {
 		log.info("Deleting S3 folder: {}", folderPrefix);
 
 		ListObjectsV2Request listRequest = ListObjectsV2Request.builder()
-				.bucket(bucket)
+				.bucket(getBucket())
 				.prefix(folderPrefix)
 				.build();
 
@@ -98,7 +100,7 @@ public class SMAS3CleanupComponent {
 						.collect(Collectors.toList());
 
 				DeleteObjectsRequest deleteRequest = DeleteObjectsRequest.builder()
-						.bucket(bucket)
+						.bucket(getBucket())
 						.delete(Delete.builder().objects(keys).build())
 						.build();
 
