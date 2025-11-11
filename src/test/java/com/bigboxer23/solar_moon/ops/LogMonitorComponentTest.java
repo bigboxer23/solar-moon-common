@@ -3,10 +3,12 @@ package com.bigboxer23.solar_moon.ops;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import org.junit.jupiter.api.Test;
 
 /** */
@@ -20,6 +22,9 @@ public class LogMonitorComponentTest {
 
 	@Test
 	public void generateBody_sortsNewestFirst_andEscapesHtml() {
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+		dateFormat.setTimeZone(TimeZone.getTimeZone("America/Chicago"));
+
 		LogEntry older = new LogEntry();
 		older.setDate(new Date(1_000));
 		older.setServiceName("service-a");
@@ -41,8 +46,8 @@ public class LogMonitorComponentTest {
 		TestableLogMonitorComponent component = new TestableLogMonitorComponent();
 		String html = component.generateBody(logs);
 
-		String newerTime = newer.getDate().toString();
-		String olderTime = older.getDate().toString();
+		String newerTime = dateFormat.format(newer.getDate());
+		String olderTime = dateFormat.format(older.getDate());
 		int idxNewer = html.indexOf(newerTime);
 		int idxOlder = html.indexOf(olderTime);
 		assertTrue(idxNewer != -1 && idxOlder != -1, "Both timestamps should appear in HTML");
