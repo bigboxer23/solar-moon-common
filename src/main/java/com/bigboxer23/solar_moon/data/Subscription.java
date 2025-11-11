@@ -17,7 +17,7 @@ public class Subscription {
 	@Schema(description = "Number of subscription packs customer has purchased")
 	private int packs = 0;
 
-	private long joinDate;
+	private long joinDate = -1;
 
 	private long manualSubscriptionDate;
 
