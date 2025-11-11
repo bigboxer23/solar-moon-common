@@ -4,7 +4,10 @@ import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.dynamodb.DynamoLockUtils;
+import com.bigboxer23.solar_moon.location.LocationComponent;
+import com.bigboxer23.solar_moon.search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.search.OpenSearchUtils;
+import com.bigboxer23.solar_moon.weather.PirateWeatherComponent;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.util.*;
 import java.util.function.Function;
@@ -14,6 +17,26 @@ import org.opensearch.client.ResponseException;
 /** Component to stash all the logic related to aggregating virtual site devices */
 @Slf4j
 public class VirtualDeviceComponent {
+	protected DeviceComponent getDeviceComponent() {
+		return IComponentRegistry.deviceComponent;
+	}
+
+	protected OpenSearchComponent getOSComponent() {
+		return IComponentRegistry.OSComponent;
+	}
+
+	protected LocationComponent getLocationComponent() {
+		return IComponentRegistry.locationComponent;
+	}
+
+	protected PirateWeatherComponent getWeatherComponent() {
+		return IComponentRegistry.weatherComponent;
+	}
+
+	protected LinkedDeviceComponent getLinkedDeviceComponent() {
+		return IComponentRegistry.linkedDeviceComponent;
+	}
+
 	public void handleVirtualDevice(DeviceData device) {
 		if (!shouldAddVirtualDevice(device)) {
 			return;
@@ -22,9 +45,7 @@ public class VirtualDeviceComponent {
 		DynamoLockUtils.doLockedCommand(
 				device.getSiteId() + "-" + device.getDate().getTime(), () -> {
 					Device virtualDevice =
-							IComponentRegistry.deviceComponent
-									.getDevicesBySiteId(device.getCustomerId(), device.getSiteId())
-									.stream()
+							getDeviceComponent().getDevicesBySiteId(device.getCustomerId(), device.getSiteId()).stream()
 									.filter(Device::isVirtual)
 									.findAny()
 									.orElse(null);
@@ -33,8 +54,9 @@ public class VirtualDeviceComponent {
 						return;
 					}
 					TransactionUtil.addDeviceId(virtualDevice.getId(), virtualDevice.getSiteId());
-					List<DeviceData> siteDevices = IComponentRegistry.OSComponent.getDevicesForSiteByTimePeriod(
-							device.getCustomerId(), device.getSiteId(), device.getDate());
+					List<DeviceData> siteDevices = getOSComponent()
+							.getDevicesForSiteByTimePeriod(
+									device.getCustomerId(), device.getSiteId(), device.getDate());
 					DeviceData virtualDeviceData = new DeviceData(
 							virtualDevice.getSiteId(), virtualDevice.getClientId(), virtualDevice.getId());
 					virtualDeviceData.setVirtual(true);
@@ -48,13 +70,13 @@ public class VirtualDeviceComponent {
 							0, getPushedDeviceValues(siteDevices, virtualDevice, DeviceData::getTotalRealPower)));
 					virtualDeviceData.setTotalEnergyConsumed(Math.max(
 							0, getPushedDeviceValues(siteDevices, virtualDevice, DeviceData::getTotalEnergyConsumed)));
-					IComponentRegistry.locationComponent.addLocationData(virtualDeviceData, virtualDevice);
-					IComponentRegistry.weatherComponent.addWeatherData(virtualDeviceData, virtualDevice);
-					IComponentRegistry.linkedDeviceComponent.addLinkedDeviceDataVirtual(virtualDeviceData, siteDevices);
+					getLocationComponent().addLocationData(virtualDeviceData, virtualDevice);
+					getWeatherComponent().addWeatherData(virtualDeviceData, virtualDevice);
+					getLinkedDeviceComponent().addLinkedDeviceDataVirtual(virtualDeviceData, siteDevices);
 					log.info("updating virtual device: " + device.getDate());
 					try {
-						IComponentRegistry.OSComponent.logData(
-								virtualDeviceData.getDate(), Collections.singletonList(virtualDeviceData));
+						getOSComponent()
+								.logData(virtualDeviceData.getDate(), Collections.singletonList(virtualDeviceData));
 						OpenSearchUtils.waitForIndexing();
 					} catch (ResponseException e) {
 						log.error("handleVirtualDevice", e);
@@ -66,14 +88,13 @@ public class VirtualDeviceComponent {
 		if (DeviceComponent.NO_SITE.equals(device.getSiteId())) {
 			return false;
 		}
-		List<Device> devices =
-				IComponentRegistry.deviceComponent.getDevicesBySiteId(device.getCustomerId(), device.getSiteId());
+		List<Device> devices = getDeviceComponent().getDevicesBySiteId(device.getCustomerId(), device.getSiteId());
 		if (devices.stream().noneMatch(Device::isVirtual)) {
 			return false;
 		}
 		OpenSearchUtils.waitForIndexing();
-		int openSearchDeviceCount = IComponentRegistry.OSComponent.getSiteDevicesCountByTimePeriod(
-				device.getCustomerId(), device.getSiteId(), device.getDate());
+		int openSearchDeviceCount = getOSComponent()
+				.getSiteDevicesCountByTimePeriod(device.getCustomerId(), device.getSiteId(), device.getDate());
 		if (devices.stream().filter(d -> !d.isDisabled()).toList().size() - 1 != openSearchDeviceCount) {
 			log.debug("not calculating site "
 					+ device.getSiteId()

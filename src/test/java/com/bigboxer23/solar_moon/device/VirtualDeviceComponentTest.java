@@ -1,7 +1,14 @@
 package com.bigboxer23.solar_moon.device;
 
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
+import com.bigboxer23.solar_moon.location.LocationComponent;
+import com.bigboxer23.solar_moon.search.OpenSearchComponent;
+import com.bigboxer23.solar_moon.weather.PirateWeatherComponent;
+import java.util.Collections;
 import java.util.Date;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,15 +22,84 @@ public class VirtualDeviceComponentTest {
 	@Mock
 	private DeviceComponent mockDeviceComponent;
 
-	private VirtualDeviceComponent virtualDeviceComponent;
+	@Mock
+	private OpenSearchComponent mockOSComponent;
+
+	@Mock
+	private LocationComponent mockLocationComponent;
+
+	@Mock
+	private PirateWeatherComponent mockWeatherComponent;
+
+	@Mock
+	private LinkedDeviceComponent mockLinkedDeviceComponent;
+
+	private TestableVirtualDeviceComponent virtualDeviceComponent;
 
 	private static final String CUSTOMER_ID = "test-customer-123";
 	private static final String DEVICE_ID = "device-123";
 	private static final String SITE_ID = "site-123";
 
+	private static class TestableVirtualDeviceComponent extends VirtualDeviceComponent {
+		private final DeviceComponent deviceComponent;
+		private final OpenSearchComponent osComponent;
+		private final LocationComponent locationComponent;
+		private final PirateWeatherComponent weatherComponent;
+		private final LinkedDeviceComponent linkedDeviceComponent;
+
+		public TestableVirtualDeviceComponent(
+				DeviceComponent deviceComponent,
+				OpenSearchComponent osComponent,
+				LocationComponent locationComponent,
+				PirateWeatherComponent weatherComponent,
+				LinkedDeviceComponent linkedDeviceComponent) {
+			this.deviceComponent = deviceComponent;
+			this.osComponent = osComponent;
+			this.locationComponent = locationComponent;
+			this.weatherComponent = weatherComponent;
+			this.linkedDeviceComponent = linkedDeviceComponent;
+		}
+
+		@Override
+		protected DeviceComponent getDeviceComponent() {
+			return deviceComponent;
+		}
+
+		@Override
+		protected com.bigboxer23.solar_moon.search.OpenSearchComponent getOSComponent() {
+			return osComponent;
+		}
+
+		@Override
+		protected com.bigboxer23.solar_moon.location.LocationComponent getLocationComponent() {
+			return locationComponent;
+		}
+
+		@Override
+		protected PirateWeatherComponent getWeatherComponent() {
+			return weatherComponent;
+		}
+
+		@Override
+		protected LinkedDeviceComponent getLinkedDeviceComponent() {
+			return linkedDeviceComponent;
+		}
+	}
+
 	@BeforeEach
 	void setUp() {
-		virtualDeviceComponent = new VirtualDeviceComponent();
+		virtualDeviceComponent = new TestableVirtualDeviceComponent(
+				mockDeviceComponent,
+				mockOSComponent,
+				mockLocationComponent,
+				mockWeatherComponent,
+				mockLinkedDeviceComponent);
+		lenient()
+				.when(mockDeviceComponent.getDevicesBySiteId(anyString(), anyString()))
+				.thenReturn(Collections.emptyList());
+		lenient()
+				.when(mockOSComponent.getSiteDevicesCountByTimePeriod(anyString(), anyString(), any(Date.class)))
+				.thenReturn(0);
 	}
 
 	@Test
