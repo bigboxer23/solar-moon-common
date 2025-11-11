@@ -50,8 +50,12 @@ public class LogMonitorComponent implements IComponentRegistry {
 			return;
 		}
 		SupportEmailTemplateContent email = new SupportEmailTemplateContent(
-				"Please review these errors.", PropertyUtils.getProperty(EMAILER_SUPPORT), generateBody(errorLogs), "");
-		sendSupportEmail(email); // <— call the seam
+				"Please review these errors.", getSupportEmail(), generateBody(errorLogs), "");
+		sendSupportEmail(email);
+	}
+
+	protected String getSupportEmail() {
+		return PropertyUtils.getProperty(EMAILER_SUPPORT);
 	}
 
 	protected String generateBody(List<LogEntry> errorLogs) {

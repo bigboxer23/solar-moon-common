@@ -13,9 +13,14 @@ name: "CI"
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
   push:
     branches:
     - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   analyze:

@@ -23,6 +23,11 @@ public class LogMonitorComponent_ReportErrorLogs_NotifyTest {
 			return "<html>body</html>";
 		}
 
+		@Override
+		protected String getSupportEmail() {
+			return "test@example.com";
+		}
+
 		public SupportEmailTemplateContent getCapturedEmail() {
 			return capturedEmail;
 		}
