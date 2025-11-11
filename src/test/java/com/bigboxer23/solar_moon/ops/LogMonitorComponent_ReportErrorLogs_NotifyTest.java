@@ -11,8 +11,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class LogMonitorComponent_ReportErrorLogs_NotifyTest
-{
+public class LogMonitorComponent_ReportErrorLogs_NotifyTest {
 
 	/** Testable subclass so we can spy on sendSupportEmail(). */
 	static class TestableLogMonitorComponent extends LogMonitorComponent {

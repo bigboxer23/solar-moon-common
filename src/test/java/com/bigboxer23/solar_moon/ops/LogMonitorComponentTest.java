@@ -10,8 +10,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /** */
-public class LogMonitorComponentTest
-{
+public class LogMonitorComponentTest {
 	private static class TestableLogMonitorComponent extends LogMonitorComponent {
 		@Override
 		protected String generateBody(List<LogEntry> errorLogs) {
