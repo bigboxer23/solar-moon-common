@@ -17,7 +17,7 @@ public class TestLogMonitorComponent_ReportErrorLogs_Notify {
 	static class TestableLogMonitorComponent extends LogMonitorComponent {
 		@Override
 		protected void sendSupportEmail(SupportEmailTemplateContent email) {
-			super.sendSupportEmail(email);
+			// Do nothing - we're just testing that it gets called, not actually sending emails
 		}
 	}
 
