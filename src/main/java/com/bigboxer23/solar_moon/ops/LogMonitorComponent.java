@@ -7,8 +7,10 @@ import com.bigboxer23.solar_moon.notifications.SupportEmailTemplateContent;
 import com.bigboxer23.solar_moon.search.SearchJSON;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.utils.properties.PropertyUtils;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.List;
+import java.util.TimeZone;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.StringEscapeUtils;
 import org.opensearch.client.opensearch.core.search.Hit;
@@ -53,6 +55,9 @@ public class LogMonitorComponent implements IComponentRegistry {
 	}
 
 	protected String generateBody(List<LogEntry> errorLogs) {
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+		dateFormat.setTimeZone(TimeZone.getTimeZone("America/Chicago"));
+
 		StringBuilder body = new StringBuilder();
 		body.append("<table border='1' cellpadding='5' cellspacing='0' style='border-collapse:"
 				+ " collapse; font-family: Arial, sans-serif; font-size: 14px;'>");
@@ -67,7 +72,7 @@ public class LogMonitorComponent implements IComponentRegistry {
 			body.append("<tr>")
 					.append("<td>")
 					.append(StringEscapeUtils.escapeHtml4(
-							log.getDate() != null ? log.getDate().toString() : ""))
+							log.getDate() != null ? dateFormat.format(log.getDate()) : ""))
 					.append("</td>")
 					.append("<td>")
 					.append(StringEscapeUtils.escapeHtml4(log.getServiceName() != null ? log.getServiceName() : ""))
