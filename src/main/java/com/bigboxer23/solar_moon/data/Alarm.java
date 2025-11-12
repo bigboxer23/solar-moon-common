@@ -4,15 +4,17 @@ import com.bigboxer23.solar_moon.alarm.AlarmComponent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
 /** */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @DynamoDbBean
 @Schema(
 		description = "data object representing an alarm state thrown by device data",
 		requiredProperties = {"alarmId", "customerId"})
-public class Alarm {
+public class Alarm extends AuditableEntity {
 
 	public Alarm() {}
 

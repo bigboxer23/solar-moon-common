@@ -3,7 +3,6 @@ package com.bigboxer23.solar_moon.alarm;
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.*;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
-import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.notifications.AlarmEmailTemplateContent;
 import com.bigboxer23.solar_moon.notifications.ResolvedAlertEmailTemplateContent;
 import com.bigboxer23.solar_moon.search.OpenSearchQueries;
@@ -14,27 +13,24 @@ import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.io.IOException;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awssdk.enhanced.dynamodb.model.Page;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 @Slf4j
-public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements IAlarmConstants, ISolectriaConstants {
+public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 	protected static final long QUICK_CHECK_THRESHOLD = TimeConstants.FORTY_FIVE_MINUTES;
 
+	private AlarmRepository repository;
+
+	protected AlarmRepository getRepository() {
+		if (repository == null) {
+			repository = new DynamoDbAlarmRepository();
+		}
+		return repository;
+	}
+
 	public Optional<Alarm> getMostRecentAlarm(String deviceId) {
-		List<Alarm> alarms = getTable()
-				.index(Alarm.DEVICEID_STARTDATE_INDEX)
-				.query(theBuilder -> theBuilder
-						.limit(1)
-						.scanIndexForward(false)
-						.queryConditional(QueryConditional.keyEqualTo(builder -> builder.partitionValue(deviceId))))
-				.stream()
-				.findFirst()
-				.map(Page::items)
-				.orElse(Collections.emptyList());
-		return !alarms.isEmpty() ? Optional.ofNullable(alarms.getFirst()) : Optional.empty();
+		return getRepository().findMostRecentAlarm(deviceId);
 	}
 
 	public void resolveActiveAlarms(DeviceData deviceData) {
@@ -259,61 +255,28 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	}
 
 	public List<Alarm> findAlarmsByDevice(String customerId, String deviceId) {
-		return findAlarmsByIndex(Alarm.DEVICE_CUSTOMER_INDEX, deviceId, customerId);
+		return getRepository().findAlarmsByDevice(customerId, deviceId);
 	}
 
 	public List<Alarm> findAlarmsBySite(String customerId, String siteId) {
-		return findAlarmsByIndex(Alarm.SITE_CUSTOMER_INDEX, siteId, customerId);
+		return getRepository().findAlarmsBySite(customerId, siteId);
 	}
 
 	public List<Alarm> findNonEmailedAlarms(String customerId) {
-		return getTable()
-				.index(Alarm.EMAILED_CUSTOMER_INDEX)
-				.query(QueryConditional.keyEqualTo(
-						builder -> builder.partitionValue(NEEDS_EMAIL).sortValue(customerId)))
-				.stream()
-				.flatMap(page -> page.items().stream())
-				.toList();
+		return getRepository().findNonEmailedAlarms(customerId);
 	}
 
 	public List<Alarm> findNonEmailedActiveAlarms() {
-		return findNonEmailed(Alarm.EMAILED_CUSTOMER_INDEX);
+		return getRepository().findNonEmailedActiveAlarms();
 	}
 
 	public List<Alarm> findNonEmailedResolvedAlarms() {
-		return findNonEmailed(Alarm.RESOLVED_EMAILED_INDEX);
-	}
-
-	private List<Alarm> findNonEmailed(String indexName) {
-		return getTable()
-				.index(indexName)
-				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(NEEDS_EMAIL)))
-				.stream()
-				.flatMap(page -> page.items().stream())
-				.toList();
-	}
-
-	private List<Alarm> findAlarmsByIndex(String indexName, String partitionId, String sort) {
-		return getTable()
-				.index(indexName)
-				.query(QueryConditional.keyEqualTo(
-						builder -> builder.partitionValue(partitionId).sortValue(sort)))
-				.stream()
-				.flatMap(page -> page.items().stream())
-				.toList();
+		return getRepository().findNonEmailedResolvedAlarms();
 	}
 
 	public List<Alarm> getAlarms(String customerId) {
-		if (StringUtils.isBlank(customerId)) {
-			return Collections.emptyList();
-		}
 		log.debug("Fetching all alarms");
-		return getTable()
-				.index(Alarm.CUSTOMER_INDEX)
-				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(customerId)))
-				.stream()
-				.flatMap(page -> page.items().stream())
-				.toList();
+		return getRepository().findAlarms(customerId);
 	}
 
 	public Optional<Alarm> updateAlarm(Alarm alarm) {
@@ -322,7 +285,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 			return Optional.empty();
 		}
 		log.warn("Updating alarm: " + alarm.getAlarmId());
-		return Optional.ofNullable(getTable().updateItem(builder -> builder.item(alarm)));
+		return getRepository().update(alarm);
 	}
 
 	public void deleteAlarmByDeviceId(String customerId, String deviceId) {
@@ -331,7 +294,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 
 	public void deleteAlarm(String alarmId, String customerId) {
 		log.warn("Deleting alarm: " + alarmId);
-		getTable().deleteItem(new Alarm(alarmId, customerId));
+		getRepository().delete(new Alarm(alarmId, customerId));
 	}
 
 	public void deleteAlarmsByCustomerId(String customerId) {
@@ -339,9 +302,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	}
 
 	public Optional<Alarm> findAlarmByAlarmId(String alarmId, String customerId) {
-		return !StringUtils.isBlank(alarmId) && !StringUtils.isBlank(customerId)
-				? Optional.ofNullable(this.getTable().getItem(new Alarm(alarmId, customerId)))
-				: Optional.empty();
+		return getRepository().findAlarmByAlarmId(alarmId, customerId);
 	}
 
 	public List<Alarm> quickCheckDevices() {
@@ -561,12 +522,7 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	}
 
 	public List<Alarm> getActiveAlarms() {
-		return getTable()
-				.index(Alarm.STATE_CUSTOMER_INDEX)
-				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(ACTIVE)))
-				.stream()
-				.flatMap(page -> page.items().stream())
-				.toList();
+		return getRepository().findActiveAlarms();
 	}
 
 	public void cleanupOldAlarms() {
@@ -576,22 +532,8 @@ public class AlarmComponent extends AbstractDynamodbComponent<Alarm> implements 
 	}
 
 	private void deleteAlarmsByStateAndDate(int state, long deleteOlderThan) {
-		getTable()
-				.index(Alarm.STATE_STARTDATE_INDEX)
-				.query(QueryConditional.sortLessThan(
-						builder -> builder.partitionValue(state).sortValue(deleteOlderThan)))
-				.stream()
-				.flatMap(page -> page.items().stream())
+		getRepository()
+				.findAlarmsByStateAndDateLessThan(state, deleteOlderThan)
 				.forEach(a -> deleteAlarm(a.getAlarmId(), a.getCustomerId()));
-	}
-
-	@Override
-	protected String getTableName() {
-		return "alarms";
-	}
-
-	@Override
-	protected Class<Alarm> getObjectClass() {
-		return Alarm.class;
 	}
 }
