@@ -1,36 +1,35 @@
 package com.bigboxer23.solar_moon.maintenance;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
-import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
-import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
-/** */
-public class MaintenanceComponent extends AbstractDynamodbComponent<MaintenanceMode> {
+@Slf4j
+public class MaintenanceComponent {
+	private MaintenanceRepository repository;
+
+	protected MaintenanceRepository getRepository() {
+		if (repository == null) {
+			repository = new DynamoDbMaintenanceRepository();
+		}
+		return repository;
+	}
+
 	public boolean isInMaintenanceMode() {
-		return Optional.ofNullable(getTable().getItem(new MaintenanceMode()))
+		return getRepository()
+				.findMaintenanceMode()
 				.map(MaintenanceMode::isInMaintenanceMode)
 				.orElse(false);
 	}
 
 	public void enableMaintenanceMode(boolean isEnable) {
 		if (isEnable) {
-			getTable().updateItem(builder -> builder.item(new MaintenanceMode()));
+			getRepository().enableMaintenanceMode();
 		} else {
-			getTable().deleteItem(new MaintenanceMode());
+			getRepository().disableMaintenanceMode();
 		}
 	}
 
 	public void cleanupOldLogs() {
 		IComponentRegistry.OSComponent.deleteOldLogs();
-	}
-
-	@Override
-	protected String getTableName() {
-		return "maintenanceMode";
-	}
-
-	@Override
-	protected Class<MaintenanceMode> getObjectClass() {
-		return MaintenanceMode.class;
 	}
 }
