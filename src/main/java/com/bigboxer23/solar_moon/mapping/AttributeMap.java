@@ -1,6 +1,8 @@
 package com.bigboxer23.solar_moon.mapping;
 
+import com.bigboxer23.solar_moon.data.AuditableEntity;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
@@ -8,7 +10,8 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortK
 /** */
 @DynamoDbBean
 @Data
-public class AttributeMap {
+@EqualsAndHashCode(callSuper = true)
+public class AttributeMap extends AuditableEntity {
 	private String customerId;
 
 	private String mappingName;

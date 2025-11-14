@@ -1,16 +1,12 @@
 package com.bigboxer23.solar_moon.mapping;
 
-import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.ingest.MeterConstants;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
-/** */
 @Slf4j
-public class MappingComponent extends AbstractDynamodbComponent<AttributeMap> implements MeterConstants {
+public class MappingComponent implements MeterConstants {
 
 	private static final Set<String> attributes = new HashSet<>();
 
@@ -22,22 +18,22 @@ public class MappingComponent extends AbstractDynamodbComponent<AttributeMap> im
 		attributes.add(POWER_FACTOR_LABEL);
 	}
 
+	private MappingRepository repository;
+
+	protected MappingRepository getRepository() {
+		if (repository == null) {
+			repository = new DynamoDbMappingRepository();
+		}
+		return repository;
+	}
+
 	public List<AttributeMap> getMappings(String customerId) {
-		return getTable()
-				.query(QueryConditional.keyEqualTo(builder -> builder.partitionValue(customerId)))
-				.items()
-				.stream()
-				.toList();
+		return getRepository().findByCustomerId(customerId);
 	}
 
 	private Optional<AttributeMap> getMapping(String customerId, String mappingName) {
 		log.debug("getting mappings");
-		return getTable()
-				.query(QueryConditional.keyEqualTo(
-						builder -> builder.partitionValue(customerId).sortValue(mappingName)))
-				.items()
-				.stream()
-				.findFirst();
+		return getRepository().findByCustomerIdAndMappingName(customerId, mappingName);
 	}
 
 	public Optional<AttributeMap> addMapping(String customerId, String attribute, String mappingName) {
@@ -54,32 +50,15 @@ public class MappingComponent extends AbstractDynamodbComponent<AttributeMap> im
 			return Optional.empty();
 		}
 		log.info("adding mapping " + attribute + " " + mappingName);
-		return Optional.ofNullable(
-				getTable().updateItem(builder -> builder.item(new AttributeMap(customerId, attribute, mappingName))));
+		return Optional.ofNullable(getRepository().add(new AttributeMap(customerId, attribute, mappingName)));
 	}
 
 	public void deleteMapping(String customerId) {
-		getMappings(customerId).forEach(map -> {
-			deleteMapping(map.getCustomerId(), map.getMappingName());
-		});
+		getRepository().deleteByCustomerId(customerId);
 	}
 
 	public void deleteMapping(String customerId, String mappingName) {
 		log.info("deleting mapping " + mappingName);
-		getTable()
-				.deleteItem(b -> b.key(Key.builder()
-						.partitionValue(customerId)
-						.sortValue(mappingName)
-						.build()));
-	}
-
-	@Override
-	protected String getTableName() {
-		return "mappings";
-	}
-
-	@Override
-	protected Class<AttributeMap> getObjectClass() {
-		return AttributeMap.class;
+		getRepository().deleteByCustomerIdAndMappingName(customerId, mappingName);
 	}
 }
