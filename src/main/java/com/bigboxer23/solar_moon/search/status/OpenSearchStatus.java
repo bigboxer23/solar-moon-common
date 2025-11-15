@@ -11,8 +11,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortK
 @DynamoDbBean
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class OpenSearchStatus extends AuditableEntity
-{
+public class OpenSearchStatus extends AuditableEntity {
 
 	public static final String IDENTITY = "1";
 
