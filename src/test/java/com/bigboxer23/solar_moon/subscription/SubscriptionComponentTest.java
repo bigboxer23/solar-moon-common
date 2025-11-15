@@ -10,32 +10,21 @@ import com.bigboxer23.solar_moon.device.DeviceComponent;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
+import lombok.Data;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.model.Page;
-import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 @ExtendWith(MockitoExtension.class)
 public class SubscriptionComponentTest {
 
 	@Mock
-	private DynamoDbTable<Subscription> mockTable;
+	private SubscriptionRepository mockRepository;
 
 	@Mock
 	private DeviceComponent mockDeviceComponent;
-
-	@Mock
-	private PageIterable<Subscription> mockPageIterable;
-
-	@Mock
-	private Page<Subscription> mockPage;
 
 	private TestableSubscriptionComponent subscriptionComponent;
 
@@ -45,17 +34,17 @@ public class SubscriptionComponentTest {
 	private static final long TRIAL_EXPIRED_TIME = CURRENT_TIME - (SubscriptionComponent.TRIAL_LENGTH + 1000);
 
 	private static class TestableSubscriptionComponent extends SubscriptionComponent {
-		private final DynamoDbTable<Subscription> table;
+		private final SubscriptionRepository repository;
 		private final DeviceComponent deviceComponent;
 
-		public TestableSubscriptionComponent(DynamoDbTable<Subscription> table, DeviceComponent deviceComponent) {
-			this.table = table;
+		public TestableSubscriptionComponent(SubscriptionRepository repository, DeviceComponent deviceComponent) {
+			this.repository = repository;
 			this.deviceComponent = deviceComponent;
 		}
 
 		@Override
-		protected DynamoDbTable<Subscription> getTable() {
-			return table;
+		protected SubscriptionRepository getRepository() {
+			return repository;
 		}
 
 		@Override
@@ -67,29 +56,25 @@ public class SubscriptionComponentTest {
 
 	@BeforeEach
 	void setUp() {
-		subscriptionComponent = new TestableSubscriptionComponent(mockTable, mockDeviceComponent);
+		subscriptionComponent = new TestableSubscriptionComponent(mockRepository, mockDeviceComponent);
 	}
 
 	@Test
 	void testGetSubscription_withValidCustomerId_returnsSubscription() {
 		Subscription expectedSubscription = new Subscription(CUSTOMER_ID, 2, TRIAL_VALID_TIME);
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.of(mockPage));
-		when(mockPage.items()).thenReturn(Collections.singletonList(expectedSubscription));
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(expectedSubscription));
 
 		Optional<Subscription> result = subscriptionComponent.getSubscription(CUSTOMER_ID);
 
 		assertTrue(result.isPresent());
 		assertEquals(expectedSubscription, result.get());
-		verify(mockTable).query(any(QueryConditional.class));
+		verify(mockRepository).findByCustomerId(CUSTOMER_ID);
 	}
 
 	@Test
 	void testGetSubscription_withPaidSubscription_setsJoinDateToNegativeOne() {
 		Subscription subscription = new Subscription(CUSTOMER_ID, 2, TRIAL_VALID_TIME);
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.of(mockPage));
-		when(mockPage.items()).thenReturn(Collections.singletonList(subscription));
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(subscription));
 
 		Optional<Subscription> result = subscriptionComponent.getSubscription(CUSTOMER_ID);
 
@@ -102,7 +87,7 @@ public class SubscriptionComponentTest {
 		Optional<Subscription> result = subscriptionComponent.getSubscription("");
 
 		assertFalse(result.isPresent());
-		verify(mockTable, never()).query(any(QueryConditional.class));
+		verify(mockRepository, never()).findByCustomerId(anyString());
 	}
 
 	@Test
@@ -110,13 +95,12 @@ public class SubscriptionComponentTest {
 		Optional<Subscription> result = subscriptionComponent.getSubscription(null);
 
 		assertFalse(result.isPresent());
-		verify(mockTable, never()).query(any(QueryConditional.class));
+		verify(mockRepository, never()).findByCustomerId(anyString());
 	}
 
 	@Test
 	void testGetSubscription_noSubscriptionExists_returnsEmpty() {
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.empty());
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.empty());
 
 		Optional<Subscription> result = subscriptionComponent.getSubscription(CUSTOMER_ID);
 
@@ -128,16 +112,14 @@ public class SubscriptionComponentTest {
 		Subscription existingSubscription = new Subscription(CUSTOMER_ID, 1, TRIAL_VALID_TIME);
 		Subscription updatedSubscription = new Subscription(CUSTOMER_ID, 3, TRIAL_VALID_TIME);
 
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.of(mockPage));
-		when(mockPage.items()).thenReturn(Collections.singletonList(existingSubscription));
-		when(mockTable.updateItem(any(Consumer.class))).thenReturn(updatedSubscription);
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(existingSubscription));
+		when(mockRepository.update(any(Subscription.class))).thenReturn(Optional.of(updatedSubscription));
 
 		Subscription result = subscriptionComponent.updateSubscription(CUSTOMER_ID, 3);
 
 		assertNotNull(result);
 		assertEquals(updatedSubscription, result);
-		verify(mockTable).updateItem(any(Consumer.class));
+		verify(mockRepository).update(any(Subscription.class));
 	}
 
 	@Test
@@ -145,7 +127,7 @@ public class SubscriptionComponentTest {
 		Subscription result = subscriptionComponent.updateSubscription("", 2);
 
 		assertNull(result);
-		verify(mockTable, never()).updateItem(any(Consumer.class));
+		verify(mockRepository, never()).update(any(Subscription.class));
 	}
 
 	@Test
@@ -153,34 +135,32 @@ public class SubscriptionComponentTest {
 		Subscription result = subscriptionComponent.updateSubscription(CUSTOMER_ID, -3);
 
 		assertNull(result);
-		verify(mockTable, never()).updateItem(any(Consumer.class));
+		verify(mockRepository, never()).update(any(Subscription.class));
 	}
 
 	@Test
 	void testUpdateSubscription_newSubscription_usesCurrentTime() {
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.empty());
-		when(mockTable.updateItem(any(Consumer.class))).thenReturn(new Subscription(CUSTOMER_ID, 2, CURRENT_TIME));
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.empty());
+		when(mockRepository.update(any(Subscription.class)))
+				.thenReturn(Optional.of(new Subscription(CUSTOMER_ID, 2, CURRENT_TIME)));
 
 		Subscription result = subscriptionComponent.updateSubscription(CUSTOMER_ID, 2);
 
 		assertNotNull(result);
-		verify(mockTable).updateItem(any(Consumer.class));
+		verify(mockRepository).update(any(Subscription.class));
 	}
 
 	@Test
 	void testDeleteSubscription_deletesSubscription() {
 		subscriptionComponent.deleteSubscription(CUSTOMER_ID);
 
-		verify(mockTable).deleteItem(any(Subscription.class));
+		verify(mockRepository).delete(any(Subscription.class));
 	}
 
 	@Test
 	void testGetSubscriptionDevices_withPaidSubscription_returnsCorrectDeviceCount() {
 		Subscription subscription = new Subscription(CUSTOMER_ID, 3, TRIAL_VALID_TIME);
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.of(mockPage));
-		when(mockPage.items()).thenReturn(Collections.singletonList(subscription));
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(subscription));
 
 		long result = subscriptionComponent.getSubscriptionDevices(CUSTOMER_ID);
 
@@ -190,9 +170,7 @@ public class SubscriptionComponentTest {
 	@Test
 	void testGetSubscriptionDevices_withValidTrial_returnsTrialDeviceCount() {
 		Subscription subscription = new Subscription(CUSTOMER_ID, SubscriptionComponent.TRIAL_MODE, TRIAL_VALID_TIME);
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.of(mockPage));
-		when(mockPage.items()).thenReturn(Collections.singletonList(subscription));
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(subscription));
 
 		long result = subscriptionComponent.getSubscriptionDevices(CUSTOMER_ID);
 
@@ -202,9 +180,7 @@ public class SubscriptionComponentTest {
 	@Test
 	void testGetSubscriptionDevices_withExpiredTrial_returnsNegativeValue() {
 		Subscription subscription = new Subscription(CUSTOMER_ID, SubscriptionComponent.TRIAL_MODE, TRIAL_EXPIRED_TIME);
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.of(mockPage));
-		when(mockPage.items()).thenReturn(Collections.singletonList(subscription));
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(subscription));
 
 		long result = subscriptionComponent.getSubscriptionDevices(CUSTOMER_ID);
 
@@ -213,8 +189,7 @@ public class SubscriptionComponentTest {
 
 	@Test
 	void testGetSubscriptionDevices_noSubscription_returnsZero() {
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.empty());
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.empty());
 
 		long result = subscriptionComponent.getSubscriptionDevices(CUSTOMER_ID);
 
@@ -224,9 +199,7 @@ public class SubscriptionComponentTest {
 	@Test
 	void testCanAddAnotherDevice_withAvailableSlots_returnsTrue() {
 		Subscription subscription = new Subscription(CUSTOMER_ID, 2, TRIAL_VALID_TIME);
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.of(mockPage));
-		when(mockPage.items()).thenReturn(Collections.singletonList(subscription));
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(subscription));
 		when(mockDeviceComponent.getDevicesForCustomerId(CUSTOMER_ID))
 				.thenReturn(Collections.nCopies(10, new Device()));
 
@@ -238,9 +211,7 @@ public class SubscriptionComponentTest {
 	@Test
 	void testCanAddAnotherDevice_withNoAvailableSlots_returnsFalse() {
 		Subscription subscription = new Subscription(CUSTOMER_ID, 2, TRIAL_VALID_TIME);
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.of(mockPage));
-		when(mockPage.items()).thenReturn(Collections.singletonList(subscription));
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(subscription));
 		when(mockDeviceComponent.getDevicesForCustomerId(CUSTOMER_ID))
 				.thenReturn(Collections.nCopies(40, new Device()));
 
@@ -252,9 +223,7 @@ public class SubscriptionComponentTest {
 	@Test
 	void testIsTrialValid_withValidTrial_returnsTrue() {
 		Subscription subscription = new Subscription(CUSTOMER_ID, -1, TRIAL_VALID_TIME);
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.of(mockPage));
-		when(mockPage.items()).thenReturn(Collections.singletonList(subscription));
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(subscription));
 
 		boolean result = subscriptionComponent.isTrialValid(CUSTOMER_ID);
 
@@ -264,9 +233,7 @@ public class SubscriptionComponentTest {
 	@Test
 	void testIsTrialValid_withExpiredTrial_returnsFalse() {
 		Subscription subscription = new Subscription(CUSTOMER_ID, -1, TRIAL_EXPIRED_TIME);
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.of(mockPage));
-		when(mockPage.items()).thenReturn(Collections.singletonList(subscription));
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(subscription));
 
 		boolean result = subscriptionComponent.isTrialValid(CUSTOMER_ID);
 
@@ -275,8 +242,7 @@ public class SubscriptionComponentTest {
 
 	@Test
 	void testIsTrialValid_noSubscription_returnsFalse() {
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.empty());
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.empty());
 
 		boolean result = subscriptionComponent.isTrialValid(CUSTOMER_ID);
 
@@ -286,9 +252,7 @@ public class SubscriptionComponentTest {
 	@Test
 	void testAddSubscriptionInformation_withFewDevices_addsSubscription() {
 		Subscription subscription = new Subscription(CUSTOMER_ID, 1, TRIAL_VALID_TIME);
-		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
-		when(mockPageIterable.stream()).thenReturn(Stream.of(mockPage));
-		when(mockPage.items()).thenReturn(Collections.singletonList(subscription));
+		when(mockRepository.findByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(subscription));
 
 		TestHasSubscription data = new TestHasSubscription(5);
 		subscriptionComponent.addSubscriptionInformation(data, CUSTOMER_ID);
@@ -303,36 +267,23 @@ public class SubscriptionComponentTest {
 		subscriptionComponent.addSubscriptionInformation(data, CUSTOMER_ID);
 
 		assertNull(data.getSubscription());
-		verify(mockTable, never()).query(any(QueryConditional.class));
+		verify(mockRepository, never()).findByCustomerId(anyString());
 	}
 
 	@Test
 	void testAddSubscriptionInformation_withNullData_doesNotThrowException() {
 		subscriptionComponent.addSubscriptionInformation(null, CUSTOMER_ID);
 
-		verify(mockTable, never()).query(any(QueryConditional.class));
+		verify(mockRepository, never()).findByCustomerId(anyString());
 	}
 
+	@Data
 	private static class TestHasSubscription implements IHasSubscription {
 		private final List<Device> devices;
 		private Subscription subscription;
 
 		public TestHasSubscription(int deviceCount) {
 			this.devices = Collections.nCopies(deviceCount, new Device());
-		}
-
-		@Override
-		public List<Device> getDevices() {
-			return devices;
-		}
-
-		@Override
-		public void setSubscription(Subscription subscription) {
-			this.subscription = subscription;
-		}
-
-		public Subscription getSubscription() {
-			return subscription;
 		}
 	}
 }
