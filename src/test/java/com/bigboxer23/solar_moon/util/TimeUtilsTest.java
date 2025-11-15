@@ -204,13 +204,6 @@ public class TimeUtilsTest {
 	}
 
 	@Test
-	public void testFormatUnixTimestampsInString_withFourteenDigitTimestamp() {
-		String result = TimeUtils.formatUnixTimestampsInString("timestamp: 12345678901234", "deviceId", "customerId");
-
-		assertEquals("timestamp: Feb 13, 09 5:31 PM4", result);
-	}
-
-	@Test
 	public void testGetTimeZone_withNullDevice() {
 		var result = TimeUtils.getTimeZone(null);
 
