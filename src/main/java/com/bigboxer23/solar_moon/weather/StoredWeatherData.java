@@ -1,14 +1,17 @@
 package com.bigboxer23.solar_moon.weather;
 
+import com.bigboxer23.solar_moon.data.AuditableEntity;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
 /** */
 @DynamoDbBean
 @Data
-public class StoredWeatherData {
+@EqualsAndHashCode(callSuper = true)
+public class StoredWeatherData extends AuditableEntity {
 	private String latitudeLongitude;
 
 	private String weather;

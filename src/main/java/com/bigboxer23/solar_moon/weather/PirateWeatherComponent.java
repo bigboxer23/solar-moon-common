@@ -5,7 +5,6 @@ import static com.bigboxer23.solar_moon.util.PropertyConstants.PIRATE_WEATHER_AP
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
-import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import com.bigboxer23.utils.command.RetryingCommand;
@@ -21,15 +20,18 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 /** */
 @Slf4j
-public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeatherData> {
+public class PirateWeatherComponent {
 	private static final String API_KEY = PropertyUtils.getProperty(PIRATE_WEATHER_API);
 
 	private static final String FORCAST_URL =
 			"https://api.pirateweather.net/forecast/" + API_KEY + "/{0}%2C{1}?exclude=minutely%2Chourly%2Cdaily";
+
+	protected WeatherRepository getRepository() {
+		return new DynamoDbWeatherRepository();
+	}
 
 	public Optional<PirateWeatherDataResponse> fetchForecastData(double latitude, double longitude) {
 		try (Response response =
@@ -122,32 +124,23 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 	}
 
 	public long getLastUpdate(double latitude, double longitude) {
-		return this.getTable()
-				.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(latitude + "," + longitude)))
-				.stream()
-				.findFirst()
-				.flatMap((page) -> page.items().stream().findFirst())
+		return getRepository()
+				.findByLatitudeLongitude(latitude, longitude)
 				.map(StoredWeatherData::getTime)
 				.orElse(-1L);
 	}
 
 	public Optional<PirateWeatherData> getWeather(double latitude, double longitude) {
-		StoredWeatherData data = this.getTable()
-				.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(latitude + "," + longitude)))
-				.stream()
-				.findFirst()
-				.flatMap((page) -> page.items().stream().findFirst())
-				.orElse(null);
-		if (data == null) {
-			return Optional.empty();
-		}
-		try {
-			return Optional.ofNullable(
-					IComponentRegistry.moshi.adapter(PirateWeatherData.class).fromJson(data.getWeather()));
-		} catch (IOException e) {
-			log.error("getWeather", e);
-			return Optional.empty();
-		}
+		return getRepository().findByLatitudeLongitude(latitude, longitude).flatMap(data -> {
+			try {
+				return Optional.ofNullable(IComponentRegistry.moshi
+						.adapter(PirateWeatherData.class)
+						.fromJson(data.getWeather()));
+			} catch (IOException e) {
+				log.error("getWeather", e);
+				return Optional.empty();
+			}
+		});
 	}
 
 	public void updateWeather(double latitude, double longitude, PirateWeatherData data) {
@@ -156,23 +149,11 @@ public class PirateWeatherComponent extends AbstractDynamodbComponent<StoredWeat
 			return;
 		}
 		log.info("Updating weather for: " + latitude + "," + longitude);
-		getTable()
-				.updateItem(builder -> builder.item(new StoredWeatherData(
-						latitude,
-						longitude,
-						IComponentRegistry.moshi
-								.adapter(PirateWeatherData.class)
-								.toJson(data),
-						new Date().getTime())));
-	}
-
-	@Override
-	protected String getTableName() {
-		return "weather";
-	}
-
-	@Override
-	protected Class<StoredWeatherData> getObjectClass() {
-		return StoredWeatherData.class;
+		StoredWeatherData weatherData = new StoredWeatherData(
+				latitude,
+				longitude,
+				IComponentRegistry.moshi.adapter(PirateWeatherData.class).toJson(data),
+				new Date().getTime());
+		getRepository().update(weatherData);
 	}
 }
