@@ -204,11 +204,11 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 			log.info("Starting sending active notifications");
 			AlarmEmailTemplateContent alarmEmail = new AlarmEmailTemplateContent(customerId, alarms);
 			if (alarmEmail.isNotificationEnabled()
-					&& !IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes()) {
+					&& !IComponentRegistry.OpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes()) {
 				IComponentRegistry.notificationComponent.sendNotification(
 						alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
 			} else {
-				if (IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes()) {
+				if (IComponentRegistry.OpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes()) {
 					log.warn("Not sending notification, opensearch failure has occurred " + " recently.");
 				} else {
 					log.warn("New notification detected, but not sending email as " + " requested.");
@@ -352,7 +352,7 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 			return Optional.empty();
 		}
 		// If stale and open search is healthy, fail
-		boolean isOpenSearchOk = !IComponentRegistry.OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes();
+		boolean isOpenSearchOk = !IComponentRegistry.OpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes();
 		if (data.getDate().getTime() < new Date(System.currentTimeMillis() - TimeConstants.HOUR).getTime()
 				&& isOpenSearchOk) {
 			log.warn("Check shows no updates for device in last 60 min.");
