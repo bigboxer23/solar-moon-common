@@ -1,6 +1,6 @@
 package com.bigboxer23.solar_moon.dynamodb;
 
-import static com.bigboxer23.solar_moon.dynamodb.DynamoDBLockComponent.LOCK_TABLE;
+import static com.bigboxer23.solar_moon.dynamodb.DynamoDbLockRepository.LOCK_TABLE;
 
 import com.amazonaws.services.dynamodbv2.AcquireLockOptions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBLockClient;
