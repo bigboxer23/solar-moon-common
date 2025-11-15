@@ -1,38 +1,31 @@
 package com.bigboxer23.solar_moon.search.status;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
-import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
-import com.bigboxer23.solar_moon.util.TimeConstants;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
-/** */
 @Slf4j
-public class OpenSearchStatusComponent extends AbstractDynamodbComponent<OpenSearchStatus> {
+public class OpenSearchStatusComponent {
+
+	private OpenSearchStatusRepository repository;
+
+	protected OpenSearchStatusRepository getRepository() {
+		if (repository == null) {
+			repository = new DynamoDbOpenSearchStatusRepository();
+		}
+		return repository;
+	}
 
 	public void storeFailure() {
-		log.info("OpenSearch failure detected");
-		getTable().updateItem(builder -> builder.item(new OpenSearchStatus(System.currentTimeMillis())));
+		getRepository().storeFailure();
 	}
 
-	public boolean hasFailureWithLastThirtyMinutes() {
-		return this.getTable()
-				.query(QueryConditional.sortGreaterThan((builder) -> builder.partitionValue("1")
-						.sortValue(System.currentTimeMillis() - TimeConstants.THIRTY_MINUTES)))
-				.stream()
-				.findFirst()
-				.flatMap((page) -> page.items().stream().findFirst())
-				.isPresent();
+	public boolean hasFailureWithinLastThirtyMinutes() {
+		return getRepository().hasFailureWithinLastThirtyMinutes();
 	}
 
-	@Override
-	protected String getTableName() {
-		return "openSearchStatus";
-	}
-
-	@Override
-	protected Class<OpenSearchStatus> getObjectClass() {
-		return OpenSearchStatus.class;
+	public Optional<OpenSearchStatus> getMostRecentStatus() {
+		return getRepository().getMostRecentStatus();
 	}
 
 	public void checkAvailability() {
