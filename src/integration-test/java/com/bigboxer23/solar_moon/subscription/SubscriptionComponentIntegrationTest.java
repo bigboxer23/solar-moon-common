@@ -6,14 +6,14 @@ import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.TestConstants;
 import com.bigboxer23.solar_moon.TestUtils;
 import com.bigboxer23.solar_moon.data.Subscription;
-import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class SubscriptionComponentIntegrationTest extends AbstractDynamodbComponent<Subscription>
-		implements IComponentRegistry, TestConstants {
+public class SubscriptionComponentIntegrationTest implements IComponentRegistry, TestConstants {
+
+	private static DynamoDbSubscriptionRepository repository;
 	@Test
 	public void testSubscription() {
 		Subscription sub = subscriptionComponent.updateSubscription(CUSTOMER_ID, 1);
@@ -97,11 +97,10 @@ public class SubscriptionComponentIntegrationTest extends AbstractDynamodbCompon
 		deviceComponent.deleteDevicesByCustomerId(CUSTOMER_ID);
 		assertTrue(deviceComponent.getDevicesForCustomerId(CUSTOMER_ID).isEmpty());
 		// Manually create "old" subscription
-		getTable()
-				.updateItem(builder -> builder.item(new Subscription(
-						CUSTOMER_ID,
-						SubscriptionComponent.TRIAL_MODE,
-						System.currentTimeMillis() - (TimeConstants.NINETY_DAYS + 1000))));
+		repository.add(new Subscription(
+				CUSTOMER_ID,
+				SubscriptionComponent.TRIAL_MODE,
+				System.currentTimeMillis() - (TimeConstants.NINETY_DAYS + 1000)));
 		assertNull(TestUtils.addDevice(
 				TestConstants.deviceName + "blah",
 				TestUtils.getDevice(),
@@ -165,31 +164,21 @@ public class SubscriptionComponentIntegrationTest extends AbstractDynamodbCompon
 	public void isTrialValid() {
 		assertTrue(subscriptionComponent.isTrialValid(CUSTOMER_ID));
 		// Manually create old subscription
-		getTable()
-				.updateItem(builder -> builder.item(new Subscription(
-						CUSTOMER_ID,
-						SubscriptionComponent.TRIAL_MODE,
-						System.currentTimeMillis() - (TimeConstants.NINETY_DAYS + 1000))));
+		repository.add(new Subscription(
+				CUSTOMER_ID,
+				SubscriptionComponent.TRIAL_MODE,
+				System.currentTimeMillis() - (TimeConstants.NINETY_DAYS + 1000)));
 		assertFalse(subscriptionComponent.isTrialValid(CUSTOMER_ID));
 	}
 
 	@BeforeAll
 	public static void beforeAll() {
+		repository = new DynamoDbSubscriptionRepository();
 		TestUtils.setupSite();
 	}
 
 	@AfterAll
 	public static void afterAll() {
 		TestUtils.nukeCustomerId(TestConstants.CUSTOMER_ID);
-	}
-
-	@Override
-	protected String getTableName() {
-		return subscriptionComponent.getTableName();
-	}
-
-	@Override
-	protected Class<Subscription> getObjectClass() {
-		return subscriptionComponent.getObjectClass();
 	}
 }

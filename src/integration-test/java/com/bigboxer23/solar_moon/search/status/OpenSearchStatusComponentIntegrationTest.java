@@ -15,6 +15,6 @@ public class OpenSearchStatusComponentIntegrationTest implements IComponentRegis
 
 	@Test
 	public void hasFailureWithLastThirtyMinutes() {
-		assertTrue(OpenSearchStatusComponent.hasFailureWithLastThirtyMinutes());
+		assertTrue(OpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes());
 	}
 }
