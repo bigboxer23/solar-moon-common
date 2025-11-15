@@ -18,67 +18,39 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.model.Page;
-import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 @ExtendWith(MockitoExtension.class)
 public class LinkedDeviceComponentTest {
 
 	@Mock
-	private DynamoDbTable<LinkedDevice> mockTable;
+	private LinkedDeviceRepository mockRepository;
 
-	@Mock
-	private DeviceComponent mockDeviceComponent;
-
-	@Mock
-	private PageIterable<LinkedDevice> mockPageIterable;
-
-	@Mock
-	private Page<LinkedDevice> mockPage;
-
-	private TestableLinkedDeviceComponent linkedDeviceComponent;
+	private LinkedDeviceComponent linkedDeviceComponent;
 
 	private static final String CUSTOMER_ID = "test-customer-123";
 	private static final String DEVICE_ID = "device-123";
 	private static final String SERIAL_NUMBER = "serial-123";
 
-	private static class TestableLinkedDeviceComponent extends LinkedDeviceComponent {
-		private final DynamoDbTable<LinkedDevice> table;
-		private final DeviceComponent deviceComponent;
-
-		public TestableLinkedDeviceComponent(DynamoDbTable<LinkedDevice> table, DeviceComponent deviceComponent) {
-			this.table = table;
-			this.deviceComponent = deviceComponent;
-		}
-
-		@Override
-		protected DynamoDbTable<LinkedDevice> getTable() {
-			return table;
-		}
-	}
-
 	@BeforeEach
 	void setUp() {
-		linkedDeviceComponent = new TestableLinkedDeviceComponent(mockTable, mockDeviceComponent);
+		linkedDeviceComponent = new LinkedDeviceComponent(mockRepository);
 	}
 
 	@Test
 	void testUpdate_withValidDevice_updatesSuccessfully() {
 		LinkedDevice device = createLinkedDevice();
-		when(mockTable.updateItem(any(java.util.function.Consumer.class))).thenReturn(device);
+		when(mockRepository.update(device)).thenReturn(Optional.of(device));
 
 		linkedDeviceComponent.update(device);
 
-		verify(mockTable).updateItem(any(java.util.function.Consumer.class));
+		verify(mockRepository).update(device);
 	}
 
 	@Test
 	void testUpdate_withNullDevice_doesNotUpdate() {
 		linkedDeviceComponent.update(null);
 
-		verify(mockTable, never()).updateItem(any(java.util.function.Consumer.class));
+		verify(mockRepository, never()).update(any());
 	}
 
 	@Test
@@ -88,7 +60,7 @@ public class LinkedDeviceComponentTest {
 
 		linkedDeviceComponent.update(device);
 
-		verify(mockTable, never()).updateItem(any(java.util.function.Consumer.class));
+		verify(mockRepository, never()).update(any());
 	}
 
 	@Test
@@ -98,7 +70,7 @@ public class LinkedDeviceComponentTest {
 
 		linkedDeviceComponent.update(device);
 
-		verify(mockTable, never()).updateItem(any(java.util.function.Consumer.class));
+		verify(mockRepository, never()).update(any());
 	}
 
 	@Test
@@ -108,7 +80,7 @@ public class LinkedDeviceComponentTest {
 
 		linkedDeviceComponent.update(device);
 
-		verify(mockTable, never()).updateItem(any(java.util.function.Consumer.class));
+		verify(mockRepository, never()).update(any());
 	}
 
 	@Test
@@ -118,88 +90,94 @@ public class LinkedDeviceComponentTest {
 
 		linkedDeviceComponent.update(device);
 
-		verify(mockTable, never()).updateItem(any(java.util.function.Consumer.class));
+		verify(mockRepository, never()).update(any());
 	}
 
 	@Test
 	void testDelete_withValidParameters_deletesSuccessfully() {
 		linkedDeviceComponent.delete(SERIAL_NUMBER, CUSTOMER_ID);
 
-		verify(mockTable).deleteItem(any(java.util.function.Consumer.class));
+		verify(mockRepository).delete(SERIAL_NUMBER, CUSTOMER_ID);
 	}
 
 	@Test
 	void testDelete_withBlankSerialNumber_doesNotDelete() {
 		linkedDeviceComponent.delete("", CUSTOMER_ID);
 
-		verify(mockTable, never()).deleteItem(any(java.util.function.Consumer.class));
+		verify(mockRepository).delete("", CUSTOMER_ID);
 	}
 
 	@Test
 	void testDelete_withNullSerialNumber_doesNotDelete() {
 		linkedDeviceComponent.delete(null, CUSTOMER_ID);
 
-		verify(mockTable, never()).deleteItem(any(java.util.function.Consumer.class));
+		verify(mockRepository).delete(null, CUSTOMER_ID);
 	}
 
 	@Test
 	void testDelete_withBlankCustomerId_doesNotDelete() {
 		linkedDeviceComponent.delete(SERIAL_NUMBER, "");
 
-		verify(mockTable, never()).deleteItem(any(java.util.function.Consumer.class));
+		verify(mockRepository).delete(SERIAL_NUMBER, "");
 	}
 
 	@Test
 	void testDelete_withNullCustomerId_doesNotDelete() {
 		linkedDeviceComponent.delete(SERIAL_NUMBER, null);
 
-		verify(mockTable, never()).deleteItem(any(java.util.function.Consumer.class));
+		verify(mockRepository).delete(SERIAL_NUMBER, null);
 	}
 
 	@Test
 	void testQueryBySerialNumber_withValidParameters_returnsDevice() {
 		LinkedDevice expectedDevice = createLinkedDevice();
-		when(mockTable.query((QueryConditional) any())).thenReturn(mockPageIterable);
-		when(mockPageIterable.items())
-				.thenReturn(() -> Collections.singletonList(expectedDevice).iterator());
+		when(mockRepository.findBySerialNumber(SERIAL_NUMBER, CUSTOMER_ID)).thenReturn(Optional.of(expectedDevice));
 
 		Optional<LinkedDevice> result = linkedDeviceComponent.queryBySerialNumber(SERIAL_NUMBER, CUSTOMER_ID);
 
 		assertTrue(result.isPresent());
 		assertEquals(expectedDevice, result.get());
-		verify(mockTable).query((QueryConditional) any());
+		verify(mockRepository).findBySerialNumber(SERIAL_NUMBER, CUSTOMER_ID);
 	}
 
 	@Test
 	void testQueryBySerialNumber_withBlankSerialNumber_returnsEmpty() {
+		when(mockRepository.findBySerialNumber("", CUSTOMER_ID)).thenReturn(Optional.empty());
+
 		Optional<LinkedDevice> result = linkedDeviceComponent.queryBySerialNumber("", CUSTOMER_ID);
 
 		assertFalse(result.isPresent());
-		verify(mockTable, never()).query((QueryConditional) any());
+		verify(mockRepository).findBySerialNumber("", CUSTOMER_ID);
 	}
 
 	@Test
 	void testQueryBySerialNumber_withNullSerialNumber_returnsEmpty() {
+		when(mockRepository.findBySerialNumber(null, CUSTOMER_ID)).thenReturn(Optional.empty());
+
 		Optional<LinkedDevice> result = linkedDeviceComponent.queryBySerialNumber(null, CUSTOMER_ID);
 
 		assertFalse(result.isPresent());
-		verify(mockTable, never()).query((QueryConditional) any());
+		verify(mockRepository).findBySerialNumber(null, CUSTOMER_ID);
 	}
 
 	@Test
 	void testQueryBySerialNumber_withBlankCustomerId_returnsEmpty() {
+		when(mockRepository.findBySerialNumber(SERIAL_NUMBER, "")).thenReturn(Optional.empty());
+
 		Optional<LinkedDevice> result = linkedDeviceComponent.queryBySerialNumber(SERIAL_NUMBER, "");
 
 		assertFalse(result.isPresent());
-		verify(mockTable, never()).query((QueryConditional) any());
+		verify(mockRepository).findBySerialNumber(SERIAL_NUMBER, "");
 	}
 
 	@Test
 	void testQueryBySerialNumber_withNullCustomerId_returnsEmpty() {
+		when(mockRepository.findBySerialNumber(SERIAL_NUMBER, null)).thenReturn(Optional.empty());
+
 		Optional<LinkedDevice> result = linkedDeviceComponent.queryBySerialNumber(SERIAL_NUMBER, null);
 
 		assertFalse(result.isPresent());
-		verify(mockTable, never()).query((QueryConditional) any());
+		verify(mockRepository).findBySerialNumber(SERIAL_NUMBER, null);
 	}
 
 	@Test
@@ -284,7 +262,7 @@ public class LinkedDeviceComponentTest {
 
 		linkedDeviceComponent.addLinkedDeviceData(null, deviceData);
 
-		verify(mockTable, never()).query((QueryConditional) any());
+		verify(mockRepository, never()).findBySerialNumber(any(), any());
 	}
 
 	@Test
@@ -293,7 +271,7 @@ public class LinkedDeviceComponentTest {
 
 		linkedDeviceComponent.addLinkedDeviceData(device, null);
 
-		verify(mockTable, never()).query((QueryConditional) any());
+		verify(mockRepository, never()).findBySerialNumber(any(), any());
 	}
 
 	@Test
@@ -304,7 +282,7 @@ public class LinkedDeviceComponentTest {
 
 		linkedDeviceComponent.addLinkedDeviceData(device, deviceData);
 
-		verify(mockTable, never()).query((QueryConditional) any());
+		verify(mockRepository, never()).findBySerialNumber(any(), any());
 	}
 
 	@Test
@@ -315,15 +293,14 @@ public class LinkedDeviceComponentTest {
 
 		linkedDeviceComponent.addLinkedDeviceData(device, deviceData);
 
-		verify(mockTable, never()).query((QueryConditional) any());
+		verify(mockRepository, never()).findBySerialNumber(any(), any());
 	}
 
 	@Test
 	void testAddLinkedDeviceData_withNoLinkedDevice_doesNotUpdate() {
 		Device device = createDevice();
 		DeviceData deviceData = createDeviceData();
-		when(mockTable.query((QueryConditional) any())).thenReturn(mockPageIterable);
-		when(mockPageIterable.items()).thenReturn(Collections::emptyIterator);
+		when(mockRepository.findBySerialNumber(SERIAL_NUMBER, CUSTOMER_ID)).thenReturn(Optional.empty());
 
 		linkedDeviceComponent.addLinkedDeviceData(device, deviceData);
 
@@ -337,9 +314,7 @@ public class LinkedDeviceComponentTest {
 		DeviceData deviceData = createDeviceData();
 		LinkedDevice linkedDevice = createLinkedDevice();
 		linkedDevice.setDate(System.currentTimeMillis() - TimeConstants.HOUR - 1000);
-		when(mockTable.query((QueryConditional) any())).thenReturn(mockPageIterable);
-		when(mockPageIterable.items())
-				.thenReturn(() -> Collections.singletonList(linkedDevice).iterator());
+		when(mockRepository.findBySerialNumber(SERIAL_NUMBER, CUSTOMER_ID)).thenReturn(Optional.of(linkedDevice));
 
 		linkedDeviceComponent.addLinkedDeviceData(device, deviceData);
 
@@ -355,9 +330,7 @@ public class LinkedDeviceComponentTest {
 		linkedDevice.setDate(System.currentTimeMillis());
 		linkedDevice.setCriticalAlarm(ISolectriaConstants.Power_Stage_Over_Temperature);
 		linkedDevice.setInformativeAlarm(ISolectriaConstants.Fan_Life_Reached);
-		when(mockTable.query((QueryConditional) any())).thenReturn(mockPageIterable);
-		when(mockPageIterable.items())
-				.thenReturn(() -> Collections.singletonList(linkedDevice).iterator());
+		when(mockRepository.findBySerialNumber(SERIAL_NUMBER, CUSTOMER_ID)).thenReturn(Optional.of(linkedDevice));
 
 		linkedDeviceComponent.addLinkedDeviceData(device, deviceData);
 
