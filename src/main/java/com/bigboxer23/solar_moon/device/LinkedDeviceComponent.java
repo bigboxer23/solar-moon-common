@@ -1,67 +1,48 @@
 package com.bigboxer23.solar_moon.device;
 
-import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.alarm.ISolectriaConstants;
 import com.bigboxer23.solar_moon.alarm.SolectriaErrorOracle;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.data.LinkedDevice;
-import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 @Slf4j
-public class LinkedDeviceComponent extends AbstractDynamodbComponent<LinkedDevice> {
+public class LinkedDeviceComponent {
+
+	private final LinkedDeviceRepository repository;
+
+	public LinkedDeviceComponent(LinkedDeviceRepository repository) {
+		this.repository = repository;
+	}
+
+	public LinkedDeviceComponent() {
+		this(new DynamoDbLinkedDeviceRepository());
+	}
+
 	public void update(LinkedDevice device) {
 		if (device == null || StringUtils.isBlank(device.getId()) || StringUtils.isBlank(device.getCustomerId())) {
 			log.warn("invalid linked device, not updating");
 			return;
 		}
-		getTable().updateItem(builder -> builder.item(device));
+		repository.update(device);
 	}
 
 	public void delete(String serialNumber, String customerId) {
-		if (StringUtils.isBlank(serialNumber) || StringUtils.isBlank(customerId)) {
-			log.warn("invalid delete query");
-			return;
-		}
-		getTable()
-				.deleteItem(builder -> builder.key(
-						builder2 -> builder2.partitionValue(serialNumber).sortValue(customerId)));
+		repository.delete(serialNumber, customerId);
 	}
 
 	public void deleteByCustomerId(String customerId) {
-		IComponentRegistry.deviceComponent.getDevicesForCustomerId(customerId).stream()
-				.filter(d -> !StringUtils.isEmpty(d.getSerialNumber()))
-				.forEach(d -> delete(d.getSerialNumber(), d.getClientId()));
+		repository.deleteByCustomerId(customerId);
 	}
 
 	public Optional<LinkedDevice> queryBySerialNumber(String serialNumber, String customerId) {
-		if (StringUtils.isBlank(serialNumber) || StringUtils.isBlank(customerId)) {
-			log.warn("invalid query");
-			return Optional.empty();
-		}
-		return getTable()
-				.query(QueryConditional.keyEqualTo(
-						builder -> builder.partitionValue(serialNumber).sortValue(customerId)))
-				.items()
-				.stream()
-				.findAny();
-	}
-
-	@Override
-	protected String getTableName() {
-		return "linked_devices";
-	}
-
-	@Override
-	protected Class<LinkedDevice> getObjectClass() {
-		return LinkedDevice.class;
+		return repository.findBySerialNumber(serialNumber, customerId);
 	}
 
 	public DeviceData addLinkedDeviceDataVirtual(DeviceData virtualDevice, List<DeviceData> childDevices) {
