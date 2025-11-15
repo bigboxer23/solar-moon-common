@@ -2,15 +2,17 @@ package com.bigboxer23.solar_moon.data;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
 /** */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @DynamoDbBean
 @Schema(
 		description = "data object representing an inverter's data linked to another collection device",
 		requiredProperties = {"id", "customerId"})
-public class LinkedDevice {
+public class LinkedDevice extends AuditableEntity {
 	@Schema(description = "id of the linked device")
 	String id;
 
