@@ -2,16 +2,14 @@ package com.bigboxer23.solar_moon.subscription;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.Subscription;
-import com.bigboxer23.solar_moon.dynamodb.AbstractDynamodbComponent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 @Slf4j
-public class SubscriptionComponent extends AbstractDynamodbComponent<Subscription> {
+public class SubscriptionComponent {
 
 	public static final int DEVICES_PER_SUBSCRIPTION = 20;
 
@@ -21,30 +19,25 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 
 	public static final long TRIAL_LENGTH = TimeConstants.NINETY_DAYS;
 
-	@Override
-	protected String getTableName() {
-		return "subscription";
-	}
+	private SubscriptionRepository repository;
 
-	@Override
-	protected Class<Subscription> getObjectClass() {
-		return Subscription.class;
+	protected SubscriptionRepository getRepository() {
+		if (repository == null) {
+			repository = new DynamoDbSubscriptionRepository();
+		}
+		return repository;
 	}
 
 	public Optional<Subscription> getSubscription(String customerId) {
-		return !StringUtils.isBlank(customerId)
-				? this.getTable()
-						.query(QueryConditional.keyEqualTo((builder) -> builder.partitionValue(customerId)))
-						.stream()
-						.findFirst()
-						.flatMap((page) -> page.items().stream().findFirst())
-						.map(subscription -> {
-							if (subscription.getPacks() > 0) {
-								subscription.setJoinDate(-1L);
-							}
-							return subscription;
-						})
-				: Optional.empty();
+		if (StringUtils.isBlank(customerId)) {
+			return Optional.empty();
+		}
+		return getRepository().findByCustomerId(customerId).map(subscription -> {
+			if (subscription.getPacks() > 0) {
+				subscription.setJoinDate(-1L);
+			}
+			return subscription;
+		});
 	}
 
 	public Subscription updateSubscription(String customerId, int seats) {
@@ -55,12 +48,13 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 		long joinDate =
 				getSubscription(customerId).map(Subscription::getJoinDate).orElse(System.currentTimeMillis());
 		log.warn("Updating subscription: " + customerId + " " + seats);
-		return getTable().updateItem(builder -> builder.item(new Subscription(customerId, seats, joinDate)));
+		Subscription subscription = new Subscription(customerId, seats, joinDate);
+		return getRepository().update(subscription).orElse(null);
 	}
 
 	public void deleteSubscription(String customerId) {
 		log.warn("Deleting subscription: " + customerId);
-		getTable().deleteItem(new Subscription(customerId, 0, -1L));
+		getRepository().delete(new Subscription(customerId, 0, -1L));
 	}
 
 	public long getSubscriptionDevices(String customerId) {
@@ -88,12 +82,7 @@ public class SubscriptionComponent extends AbstractDynamodbComponent<Subscriptio
 				.orElse(false);
 	}
 
-	/**
-	 * Maybe trial, add the date. If more devices, obviously not a trial, don't worry about it
-	 *
-	 * @param data
-	 * @param customerId
-	 */
+	/** Maybe trial, add the date. If more devices, obviously not a trial, don't worry about it */
 	public void addSubscriptionInformation(IHasSubscription data, String customerId) {
 		if (data != null && data.getDevices().size() < SubscriptionComponent.TRIAL_DEVICE_COUNT) {
 			data.setSubscription(getSubscription(customerId).orElse(null));

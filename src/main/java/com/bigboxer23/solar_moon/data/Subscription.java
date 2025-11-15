@@ -2,6 +2,7 @@ package com.bigboxer23.solar_moon.data;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
@@ -10,7 +11,8 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 		description = "data object representing a customer's subscription",
 		requiredProperties = {"customerId", "packs"})
 @Data
-public class Subscription {
+@EqualsAndHashCode(callSuper = true)
+public class Subscription extends AuditableEntity {
 	@Schema(description = "(internal) id of the customer")
 	private String customerId;
 
