@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 public class NotificationComponentTest {
 
@@ -65,7 +66,7 @@ public class NotificationComponentTest {
 	@Test
 	public void testSendResponseMail_expectsAwsConfiguration() {
 		assertThrows(
-				NullPointerException.class,
+				SdkClientException.class,
 				() -> component.sendResponseMail(
 						"customer@example.com", "Support Question", "Our response", "Their email"));
 	}
