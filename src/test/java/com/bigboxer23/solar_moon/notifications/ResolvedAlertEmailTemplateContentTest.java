@@ -26,6 +26,15 @@ public class ResolvedAlertEmailTemplateContentTest {
 
 	private CustomerComponent originalCustomerComponent;
 	private DeviceComponent originalDeviceComponent;
+	private CustomerComponent mockCustomerComponent;
+	private DeviceComponent mockDeviceComponent;
+
+	@org.junit.jupiter.api.BeforeEach
+	public void setupMocks() throws Exception {
+		mockCustomerComponent = mock(CustomerComponent.class);
+		mockDeviceComponent = mock(DeviceComponent.class);
+		injectMocks(mockCustomerComponent, mockDeviceComponent);
+	}
 
 	@AfterEach
 	public void restoreComponents() throws Exception {
@@ -38,17 +47,12 @@ public class ResolvedAlertEmailTemplateContentTest {
 	}
 
 	@Test
-	public void testConstructor_setsCorrectTitleAndContent() throws Exception {
-		CustomerComponent mockCustomerComponent = mock(CustomerComponent.class);
-		DeviceComponent mockDeviceComponent = mock(DeviceComponent.class);
-
+	public void testConstructor_setsCorrectTitleAndContent() {
 		Customer customer = createCustomer("John Doe", "john@example.com");
 		Device device = createDevice("Solar Panel 1", false);
 
 		when(mockCustomerComponent.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(customer));
 		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(device));
-
-		injectMocks(mockCustomerComponent, mockDeviceComponent);
 
 		List<Alarm> alarms = Collections.singletonList(createAlarm());
 		ResolvedAlertEmailTemplateContent content = new ResolvedAlertEmailTemplateContent(CUSTOMER_ID, alarms);
@@ -78,17 +82,12 @@ public class ResolvedAlertEmailTemplateContentTest {
 	}
 
 	@Test
-	public void testConstructor_withSingleDeviceResolution() throws Exception {
-		CustomerComponent mockCustomerComponent = mock(CustomerComponent.class);
-		DeviceComponent mockDeviceComponent = mock(DeviceComponent.class);
-
+	public void testConstructor_withSingleDeviceResolution() {
 		Customer customer = createCustomer("Jane Smith", "jane@example.com");
 		Device device = createDevice("Inverter 1", false);
 
 		when(mockCustomerComponent.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(customer));
 		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(device));
-
-		injectMocks(mockCustomerComponent, mockDeviceComponent);
 
 		List<Alarm> alarms = Collections.singletonList(createAlarm());
 		ResolvedAlertEmailTemplateContent content = new ResolvedAlertEmailTemplateContent(CUSTOMER_ID, alarms);
@@ -102,10 +101,7 @@ public class ResolvedAlertEmailTemplateContentTest {
 	}
 
 	@Test
-	public void testConstructor_withSingleDeviceAndSite() throws Exception {
-		CustomerComponent mockCustomerComponent = mock(CustomerComponent.class);
-		DeviceComponent mockDeviceComponent = mock(DeviceComponent.class);
-
+	public void testConstructor_withSingleDeviceAndSite() {
 		Customer customer = createCustomer("Bob Johnson", "bob@example.com");
 		Device device = createDevice("Solar Panel 1", false);
 		device.setSiteId(SITE_ID);
@@ -113,8 +109,6 @@ public class ResolvedAlertEmailTemplateContentTest {
 
 		when(mockCustomerComponent.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(customer));
 		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(device));
-
-		injectMocks(mockCustomerComponent, mockDeviceComponent);
 
 		List<Alarm> alarms = Collections.singletonList(createAlarm());
 		ResolvedAlertEmailTemplateContent content = new ResolvedAlertEmailTemplateContent(CUSTOMER_ID, alarms);
@@ -124,10 +118,7 @@ public class ResolvedAlertEmailTemplateContentTest {
 	}
 
 	@Test
-	public void testConstructor_withMultipleDeviceResolutions() throws Exception {
-		CustomerComponent mockCustomerComponent = mock(CustomerComponent.class);
-		DeviceComponent mockDeviceComponent = mock(DeviceComponent.class);
-
+	public void testConstructor_withMultipleDeviceResolutions() {
 		Customer customer = createCustomer("Alice Brown", "alice@example.com");
 		Device device1 = createDevice("Solar Panel 1", false);
 		Device device2 = createDevice("Solar Panel 2", false);
@@ -136,8 +127,6 @@ public class ResolvedAlertEmailTemplateContentTest {
 		when(mockDeviceComponent.findDeviceById(eq(DEVICE_ID), eq(CUSTOMER_ID))).thenReturn(Optional.of(device1));
 		when(mockDeviceComponent.findDeviceById(eq("device-789"), eq(CUSTOMER_ID)))
 				.thenReturn(Optional.of(device2));
-
-		injectMocks(mockCustomerComponent, mockDeviceComponent);
 
 		List<Alarm> alarms = Arrays.asList(createAlarm(), createAlarm("device-789", "Second alarm resolved"));
 		ResolvedAlertEmailTemplateContent content = new ResolvedAlertEmailTemplateContent(CUSTOMER_ID, alarms);
@@ -149,10 +138,7 @@ public class ResolvedAlertEmailTemplateContentTest {
 	}
 
 	@Test
-	public void testConstructor_withMultipleDevicesIncludingSite() throws Exception {
-		CustomerComponent mockCustomerComponent = mock(CustomerComponent.class);
-		DeviceComponent mockDeviceComponent = mock(DeviceComponent.class);
-
+	public void testConstructor_withMultipleDevicesIncludingSite() {
 		Customer customer = createCustomer("Charlie Davis", "charlie@example.com");
 		Device device1 = createDevice("Inverter A", false);
 		device1.setSiteId(SITE_ID);
@@ -166,8 +152,6 @@ public class ResolvedAlertEmailTemplateContentTest {
 		when(mockDeviceComponent.findDeviceById(eq(DEVICE_ID), eq(CUSTOMER_ID))).thenReturn(Optional.of(device1));
 		when(mockDeviceComponent.findDeviceById(eq("device-999"), eq(CUSTOMER_ID)))
 				.thenReturn(Optional.of(device2));
-
-		injectMocks(mockCustomerComponent, mockDeviceComponent);
 
 		List<Alarm> alarms = Arrays.asList(createAlarm(), createAlarm("device-999", "Alarm B"));
 		ResolvedAlertEmailTemplateContent content = new ResolvedAlertEmailTemplateContent(CUSTOMER_ID, alarms);
@@ -188,17 +172,12 @@ public class ResolvedAlertEmailTemplateContentTest {
 	}
 
 	@Test
-	public void testContentDifferentFromAlarmEmail() throws Exception {
-		CustomerComponent mockCustomerComponent = mock(CustomerComponent.class);
-		DeviceComponent mockDeviceComponent = mock(DeviceComponent.class);
-
+	public void testContentDifferentFromAlarmEmail() {
 		Customer customer = createCustomer("Test User", "test@example.com");
 		Device device = createDevice("Test Device", false);
 
 		when(mockCustomerComponent.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(customer));
 		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(device));
-
-		injectMocks(mockCustomerComponent, mockDeviceComponent);
 
 		List<Alarm> alarms = Collections.singletonList(createAlarm());
 
@@ -221,17 +200,12 @@ public class ResolvedAlertEmailTemplateContentTest {
 	}
 
 	@Test
-	public void testResolvedMessageToneIsDifferent() throws Exception {
-		CustomerComponent mockCustomerComponent = mock(CustomerComponent.class);
-		DeviceComponent mockDeviceComponent = mock(DeviceComponent.class);
-
+	public void testResolvedMessageToneIsDifferent() {
 		Customer customer = createCustomer("Test User", "test@example.com");
 		Device device = createDevice("Test Device", false);
 
 		when(mockCustomerComponent.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(customer));
 		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(device));
-
-		injectMocks(mockCustomerComponent, mockDeviceComponent);
 
 		List<Alarm> alarms = Collections.singletonList(createAlarm());
 		ResolvedAlertEmailTemplateContent content = new ResolvedAlertEmailTemplateContent(CUSTOMER_ID, alarms);
