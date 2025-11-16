@@ -18,7 +18,6 @@ import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
 import org.apache.hc.core5.http.HttpHost;
 import org.opensearch.client.ResponseException;
-import org.opensearch.client.RestClient;
 import org.opensearch.client.json.jackson.JacksonJsonpMapper;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.*;
@@ -35,7 +34,7 @@ import org.opensearch.client.opensearch.core.search.Hit;
 import org.opensearch.client.opensearch.core.search.SourceConfig;
 import org.opensearch.client.opensearch.core.search.SourceFilter;
 import org.opensearch.client.opensearch.indices.DeleteIndexRequest;
-import org.opensearch.client.transport.rest_client.RestClientTransport;
+import org.opensearch.client.transport.httpclient5.ApacheHttpClient5TransportBuilder;
 import software.amazon.awssdk.utils.StringUtils;
 
 /** */
@@ -328,7 +327,7 @@ public class OpenSearchComponent implements OpenSearchConstants {
 		Date end = TimeUtils.getStartOfDay(searchJSON.getTimeZone());
 		searchJSON.setEndDate(end.getTime() - TimeConstants.SECOND);
 		searchJSON.setStartDate(end.getTime() - TimeConstants.NINETY_DAYS);
-		return ((Aggregate) search(searchJSON).aggregations().get("2"))
+		return (search(searchJSON).aggregations().get("2"))
 				.dateHistogram().buckets().array().stream()
 						.map(bucket -> bucket.aggregations().get("1").sum().value())
 						.mapToDouble(a -> a)
@@ -517,16 +516,16 @@ public class OpenSearchComponent implements OpenSearchConstants {
 	}
 
 	@SneakyThrows
-	private OpenSearchClient getClient() {
+	protected OpenSearchClient getClient() {
 		if (client == null) {
 			final BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 			credentialsProvider.setCredentials(
 					new AuthScope(null, -1), new UsernamePasswordCredentials(user, pass.toCharArray()));
-			final RestClient restClient = RestClient.builder(HttpHost.create(openSearchUrl))
+			client = new OpenSearchClient(ApacheHttpClient5TransportBuilder.builder(HttpHost.create(openSearchUrl))
+					.setMapper(new JacksonJsonpMapper())
 					.setHttpClientConfigCallback(
 							httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
-					.build();
-			client = new OpenSearchClient(new RestClientTransport(restClient, new JacksonJsonpMapper()));
+					.build());
 		}
 		return client;
 	}
