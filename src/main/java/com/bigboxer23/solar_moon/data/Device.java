@@ -4,6 +4,7 @@ import com.bigboxer23.solar_moon.device.DeviceComponent;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Optional;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
 /** */
@@ -12,6 +13,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 @Schema(
 		description = "data object representing a solar energy device",
 		requiredProperties = {"id", "clientId"})
+@EqualsAndHashCode(callSuper = true)
 public class Device extends AuditableEntity {
 	public static final String NAME_INDEX = "name-clientId-index";
 

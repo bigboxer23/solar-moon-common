@@ -12,11 +12,11 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ses.SesClient;
 import software.amazon.awssdk.services.ses.model.*;
-import software.amazon.awssdk.utils.StringUtils;
 
 /** */
 @Slf4j
@@ -44,8 +44,8 @@ public class NotificationComponent {
 		getRecipients(recipient).forEach(r -> {
 			try (SesClient client = SesClient.builder()
 					.region(Region.of(PropertyUtils.getProperty(AWS_REGION)))
-					.credentialsProvider(DefaultCredentialsProvider.create())
-					.build(); ) {
+					.credentialsProvider(DefaultCredentialsProvider.builder().build())
+					.build()) {
 				log.info("Sending email to " + recipient + " proxy:" + r);
 				client.sendEmail(SendEmailRequest.builder()
 						.destination(Destination.builder().toAddresses(r).build())
