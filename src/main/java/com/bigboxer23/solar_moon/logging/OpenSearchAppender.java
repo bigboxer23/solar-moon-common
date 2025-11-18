@@ -1,6 +1,7 @@
 package com.bigboxer23.solar_moon.logging;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import com.internetitem.logback.elasticsearch.ClassicElasticsearchPublisher;
 import com.internetitem.logback.elasticsearch.ElasticsearchAppender;
 import com.internetitem.logback.elasticsearch.config.ElasticsearchProperties;
 import com.internetitem.logback.elasticsearch.config.Property;
@@ -43,7 +44,7 @@ public class OpenSearchAppender extends ElasticsearchAppender {
 	@SneakyThrows
 	public static void waitForPendingData() {
 		int waits = 0;
-		while (waits < 30 && (instance.publisher.hasPendingData()) || instance.publisher.isWorking()) {
+		while (waits < 30 && (instance.publisher.hasPendingData() || instance.publisher.isWorking())) {
 			waits++;
 			Thread.sleep(100);
 		}
@@ -51,13 +52,23 @@ public class OpenSearchAppender extends ElasticsearchAppender {
 
 	@Override
 	public void start() {
-		started = true;
-		this.errorReporter = getErrorReporter();
+		super.start();
 		try {
 			this.publisher =
 					new OpenSearchPublisher(getContext(), errorReporter, settings, elasticsearchProperties, headers);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * Need to call super.start() above, can't make this directly return the publisher type we want,
+	 * so return null and return our own type in the start method
+	 *
+	 * @return
+	 */
+	@Override
+	protected ClassicElasticsearchPublisher buildElasticsearchPublisher() {
+		return null;
 	}
 }
