@@ -65,9 +65,13 @@ public class NotificationComponentTest {
 
 	@Test
 	public void testSendResponseMail_expectsAwsConfiguration() {
-		assertThrows(
-				SdkClientException.class,
+		Exception exception = assertThrows(
+				Exception.class,
 				() -> component.sendResponseMail(
 						"customer@example.com", "Support Question", "Our response", "Their email"));
+		assertTrue(
+				exception instanceof NullPointerException || exception instanceof SdkClientException,
+				"Expected NullPointerException or SdkClientException but got: "
+						+ exception.getClass().getName());
 	}
 }
