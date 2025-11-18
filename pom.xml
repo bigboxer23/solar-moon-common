@@ -24,7 +24,7 @@
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
-        <version>2.38.2</version>
+        <version>2.38.7</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -94,12 +94,12 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.5.20</version>
+      <version>1.5.21</version>
     </dependency>
     <dependency>
       <groupId>com.bigboxer23</groupId>
       <artifactId>utils</artifactId>
-      <version>2.2.9</version>
+      <version>2.3.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.ben-manes.caffeine</groupId>
@@ -182,7 +182,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>build-helper-maven-plugin</artifactId>
-          <version>3.6.0</version>
+          <version>3.6.1</version>
           <executions>
             <execution>
               <id>add-integration-test-source</id>
@@ -258,7 +258,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.4.2</version>
+          <version>3.5.0</version>
           <executions>
             <execution>
               <goals>
@@ -301,7 +301,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.13</version>
+        <version>0.8.14</version>
         <executions>
           <execution>
             <goals>
@@ -314,6 +314,11 @@
               <goal>report</goal>
             </goals>
             <phase>test</phase>
+            <configuration>
+              <excludes>
+                <exclude>com/bigboxer23/solar_moon/lambda/data/*</exclude>
+              </excludes>
+            </configuration>
           </execution>
         </executions>
       </plugin>
