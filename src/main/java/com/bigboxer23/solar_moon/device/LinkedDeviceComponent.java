@@ -15,14 +15,13 @@ import software.amazon.awssdk.utils.StringUtils;
 @Slf4j
 public class LinkedDeviceComponent {
 
-	private final LinkedDeviceRepository repository;
+	private LinkedDeviceRepository repository;
 
-	public LinkedDeviceComponent(LinkedDeviceRepository repository) {
-		this.repository = repository;
-	}
-
-	public LinkedDeviceComponent() {
-		this(new DynamoDbLinkedDeviceRepository());
+	protected LinkedDeviceRepository getRepository() {
+		if (repository == null) {
+			repository = new DynamoDbLinkedDeviceRepository();
+		}
+		return repository;
 	}
 
 	public void update(LinkedDevice device) {
@@ -30,19 +29,19 @@ public class LinkedDeviceComponent {
 			log.warn("invalid linked device, not updating");
 			return;
 		}
-		repository.update(device);
+		getRepository().update(device);
 	}
 
 	public void delete(String serialNumber, String customerId) {
-		repository.delete(serialNumber, customerId);
+		getRepository().delete(serialNumber, customerId);
 	}
 
 	public void deleteByCustomerId(String customerId) {
-		repository.deleteByCustomerId(customerId);
+		getRepository().deleteByCustomerId(customerId);
 	}
 
 	public Optional<LinkedDevice> queryBySerialNumber(String serialNumber, String customerId) {
-		return repository.findBySerialNumber(serialNumber, customerId);
+		return getRepository().findBySerialNumber(serialNumber, customerId);
 	}
 
 	public DeviceData addLinkedDeviceDataVirtual(DeviceData virtualDevice, List<DeviceData> childDevices) {
