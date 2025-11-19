@@ -31,9 +31,22 @@ public class LinkedDeviceComponentTest {
 	private static final String DEVICE_ID = "device-123";
 	private static final String SERIAL_NUMBER = "serial-123";
 
+	private static class TestableLinkedDeviceComponent extends LinkedDeviceComponent {
+		private final LinkedDeviceRepository repository;
+
+		public TestableLinkedDeviceComponent(LinkedDeviceRepository repository) {
+			this.repository = repository;
+		}
+
+		@Override
+		protected LinkedDeviceRepository getRepository() {
+			return repository;
+		}
+	}
+
 	@BeforeEach
 	void setUp() {
-		linkedDeviceComponent = new LinkedDeviceComponent(mockRepository);
+		linkedDeviceComponent = new TestableLinkedDeviceComponent(mockRepository);
 	}
 
 	@Test
@@ -126,6 +139,27 @@ public class LinkedDeviceComponentTest {
 		linkedDeviceComponent.delete(SERIAL_NUMBER, null);
 
 		verify(mockRepository).delete(SERIAL_NUMBER, null);
+	}
+
+	@Test
+	void testDeleteByCustomerId_withValidCustomerId_deletesSuccessfully() {
+		linkedDeviceComponent.deleteByCustomerId(CUSTOMER_ID);
+
+		verify(mockRepository).deleteByCustomerId(CUSTOMER_ID);
+	}
+
+	@Test
+	void testDeleteByCustomerId_withNullCustomerId_callsRepository() {
+		linkedDeviceComponent.deleteByCustomerId(null);
+
+		verify(mockRepository).deleteByCustomerId(null);
+	}
+
+	@Test
+	void testDeleteByCustomerId_withBlankCustomerId_callsRepository() {
+		linkedDeviceComponent.deleteByCustomerId("");
+
+		verify(mockRepository).deleteByCustomerId("");
 	}
 
 	@Test
