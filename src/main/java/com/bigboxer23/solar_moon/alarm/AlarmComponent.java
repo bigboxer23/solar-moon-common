@@ -3,6 +3,7 @@ package com.bigboxer23.solar_moon.alarm;
 import com.bigboxer23.solar_moon.IComponentRegistry;
 import com.bigboxer23.solar_moon.data.*;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
+import com.bigboxer23.solar_moon.device.DeviceUpdateComponent;
 import com.bigboxer23.solar_moon.notifications.AlarmEmailTemplateContent;
 import com.bigboxer23.solar_moon.notifications.ResolvedAlertEmailTemplateContent;
 import com.bigboxer23.solar_moon.search.OpenSearchQueries;
@@ -29,6 +30,18 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 		return repository;
 	}
 
+	protected DeviceComponent getDeviceComponent() {
+		return IComponentRegistry.deviceComponent;
+	}
+
+	protected DeviceUpdateComponent getDeviceUpdateComponent() {
+		return IComponentRegistry.deviceUpdateComponent;
+	}
+
+	protected com.bigboxer23.solar_moon.maintenance.MaintenanceComponent getMaintenanceComponent() {
+		return IComponentRegistry.maintenanceComponent;
+	}
+
 	public Optional<Alarm> getMostRecentAlarm(String deviceId) {
 		return getRepository().findMostRecentAlarm(deviceId);
 	}
@@ -39,7 +52,7 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 			log.warn("old data, not adding device update or resolving active alarms " + deviceData.getDate());
 			return;
 		}
-		IComponentRegistry.deviceUpdateComponent.update(deviceData.getDeviceId());
+		getDeviceUpdateComponent().update(deviceData.getDeviceId());
 		Optional<Alarm> maybeAlarm =
 				getMostRecentAlarm(deviceData.getDeviceId()).filter(alarm -> alarm.getState() == ACTIVE);
 		if (maybeAlarm.isEmpty()) {
@@ -132,7 +145,7 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 		newAlarm.setStartDate(System.currentTimeMillis());
 		newAlarm.setState(ACTIVE);
 		newAlarm.setMessage(content);
-		if (!IComponentRegistry.deviceComponent
+		if (!getDeviceComponent()
 				.findDeviceById(deviceId, customerId)
 				.map(Device::isNotificationsDisabled)
 				.orElse(false)) {
@@ -167,7 +180,7 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 
 	public Optional<Alarm> alarmConditionDetected(String customerId, String deviceId, String siteId, String content) {
 		log.warn("Alarm condition detected: " + content);
-		if (IComponentRegistry.maintenanceComponent.isInMaintenanceMode()) {
+		if (getMaintenanceComponent().isInMaintenanceMode()) {
 			log.warn("Maintenance mode activated, not flagging alarm condition.");
 			return Optional.empty();
 		}
@@ -176,7 +189,7 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 				.findAny()
 				.orElseGet(() -> getNewAlarm(customerId, deviceId, siteId, content));
 		if (alarm.getEmailed() == DONT_EMAIL
-				&& !IComponentRegistry.deviceComponent
+				&& !getDeviceComponent()
 						.findDeviceById(deviceId, customerId)
 						.map(Device::isNotificationsDisabled)
 						.orElse(false)) {
