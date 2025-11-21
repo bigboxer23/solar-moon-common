@@ -8,6 +8,9 @@ import com.bigboxer23.solar_moon.data.Alarm;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.data.LinkedDevice;
+import com.bigboxer23.solar_moon.device.DeviceComponent;
+import com.bigboxer23.solar_moon.device.DeviceUpdateComponent;
+import com.bigboxer23.solar_moon.maintenance.MaintenanceComponent;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -25,6 +28,15 @@ public class AlarmComponentTest implements IAlarmConstants {
 	@Mock
 	private AlarmRepository mockRepository;
 
+	@Mock
+	private DeviceComponent mockDeviceComponent;
+
+	@Mock
+	private DeviceUpdateComponent mockDeviceUpdateComponent;
+
+	@Mock
+	private MaintenanceComponent mockMaintenanceComponent;
+
 	private TestableAlarmComponent alarmComponent;
 
 	private static final String ALARM_ID = "alarm-123";
@@ -35,14 +47,39 @@ public class AlarmComponentTest implements IAlarmConstants {
 
 	private static class TestableAlarmComponent extends AlarmComponent {
 		private final AlarmRepository repository;
+		private final DeviceComponent deviceComponent;
+		private final DeviceUpdateComponent deviceUpdateComponent;
+		private final MaintenanceComponent maintenanceComponent;
 
-		public TestableAlarmComponent(AlarmRepository repository) {
+		public TestableAlarmComponent(
+				AlarmRepository repository,
+				DeviceComponent deviceComponent,
+				DeviceUpdateComponent deviceUpdateComponent,
+				MaintenanceComponent maintenanceComponent) {
 			this.repository = repository;
+			this.deviceComponent = deviceComponent;
+			this.deviceUpdateComponent = deviceUpdateComponent;
+			this.maintenanceComponent = maintenanceComponent;
 		}
 
 		@Override
 		protected AlarmRepository getRepository() {
 			return repository;
+		}
+
+		@Override
+		protected DeviceComponent getDeviceComponent() {
+			return deviceComponent;
+		}
+
+		@Override
+		protected DeviceUpdateComponent getDeviceUpdateComponent() {
+			return deviceUpdateComponent;
+		}
+
+		@Override
+		protected MaintenanceComponent getMaintenanceComponent() {
+			return maintenanceComponent;
 		}
 
 		@Override
@@ -53,7 +90,8 @@ public class AlarmComponentTest implements IAlarmConstants {
 
 	@BeforeEach
 	void setUp() {
-		alarmComponent = new TestableAlarmComponent(mockRepository);
+		alarmComponent = new TestableAlarmComponent(
+				mockRepository, mockDeviceComponent, mockDeviceUpdateComponent, mockMaintenanceComponent);
 	}
 
 	@Test
@@ -353,6 +391,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
 		verify(mockRepository).findMostRecentAlarm(DEVICE_ID);
 		verify(mockRepository, never()).update(any(Alarm.class));
 	}
@@ -366,6 +405,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
 		verify(mockRepository).findMostRecentAlarm(DEVICE_ID);
 		verify(mockRepository, never()).update(any(Alarm.class));
 	}
@@ -380,6 +420,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
 		verify(mockRepository, never()).update(any(Alarm.class));
 	}
 
@@ -393,6 +434,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
 		verify(mockRepository, never()).update(any(Alarm.class));
 	}
 
@@ -407,6 +449,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
 		verify(mockRepository)
 				.update(argThat(alarm -> alarm.getState() == RESOLVED
 						&& alarm.getEmailed() == RESOLVED_NOT_EMAILED
@@ -423,6 +466,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
 		verify(mockRepository).update(argThat(alarm -> alarm.getResolveEmailed() == NEEDS_EMAIL));
 	}
 
@@ -431,6 +475,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 		String content = "Device fault detected";
 		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(Collections.emptyList());
 		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.empty());
 
 		Optional<Alarm> result = alarmComponent.faultDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
 
