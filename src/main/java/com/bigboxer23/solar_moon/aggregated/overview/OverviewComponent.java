@@ -1,10 +1,15 @@
 package com.bigboxer23.solar_moon.aggregated.overview;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.aggregated.sites.SitesOverviewComponent;
+import com.bigboxer23.solar_moon.alarm.AlarmComponent;
 import com.bigboxer23.solar_moon.alarm.IAlarmConstants;
 import com.bigboxer23.solar_moon.data.Device;
+import com.bigboxer23.solar_moon.device.DeviceComponent;
+import com.bigboxer23.solar_moon.search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.search.OpenSearchConstants;
 import com.bigboxer23.solar_moon.search.SearchJSON;
+import com.bigboxer23.solar_moon.subscription.SubscriptionComponent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TimeUtils;
 import java.util.Date;
@@ -20,13 +25,13 @@ public class OverviewComponent implements IComponentRegistry {
 		log.info("Fetching overview data");
 		search.setIsSite(true);
 		OverviewData data = new OverviewData(
-				deviceComponent.getDevicesForCustomerId(search.getCustomerId()),
-				alarmComponent.getAlarms(search.getCustomerId()).stream()
+				getDeviceComponent().getDevicesForCustomerId(search.getCustomerId()),
+				getAlarmComponent().getAlarms(search.getCustomerId()).stream()
 						.filter(alarm -> (alarm.getStartDate() > search.getStartDate()
 										&& search.getEndDate() > alarm.getStartDate())
 								|| alarm.getState() == IAlarmConstants.ACTIVE)
 						.toList());
-		subscriptionComponent.addSubscriptionInformation(data, search.getCustomerId());
+		getSubscriptionComponent().addSubscriptionInformation(data, search.getCustomerId());
 		fillSiteInfo(data, search);
 		fillInOverallInfo(data, search);
 		return data;
@@ -58,8 +63,8 @@ public class OverviewComponent implements IComponentRegistry {
 		search.setDaylight(true);
 		// This is necessary because the period can shift to wk/mo/yr, and always need to get daily
 		// for overview as well.
-		data.getOverall().setDailyEnergyConsumedTotal(OSComponent.search(search));
-		data.getOverall().setDailyEnergyConsumedAverage(OSComponent.getAverageEnergyConsumedPerDay(search));
+		data.getOverall().setDailyEnergyConsumedTotal(getOSComponent().search(search));
+		data.getOverall().setDailyEnergyConsumedAverage(getOSComponent().getAverageEnergyConsumedPerDay(search));
 	}
 
 	private OverviewSiteData getData(Device device, SearchJSON searchJson, String timeSeriesType) {
@@ -67,16 +72,36 @@ public class OverviewComponent implements IComponentRegistry {
 		SearchJSON search = new SearchJSON(searchJson);
 		search.setDeviceId(Optional.ofNullable(device).map(Device::getId).orElse(null));
 		search.setType(OpenSearchConstants.TOTAL_SEARCH_TYPE);
-		data.setTotal(OSComponent.search(search));
+		data.setTotal(getOSComponent().search(search));
 		search.setType(timeSeriesType);
-		data.setTimeSeries(OSComponent.search(search));
+		data.setTimeSeries(getOSComponent().search(search));
 		search.setType(OpenSearchConstants.AVG_SEARCH_TYPE);
-		data.setAvg(OSComponent.search(search));
+		data.setAvg(getOSComponent().search(search));
 		if (device != null) {
 			data.setWeeklyMaxPower(
-					sitesOverviewComponent.getMaxInformation(device.getId(), searchJson.getCustomerId()));
-			data.setWeather(sitesOverviewComponent.getWeatherInformation(device));
+					getSitesOverviewComponent().getMaxInformation(device.getId(), searchJson.getCustomerId()));
+			data.setWeather(getSitesOverviewComponent().getWeatherInformation(device));
 		}
 		return data;
+	}
+
+	protected DeviceComponent getDeviceComponent() {
+		return deviceComponent;
+	}
+
+	protected AlarmComponent getAlarmComponent() {
+		return alarmComponent;
+	}
+
+	protected SubscriptionComponent getSubscriptionComponent() {
+		return subscriptionComponent;
+	}
+
+	protected OpenSearchComponent getOSComponent() {
+		return OSComponent;
+	}
+
+	protected SitesOverviewComponent getSitesOverviewComponent() {
+		return sitesOverviewComponent;
 	}
 }
