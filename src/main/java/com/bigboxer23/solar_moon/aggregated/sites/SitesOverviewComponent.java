@@ -1,12 +1,17 @@
 package com.bigboxer23.solar_moon.aggregated.sites;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.alarm.AlarmComponent;
 import com.bigboxer23.solar_moon.alarm.IAlarmConstants;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
+import com.bigboxer23.solar_moon.device.DeviceComponent;
+import com.bigboxer23.solar_moon.location.LocationComponent;
+import com.bigboxer23.solar_moon.search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.search.OpenSearchConstants;
 import com.bigboxer23.solar_moon.search.OpenSearchQueries;
 import com.bigboxer23.solar_moon.search.SearchJSON;
+import com.bigboxer23.solar_moon.subscription.SubscriptionComponent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
 import com.bigboxer23.solar_moon.util.TimeUtils;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
@@ -25,12 +30,12 @@ public class SitesOverviewComponent implements IComponentRegistry {
 	public SitesSiteData getExtendedSiteOverviewData(String siteId, SearchJSON search) {
 		TransactionUtil.addDeviceId(siteId, siteId);
 		log.info("Fetching site data");
-		SitesSiteData data = deviceComponent
+		SitesSiteData data = getDeviceComponent()
 				.findDeviceById(siteId, search.getCustomerId())
 				.map(site -> getSiteOverviewData(site, search))
 				.map(siteOverview -> fillExtendedSiteOverviewData(siteOverview, search))
 				.orElse(null);
-		subscriptionComponent.addSubscriptionInformation(data, search.getCustomerId());
+		getSubscriptionComponent().addSubscriptionInformation(data, search.getCustomerId());
 		return data;
 	}
 
@@ -51,8 +56,8 @@ public class SitesOverviewComponent implements IComponentRegistry {
 	}
 
 	public SiteWeatherData getWeatherInformation(Device site) {
-		return Optional.ofNullable(
-						OSComponent.getLastDeviceEntry(site.getId(), OpenSearchQueries.getDeviceIdQuery(site.getId())))
+		return Optional.ofNullable(getOSComponent()
+						.getLastDeviceEntry(site.getId(), OpenSearchQueries.getDeviceIdQuery(site.getId())))
 				.filter(deviceData -> !StringUtils.isEmpty(deviceData.getWeatherSummary())) // No weather stamped for
 				// some reason
 				.map(SiteWeatherData::new)
@@ -60,7 +65,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 	}
 
 	public void fillLocalTimeInformation(SitesSiteData siteData, Device site) {
-		locationComponent
+		getLocationComponent()
 				.getLocalTimeString(site.getLatitude(), site.getLongitude())
 				.map(time -> time.format(DateTimeFormatter.ofPattern("h:mm a")))
 				.ifPresent(siteData::setLocalTime);
@@ -70,11 +75,11 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		SearchJSON searchJSON = new SearchJSON(search);
 		searchJSON.setDeviceId(site.getId());
 		searchJSON.setType(OpenSearchConstants.TOTAL_SEARCH_TYPE);
-		siteData.setTotal(OSComponent.search(searchJSON));
+		siteData.setTotal(getOSComponent().search(searchJSON));
 
 		searchJSON.setType(OpenSearchConstants.AVG_SEARCH_TYPE);
 		searchJSON.setDaylight(true);
-		siteData.setAvg(OSComponent.search(searchJSON));
+		siteData.setAvg(getOSComponent().search(searchJSON));
 	}
 
 	public SearchResponse<DeviceData> getMaxInformation(String deviceId, String customerId) {
@@ -86,14 +91,15 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		search.setDeviceId(deviceId);
 		search.setEndDate(end.getTime());
 		search.setStartDate(end.getTime() - TimeConstants.WEEK);
-		return OSComponent.search(search);
+		return getOSComponent().search(search);
 	}
 
 	private SitesSiteData fillExtendedSiteOverviewData(SitesSiteData siteOverview, SearchJSON search) {
-		siteOverview.setDevices(deviceComponent.getDevicesBySiteId(
-				search.getCustomerId(), siteOverview.getSite().getSiteId()));
+		siteOverview.setDevices(getDeviceComponent()
+				.getDevicesBySiteId(
+						search.getCustomerId(), siteOverview.getSite().getSiteId()));
 		siteOverview.setAlarms(
-				alarmComponent
+				getAlarmComponent()
 						.findAlarmsBySite(
 								search.getCustomerId(), siteOverview.getSite().getId())
 						.stream()
@@ -119,7 +125,7 @@ public class SitesOverviewComponent implements IComponentRegistry {
 				siteOverview.getSite().isSubtraction()
 						? OpenSearchConstants.TIME_SERIES_SEARCH_TYPE
 						: OpenSearchConstants.STACKED_TIME_SERIES_SEARCH_TYPE);
-		siteOverview.setTimeSeries(OSComponent.search(searchJson));
+		siteOverview.setTimeSeries(getOSComponent().search(searchJson));
 	}
 
 	private void fillDevicesAverageTotal(SitesSiteData siteOverview, SearchJSON search) {
@@ -156,7 +162,27 @@ public class SitesOverviewComponent implements IComponentRegistry {
 		searchJson.setType(type);
 		siteOverview.getDevices().stream().filter(d -> !d.isDeviceSite()).forEach(d -> {
 			searchJson.setDeviceId(d.getId());
-			map.put(d.getId(), OSComponent.search(searchJson));
+			map.put(d.getId(), getOSComponent().search(searchJson));
 		});
+	}
+
+	protected DeviceComponent getDeviceComponent() {
+		return deviceComponent;
+	}
+
+	protected AlarmComponent getAlarmComponent() {
+		return alarmComponent;
+	}
+
+	protected SubscriptionComponent getSubscriptionComponent() {
+		return subscriptionComponent;
+	}
+
+	protected OpenSearchComponent getOSComponent() {
+		return OSComponent;
+	}
+
+	protected LocationComponent getLocationComponent() {
+		return locationComponent;
 	}
 }
