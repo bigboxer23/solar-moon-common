@@ -8,7 +8,7 @@ public class PirateWeatherDataResponse {
 	private double latitude;
 	private double longitude;
 	private String timezone;
-	private int offset;
-	private int elevation;
+	private double offset;
+	private double elevation;
 	private PirateWeatherData currently;
 }
