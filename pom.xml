@@ -327,6 +327,7 @@
             <configuration>
               <excludes>
                 <exclude>com/bigboxer23/solar_moon/lambda/data/*</exclude>
+                <exclude>com/bigboxer23/solar_moon/util/TimezoneMapper</exclude>
               </excludes>
             </configuration>
           </execution>
