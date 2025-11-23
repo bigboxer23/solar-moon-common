@@ -6,11 +6,9 @@ import static org.mockito.Mockito.*;
 
 import com.bigboxer23.solar_moon.data.DeviceUpdateData;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -126,7 +124,7 @@ public class DynamoDbDeviceUpdateRepositoryTest {
 	void testFindLastUpdateByDeviceId_withNoResults_returnsEmpty() {
 		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
 		when(mockPageIterable.items()).thenReturn(mockSdkIterable);
-		when(mockSdkIterable.stream()).thenReturn(Stream.<DeviceUpdateData>empty());
+		when(mockSdkIterable.stream()).thenReturn(Stream.empty());
 
 		Optional<Long> result = repository.findLastUpdateByDeviceId(DEVICE_ID);
 

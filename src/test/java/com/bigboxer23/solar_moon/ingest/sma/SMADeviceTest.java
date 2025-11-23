@@ -5,9 +5,14 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.customer.CustomerComponent;
+import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.data.Device;
+import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.ingest.IngestComponent;
+import com.bigboxer23.solar_moon.location.LocationComponent;
 import java.lang.reflect.Field;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,21 +20,48 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 class SMADeviceTest {
 
 	private IngestComponent mockGenerationComponent;
 	private IngestComponent originalGenerationComponent;
+	private LocationComponent mockLocationComponent;
+	private LocationComponent originalLocationComponent;
+	private DeviceComponent mockDeviceComponent;
+	private DeviceComponent originalDeviceComponent;
+	private CustomerComponent mockCustomerComponent;
+	private CustomerComponent originalCustomerComponent;
 
 	@BeforeEach
 	void setUp() throws Exception {
 		originalGenerationComponent = IComponentRegistry.generationComponent;
+		originalLocationComponent = IComponentRegistry.locationComponent;
+		originalDeviceComponent = IComponentRegistry.deviceComponent;
+		originalCustomerComponent = IComponentRegistry.customerComponent;
+
 		mockGenerationComponent = mock(IngestComponent.class);
+		mockLocationComponent = mock(LocationComponent.class);
+		mockDeviceComponent = mock(DeviceComponent.class);
+		mockCustomerComponent = mock(CustomerComponent.class);
+
 		setFinalStatic(IComponentRegistry.class.getField("generationComponent"), mockGenerationComponent);
+		setFinalStatic(IComponentRegistry.class.getField("locationComponent"), mockLocationComponent);
+		setFinalStatic(IComponentRegistry.class.getField("deviceComponent"), mockDeviceComponent);
+		setFinalStatic(IComponentRegistry.class.getField("customerComponent"), mockCustomerComponent);
+
+		when(mockLocationComponent.getLocalTimeZone(anyDouble(), anyDouble()))
+				.thenReturn(Optional.of("America/New_York"));
+		Customer mockCustomer = new Customer();
+		mockCustomer.setDefaultTimezone("America/New_York");
+		when(mockCustomerComponent.findCustomerByCustomerId(anyString())).thenReturn(Optional.of(mockCustomer));
 	}
 
 	@AfterEach
 	void tearDown() throws Exception {
 		setFinalStatic(IComponentRegistry.class.getField("generationComponent"), originalGenerationComponent);
+		setFinalStatic(IComponentRegistry.class.getField("locationComponent"), originalLocationComponent);
+		setFinalStatic(IComponentRegistry.class.getField("deviceComponent"), originalDeviceComponent);
+		setFinalStatic(IComponentRegistry.class.getField("customerComponent"), originalCustomerComponent);
 	}
 
 	private void setFinalStatic(Field field, Object newValue) throws Exception {

@@ -5,6 +5,8 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.bigboxer23.solar_moon.IComponentRegistry;
+import com.bigboxer23.solar_moon.customer.CustomerComponent;
+import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
@@ -37,6 +39,8 @@ class SMAIngestComponentTest {
 	private IngestComponent originalGenerationComponent;
 	private LocationComponent mockLocationComponent;
 	private LocationComponent originalLocationComponent;
+	private CustomerComponent mockCustomerComponent;
+	private CustomerComponent originalCustomerComponent;
 	private OpenSearchComponent mockOSComponent;
 	private OpenSearchComponent originalOSComponent;
 
@@ -84,18 +88,27 @@ class SMAIngestComponentTest {
 		originalDeviceComponent = IComponentRegistry.deviceComponent;
 		originalGenerationComponent = IComponentRegistry.generationComponent;
 		originalLocationComponent = IComponentRegistry.locationComponent;
+		originalCustomerComponent = IComponentRegistry.customerComponent;
 		originalOSComponent = IComponentRegistry.OSComponent;
 
 		mockS3Client = mock(S3Client.class);
 		mockDeviceComponent = mock(DeviceComponent.class);
 		mockGenerationComponent = mock(IngestComponent.class);
 		mockLocationComponent = mock(LocationComponent.class);
+		mockCustomerComponent = mock(CustomerComponent.class);
 		mockOSComponent = mock(OpenSearchComponent.class);
 
 		setFinalStatic(IComponentRegistry.class.getField("deviceComponent"), mockDeviceComponent);
 		setFinalStatic(IComponentRegistry.class.getField("generationComponent"), mockGenerationComponent);
 		setFinalStatic(IComponentRegistry.class.getField("locationComponent"), mockLocationComponent);
+		setFinalStatic(IComponentRegistry.class.getField("customerComponent"), mockCustomerComponent);
 		setFinalStatic(IComponentRegistry.class.getField("OSComponent"), mockOSComponent);
+
+		when(mockLocationComponent.getLocalTimeZone(anyDouble(), anyDouble()))
+				.thenReturn(Optional.of("America/New_York"));
+		Customer mockCustomer = new Customer();
+		mockCustomer.setDefaultTimezone("America/New_York");
+		when(mockCustomerComponent.findCustomerByCustomerId(anyString())).thenReturn(Optional.of(mockCustomer));
 
 		when(IComponentRegistry.generationComponent.findDeviceFromDeviceNameFuzzy(anyString(), anyString()))
 				.thenAnswer(invocation -> {
@@ -131,6 +144,7 @@ class SMAIngestComponentTest {
 		setFinalStatic(IComponentRegistry.class.getField("deviceComponent"), originalDeviceComponent);
 		setFinalStatic(IComponentRegistry.class.getField("generationComponent"), originalGenerationComponent);
 		setFinalStatic(IComponentRegistry.class.getField("locationComponent"), originalLocationComponent);
+		setFinalStatic(IComponentRegistry.class.getField("customerComponent"), originalCustomerComponent);
 		setFinalStatic(IComponentRegistry.class.getField("OSComponent"), originalOSComponent);
 	}
 

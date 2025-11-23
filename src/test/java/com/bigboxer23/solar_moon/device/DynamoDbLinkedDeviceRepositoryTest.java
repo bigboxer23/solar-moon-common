@@ -11,7 +11,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -161,7 +160,7 @@ public class DynamoDbLinkedDeviceRepositoryTest {
 	void testFindBySerialNumber_withNoResults_returnsEmpty() {
 		when(mockTable.query(any(QueryConditional.class))).thenReturn(mockPageIterable);
 		when(mockPageIterable.items()).thenReturn(mockSdkIterable);
-		when(mockSdkIterable.stream()).thenReturn(Stream.<LinkedDevice>empty());
+		when(mockSdkIterable.stream()).thenReturn(Stream.empty());
 
 		Optional<LinkedDevice> result = repository.findBySerialNumber(SERIAL_NUMBER, CUSTOMER_ID);
 
