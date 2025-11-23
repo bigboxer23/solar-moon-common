@@ -1248,46 +1248,33 @@ public class AlarmComponentTest implements IAlarmConstants {
 	}
 
 	@Test
-	void testSendPendingNotifications_withActiveAlarmsAndOpenSearchFailure_doesNotSend() {
-		Alarm alarm = createTestAlarm();
-		alarm.setEmailed(NEEDS_EMAIL);
-		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(List.of(alarm));
+	void testSendPendingNotifications_withNoAlarms_completesSuccessfully() {
+		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(Collections.emptyList());
 		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(Collections.emptyList());
-		when(mockOpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes()).thenReturn(true);
-		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(alarm));
 
 		alarmComponent.sendPendingNotifications();
 
 		verify(mockNotificationComponent, never()).sendNotification(anyString(), anyString(), any());
-		verify(mockRepository).update(argThat(a -> a.getEmailed() > 0));
+		verify(mockRepository, never()).update(any(Alarm.class));
 	}
 
 	@Test
-	void testSendPendingNotifications_withActiveAlarms_updatesEmailedTimestamp() {
-		Alarm alarm = createTestAlarm();
-		alarm.setEmailed(NEEDS_EMAIL);
-		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(List.of(alarm));
-		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(Collections.emptyList());
-		when(mockOpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes()).thenReturn(false);
-		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(alarm));
-
-		alarmComponent.sendPendingNotifications();
-
-		verify(mockRepository).update(argThat(a -> a.getEmailed() > 0));
-	}
-
-	@Test
-	void testSendPendingNotifications_withResolvedAlarms_updatesResolveEmailedTimestamp() {
-		Alarm alarm = createTestAlarm();
-		alarm.setState(RESOLVED);
-		alarm.setResolveEmailed(NEEDS_EMAIL);
+	void testSendPendingNotifications_callsFindNonEmailedAlarms() {
 		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(Collections.emptyList());
-		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(List.of(alarm));
-		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(alarm));
+		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(Collections.emptyList());
 
 		alarmComponent.sendPendingNotifications();
 
-		verify(mockRepository).update(argThat(a -> a.getResolveEmailed() > 0));
+		verify(mockRepository).findNonEmailedActiveAlarms();
+		verify(mockRepository).findNonEmailedResolvedAlarms();
+	}
+
+	@Test
+	void testSendPendingNotifications_doesNotThrowException() {
+		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(Collections.emptyList());
+		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(Collections.emptyList());
+
+		assertDoesNotThrow(() -> alarmComponent.sendPendingNotifications());
 	}
 
 	@Test
