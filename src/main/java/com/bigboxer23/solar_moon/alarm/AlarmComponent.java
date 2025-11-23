@@ -42,6 +42,26 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 		return IComponentRegistry.maintenanceComponent;
 	}
 
+	protected com.bigboxer23.solar_moon.device.LinkedDeviceComponent getLinkedDeviceComponent() {
+		return IComponentRegistry.linkedDeviceComponent;
+	}
+
+	protected com.bigboxer23.solar_moon.location.LocationComponent getLocationComponent() {
+		return IComponentRegistry.locationComponent;
+	}
+
+	protected com.bigboxer23.solar_moon.search.OpenSearchComponent getOpenSearchComponent() {
+		return IComponentRegistry.OSComponent;
+	}
+
+	protected com.bigboxer23.solar_moon.search.status.OpenSearchStatusComponent getOpenSearchStatusComponent() {
+		return IComponentRegistry.OpenSearchStatusComponent;
+	}
+
+	protected com.bigboxer23.solar_moon.notifications.NotificationComponent getNotificationComponent() {
+		return IComponentRegistry.notificationComponent;
+	}
+
 	public Optional<Alarm> getMostRecentAlarm(String deviceId) {
 		return getRepository().findMostRecentAlarm(deviceId);
 	}
@@ -110,14 +130,13 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 		}
 		Optional<Device> optionalDevice = device != null
 				? Optional.of(device)
-				: IComponentRegistry.deviceComponent.findDeviceById(
-						deviceData.getDeviceId(), deviceData.getCustomerId());
+				: getDeviceComponent().findDeviceById(deviceData.getDeviceId(), deviceData.getCustomerId());
 		if (optionalDevice.isEmpty() || StringUtils.isBlank(optionalDevice.get().getSerialNumber())) {
 			log.debug("no device or no serial number found, linked device is normal.");
 			return Optional.empty();
 		}
-		Optional<LinkedDevice> linkedDevice = IComponentRegistry.linkedDeviceComponent.queryBySerialNumber(
-				optionalDevice.get().getSerialNumber(), deviceData.getCustomerId());
+		Optional<LinkedDevice> linkedDevice = getLinkedDeviceComponent()
+				.queryBySerialNumber(optionalDevice.get().getSerialNumber(), deviceData.getCustomerId());
 		if (linkedDevice.isEmpty()) {
 			log.debug("no linked device. " + optionalDevice.get().getSerialNumber());
 			return Optional.empty();
@@ -217,11 +236,11 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 			log.info("Starting sending active notifications");
 			AlarmEmailTemplateContent alarmEmail = new AlarmEmailTemplateContent(customerId, alarms);
 			if (alarmEmail.isNotificationEnabled()
-					&& !IComponentRegistry.OpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes()) {
-				IComponentRegistry.notificationComponent.sendNotification(
-						alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
+					&& !getOpenSearchStatusComponent().hasFailureWithinLastThirtyMinutes()) {
+				getNotificationComponent()
+						.sendNotification(alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
 			} else {
-				if (IComponentRegistry.OpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes()) {
+				if (getOpenSearchStatusComponent().hasFailureWithinLastThirtyMinutes()) {
 					log.warn("Not sending notification, opensearch failure has occurred " + " recently.");
 				} else {
 					log.warn("New notification detected, but not sending email as " + " requested.");
@@ -245,8 +264,7 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 			TransactionUtil.updateCustomerId(customerId);
 			log.info("Starting sending resolved notifications");
 			ResolvedAlertEmailTemplateContent alarmEmail = new ResolvedAlertEmailTemplateContent(customerId, alarms);
-			IComponentRegistry.notificationComponent.sendNotification(
-					alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
+			getNotificationComponent().sendNotification(alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
 			alarms.forEach(a -> {
 				a.setResolveEmailed(System.currentTimeMillis());
 				updateAlarm(a);
@@ -321,15 +339,15 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 	public List<Alarm> quickCheckDevices() {
 		log.info("Checking for non-responsive devices");
 		List<Alarm> alarms = new ArrayList<>();
-		IComponentRegistry.deviceUpdateComponent
+		getDeviceUpdateComponent()
 				.queryByTimeRange(System.currentTimeMillis() - QUICK_CHECK_THRESHOLD)
-				.forEach(d -> IComponentRegistry.deviceComponent
+				.forEach(d -> getDeviceComponent()
 						.findDeviceById(d.getDeviceId())
 						.filter(d2 -> !d2.isDisabled())
 						.filter(d2 -> {
-							boolean isDay = IComponentRegistry.deviceComponent
+							boolean isDay = getDeviceComponent()
 									.findDeviceById(d2.getSiteId(), d2.getClientId())
-									.map(site -> IComponentRegistry.locationComponent
+									.map(site -> getLocationComponent()
 											.isDay(new Date(), site.getLatitude(), site.getLongitude())
 											.orElse(true))
 									.orElse(true);
@@ -357,15 +375,15 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 		}
 		TransactionUtil.updateCustomerId(device.getClientId());
 		TransactionUtil.addDeviceId(device.getId(), device.getSiteId());
-		DeviceData data = IComponentRegistry.OSComponent.getLastDeviceEntry(
-				device.getId(), OpenSearchQueries.getDeviceIdQuery(device.getId()));
+		DeviceData data = getOpenSearchComponent()
+				.getLastDeviceEntry(device.getId(), OpenSearchQueries.getDeviceIdQuery(device.getId()));
 		// Check disabled or new
 		if (data == null || device.isDisabled()) {
 			log.debug("likely new device with no data (or disabled) " + device.getId());
 			return Optional.empty();
 		}
 		// If stale and open search is healthy, fail
-		boolean isOpenSearchOk = !IComponentRegistry.OpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes();
+		boolean isOpenSearchOk = !getOpenSearchStatusComponent().hasFailureWithinLastThirtyMinutes();
 		if (data.getDate().getTime() < new Date(System.currentTimeMillis() - TimeConstants.HOUR).getTime()
 				&& isOpenSearchOk) {
 			log.warn("Check shows no updates for device in last 60 min.");
@@ -409,8 +427,8 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 			return true;
 		}
 		try {
-			List<DeviceData> historicData = IComponentRegistry.OSComponent.getRecentDeviceData(
-					device.getClientId(), device.getId(), TimeConstants.HOUR * 2);
+			List<DeviceData> historicData = getOpenSearchComponent()
+					.getRecentDeviceData(device.getClientId(), device.getId(), TimeConstants.HOUR * 2);
 
 			boolean isDarkAdjacent = historicData.stream().anyMatch(d -> !d.isDaylight());
 			if (isDarkAdjacent) {
@@ -418,7 +436,7 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 				return true;
 			}
 			if (deviceData.getDate() != null
-					&& !IComponentRegistry.locationComponent
+					&& !getLocationComponent()
 							.isDay(
 									new Date(deviceData.getDate().getTime() + TimeConstants.HOUR * 2),
 									device.getLatitude(),
@@ -495,13 +513,12 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 			log.info("no site attached to device or is site. Won't include in OK check.");
 			return true;
 		}
-		List<Device> siteDevices =
-				IComponentRegistry.deviceComponent.getDevicesBySiteId(device.getClientId(), device.getSiteId());
+		List<Device> siteDevices = getDeviceComponent().getDevicesBySiteId(device.getClientId(), device.getSiteId());
 		boolean hasValidSiteDeviceData = false;
 		for (Device siteDevice : siteDevices) {
 			if (!device.getId().equalsIgnoreCase(siteDevice.getId()) && !siteDevice.isDeviceSite()) {
-				DeviceData siteDeviceData = IComponentRegistry.OSComponent.getLastDeviceEntry(
-						siteDevice.getId(), OpenSearchQueries.getDeviceIdQuery(siteDevice.getId()));
+				DeviceData siteDeviceData = getOpenSearchComponent()
+						.getLastDeviceEntry(siteDevice.getId(), OpenSearchQueries.getDeviceIdQuery(siteDevice.getId()));
 				hasValidSiteDeviceData = hasValidSiteDeviceData || siteDeviceData != null;
 				if (siteDeviceData != null && siteDeviceData.getTotalRealPower() > 0.25) {
 					log.info(
@@ -521,7 +538,7 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 	}
 
 	public void clearDisabledResolvedAlarms() {
-		getActiveAlarms().forEach(alarm -> IComponentRegistry.deviceComponent
+		getActiveAlarms().forEach(alarm -> getDeviceComponent()
 				.findDeviceById(alarm.getDeviceId(), alarm.getCustomerId())
 				.filter(Device::isDisabled)
 				.ifPresent(device -> {

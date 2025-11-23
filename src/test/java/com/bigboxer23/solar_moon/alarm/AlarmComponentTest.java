@@ -11,6 +11,7 @@ import com.bigboxer23.solar_moon.data.LinkedDevice;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.device.DeviceUpdateComponent;
 import com.bigboxer23.solar_moon.maintenance.MaintenanceComponent;
+import com.bigboxer23.solar_moon.util.TimeConstants;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -37,6 +38,21 @@ public class AlarmComponentTest implements IAlarmConstants {
 	@Mock
 	private MaintenanceComponent mockMaintenanceComponent;
 
+	@Mock
+	private com.bigboxer23.solar_moon.device.LinkedDeviceComponent mockLinkedDeviceComponent;
+
+	@Mock
+	private com.bigboxer23.solar_moon.location.LocationComponent mockLocationComponent;
+
+	@Mock
+	private com.bigboxer23.solar_moon.search.OpenSearchComponent mockOpenSearchComponent;
+
+	@Mock
+	private com.bigboxer23.solar_moon.search.status.OpenSearchStatusComponent mockOpenSearchStatusComponent;
+
+	@Mock
+	private com.bigboxer23.solar_moon.notifications.NotificationComponent mockNotificationComponent;
+
 	private TestableAlarmComponent alarmComponent;
 
 	private static final String ALARM_ID = "alarm-123";
@@ -50,16 +66,33 @@ public class AlarmComponentTest implements IAlarmConstants {
 		private final DeviceComponent deviceComponent;
 		private final DeviceUpdateComponent deviceUpdateComponent;
 		private final MaintenanceComponent maintenanceComponent;
+		private final com.bigboxer23.solar_moon.device.LinkedDeviceComponent linkedDeviceComponent;
+		private final com.bigboxer23.solar_moon.location.LocationComponent locationComponent;
+		private final com.bigboxer23.solar_moon.search.OpenSearchComponent openSearchComponent;
+		private final com.bigboxer23.solar_moon.search.status.OpenSearchStatusComponent openSearchStatusComponent;
+		private final com.bigboxer23.solar_moon.notifications.NotificationComponent notificationComponent;
+		private Optional<LinkedDevice> linkedDeviceErrorResult = Optional.empty();
+		private boolean useRealLinkedDeviceErrored = false;
 
 		public TestableAlarmComponent(
 				AlarmRepository repository,
 				DeviceComponent deviceComponent,
 				DeviceUpdateComponent deviceUpdateComponent,
-				MaintenanceComponent maintenanceComponent) {
+				MaintenanceComponent maintenanceComponent,
+				com.bigboxer23.solar_moon.device.LinkedDeviceComponent linkedDeviceComponent,
+				com.bigboxer23.solar_moon.location.LocationComponent locationComponent,
+				com.bigboxer23.solar_moon.search.OpenSearchComponent openSearchComponent,
+				com.bigboxer23.solar_moon.search.status.OpenSearchStatusComponent openSearchStatusComponent,
+				com.bigboxer23.solar_moon.notifications.NotificationComponent notificationComponent) {
 			this.repository = repository;
 			this.deviceComponent = deviceComponent;
 			this.deviceUpdateComponent = deviceUpdateComponent;
 			this.maintenanceComponent = maintenanceComponent;
+			this.linkedDeviceComponent = linkedDeviceComponent;
+			this.locationComponent = locationComponent;
+			this.openSearchComponent = openSearchComponent;
+			this.openSearchStatusComponent = openSearchStatusComponent;
+			this.notificationComponent = notificationComponent;
 		}
 
 		@Override
@@ -83,15 +116,59 @@ public class AlarmComponentTest implements IAlarmConstants {
 		}
 
 		@Override
+		protected com.bigboxer23.solar_moon.device.LinkedDeviceComponent getLinkedDeviceComponent() {
+			return linkedDeviceComponent;
+		}
+
+		@Override
+		protected com.bigboxer23.solar_moon.location.LocationComponent getLocationComponent() {
+			return locationComponent;
+		}
+
+		@Override
+		protected com.bigboxer23.solar_moon.search.OpenSearchComponent getOpenSearchComponent() {
+			return openSearchComponent;
+		}
+
+		@Override
+		protected com.bigboxer23.solar_moon.search.status.OpenSearchStatusComponent getOpenSearchStatusComponent() {
+			return openSearchStatusComponent;
+		}
+
+		@Override
+		protected com.bigboxer23.solar_moon.notifications.NotificationComponent getNotificationComponent() {
+			return notificationComponent;
+		}
+
+		@Override
 		protected Optional<LinkedDevice> isLinkedDeviceErrored(DeviceData deviceData, Device device) {
-			return Optional.empty();
+			if (useRealLinkedDeviceErrored) {
+				return super.isLinkedDeviceErrored(deviceData, device);
+			}
+			return linkedDeviceErrorResult;
+		}
+
+		public void setLinkedDeviceErrorResult(Optional<LinkedDevice> result) {
+			this.linkedDeviceErrorResult = result;
+		}
+
+		public void setUseRealLinkedDeviceErrored(boolean use) {
+			this.useRealLinkedDeviceErrored = use;
 		}
 	}
 
 	@BeforeEach
 	void setUp() {
 		alarmComponent = new TestableAlarmComponent(
-				mockRepository, mockDeviceComponent, mockDeviceUpdateComponent, mockMaintenanceComponent);
+				mockRepository,
+				mockDeviceComponent,
+				mockDeviceUpdateComponent,
+				mockMaintenanceComponent,
+				mockLinkedDeviceComponent,
+				mockLocationComponent,
+				mockOpenSearchComponent,
+				mockOpenSearchStatusComponent,
+				mockNotificationComponent);
 	}
 
 	@Test
@@ -767,6 +844,765 @@ public class AlarmComponentTest implements IAlarmConstants {
 				.update(argThat(alarm -> alarm.getState() == RESOLVED
 						&& alarm.getResolveEmailed() == NEEDS_EMAIL
 						&& alarm.getEndDate() > 0));
+	}
+
+	@Test
+	void testResolveActiveAlarms_withLinkedDeviceError_doesNotResolve() {
+		DeviceData deviceData = createValidDeviceData();
+		Alarm activeAlarm = createTestAlarm();
+		activeAlarm.setMessage("Device error");
+		LinkedDevice erroredLinkedDevice = new LinkedDevice();
+		erroredLinkedDevice.setCriticalAlarm(1);
+
+		alarmComponent.setLinkedDeviceErrorResult(Optional.of(erroredLinkedDevice));
+		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+
+		alarmComponent.resolveActiveAlarms(deviceData);
+
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
+		verify(mockRepository, never()).update(any(Alarm.class));
+	}
+
+	@Test
+	void testResolveActiveAlarms_withLinkedDeviceErrorButNoDataAlarm_resolvesAlarm() {
+		DeviceData deviceData = createValidDeviceData();
+		Alarm activeAlarm = createTestAlarm();
+		activeAlarm.setMessage(NO_DATA_RECENTLY + "12345");
+		activeAlarm.setEmailed(System.currentTimeMillis());
+		LinkedDevice erroredLinkedDevice = new LinkedDevice();
+		erroredLinkedDevice.setCriticalAlarm(1);
+
+		alarmComponent.setLinkedDeviceErrorResult(Optional.of(erroredLinkedDevice));
+		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(activeAlarm));
+
+		alarmComponent.resolveActiveAlarms(deviceData);
+
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
+		verify(mockRepository)
+				.update(argThat(alarm -> alarm.getState() == RESOLVED
+						&& alarm.getResolveEmailed() == NEEDS_EMAIL
+						&& alarm.getEndDate() > 0));
+	}
+
+	@Test
+	void testGetNewAlarm_withDeviceNotFound_setsEmailFlag() {
+		String content = "Test alarm content";
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.empty());
+
+		Alarm result = alarmComponent.getNewAlarm(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
+
+		assertNotNull(result);
+		assertEquals(NEEDS_EMAIL, result.getEmailed());
+	}
+
+	@Test
+	void testAlarmConditionDetected_withExistingAlarmWithEmptyMessage_setsMessage() {
+		String newContent = "New alarm content";
+		Alarm existingAlarm = createTestAlarm();
+		existingAlarm.setMessage("");
+		existingAlarm.setEmailed(NEEDS_EMAIL);
+
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(existingAlarm));
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.alarmConditionDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, newContent);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository)
+				.update(argThat(alarm -> alarm.getMessage().equals(newContent) && alarm.getLastUpdate() > 0));
+	}
+
+	@Test
+	void testFaultDetected_withResolvedExistingAlarm_createsNewFault() {
+		String content = "Device fault detected";
+		Alarm resolvedAlarm = createTestAlarm();
+		resolvedAlarm.setState(RESOLVED);
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(resolvedAlarm));
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.empty());
+
+		Optional<Alarm> result = alarmComponent.faultDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository)
+				.update(argThat(alarm -> alarm.getEmailed() == DONT_EMAIL
+						&& alarm.getState() == ACTIVE
+						&& !alarm.getAlarmId().equals(ALARM_ID)));
+	}
+
+	@Test
+	void testAlarmConditionDetected_withResolvedExistingAlarm_createsNewAlarm() {
+		String content = "Alarm condition detected";
+		Alarm resolvedAlarm = createTestAlarm();
+		resolvedAlarm.setState(RESOLVED);
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(resolvedAlarm));
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.alarmConditionDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository)
+				.update(argThat(alarm -> alarm.getState() == ACTIVE
+						&& alarm.getMessage().equals(content)
+						&& !alarm.getAlarmId().equals(ALARM_ID)));
+	}
+
+	@Test
+	void testFilterAlarms_withBlankSiteId_andBlankDeviceId_returnsAllCustomerAlarms() {
+		List<Alarm> expectedAlarms = List.of(createTestAlarm());
+		when(mockRepository.findAlarms(CUSTOMER_ID)).thenReturn(expectedAlarms);
+
+		List<Alarm> result = alarmComponent.filterAlarms(CUSTOMER_ID, null, null);
+
+		assertEquals(expectedAlarms, result);
+		verify(mockRepository).findAlarms(CUSTOMER_ID);
+	}
+
+	@Test
+	void testGetMostRecentAlarm_returnsEmpty() {
+		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.empty());
+
+		Optional<Alarm> result = alarmComponent.getMostRecentAlarm(DEVICE_ID);
+
+		assertFalse(result.isPresent());
+	}
+
+	@Test
+	void testCleanupOldAlarms_deletesOnlyOldAlarms() {
+		Alarm recentResolvedAlarm = createTestAlarm();
+		recentResolvedAlarm.setState(RESOLVED);
+		recentResolvedAlarm.setStartDate(System.currentTimeMillis());
+
+		when(mockRepository.findAlarmsByStateAndDateLessThan(eq(RESOLVED), anyLong()))
+				.thenReturn(Collections.emptyList());
+		when(mockRepository.findAlarmsByStateAndDateLessThan(eq(ACTIVE), anyLong()))
+				.thenReturn(Collections.emptyList());
+
+		alarmComponent.cleanupOldAlarms();
+
+		verify(mockRepository).findAlarmsByStateAndDateLessThan(eq(RESOLVED), anyLong());
+		verify(mockRepository).findAlarmsByStateAndDateLessThan(eq(ACTIVE), anyLong());
+		verify(mockRepository, never()).delete(any(Alarm.class));
+	}
+
+	@Test
+	void testResolveActiveAlarms_withBothNoPowerAndNotDaylight_doesNotResolveNonNoDataAlarm() {
+		DeviceData deviceData = createValidDeviceData();
+		deviceData.setDaylight(false);
+		deviceData.setTotalRealPower(0.0f);
+		Alarm activeAlarm = createTestAlarm();
+		activeAlarm.setMessage("Some other error");
+		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+
+		alarmComponent.resolveActiveAlarms(deviceData);
+
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
+		verify(mockRepository, never()).update(any(Alarm.class));
+	}
+
+	@Test
+	void testUpdateAlarm_withValidAlarmButRepositoryReturnsEmpty_returnsEmpty() {
+		Alarm alarm = createTestAlarm();
+		when(mockRepository.update(alarm)).thenReturn(Optional.empty());
+
+		Optional<Alarm> result = alarmComponent.updateAlarm(alarm);
+
+		assertFalse(result.isPresent());
+		verify(mockRepository).update(alarm);
+	}
+
+	@Test
+	void testFindAlarmsByDevice_withNoAlarms_returnsEmptyList() {
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(Collections.emptyList());
+
+		List<Alarm> result = alarmComponent.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID);
+
+		assertTrue(result.isEmpty());
+		verify(mockRepository).findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID);
+	}
+
+	@Test
+	void testFindAlarmsBySite_withNoAlarms_returnsEmptyList() {
+		when(mockRepository.findAlarmsBySite(CUSTOMER_ID, SITE_ID)).thenReturn(Collections.emptyList());
+
+		List<Alarm> result = alarmComponent.findAlarmsBySite(CUSTOMER_ID, SITE_ID);
+
+		assertTrue(result.isEmpty());
+		verify(mockRepository).findAlarmsBySite(CUSTOMER_ID, SITE_ID);
+	}
+
+	@Test
+	void testGetAlarms_withNoAlarms_returnsEmptyList() {
+		when(mockRepository.findAlarms(CUSTOMER_ID)).thenReturn(Collections.emptyList());
+
+		List<Alarm> result = alarmComponent.getAlarms(CUSTOMER_ID);
+
+		assertTrue(result.isEmpty());
+		verify(mockRepository).findAlarms(CUSTOMER_ID);
+	}
+
+	@Test
+	void testFindNonEmailedAlarms_withNoAlarms_returnsEmptyList() {
+		when(mockRepository.findNonEmailedAlarms(CUSTOMER_ID)).thenReturn(Collections.emptyList());
+
+		List<Alarm> result = alarmComponent.findNonEmailedAlarms(CUSTOMER_ID);
+
+		assertTrue(result.isEmpty());
+		verify(mockRepository).findNonEmailedAlarms(CUSTOMER_ID);
+	}
+
+	@Test
+	void testFindNonEmailedActiveAlarms_withNoAlarms_returnsEmptyList() {
+		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(Collections.emptyList());
+
+		List<Alarm> result = alarmComponent.findNonEmailedActiveAlarms();
+
+		assertTrue(result.isEmpty());
+		verify(mockRepository).findNonEmailedActiveAlarms();
+	}
+
+	@Test
+	void testFindNonEmailedResolvedAlarms_withNoAlarms_returnsEmptyList() {
+		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(Collections.emptyList());
+
+		List<Alarm> result = alarmComponent.findNonEmailedResolvedAlarms();
+
+		assertTrue(result.isEmpty());
+		verify(mockRepository).findNonEmailedResolvedAlarms();
+	}
+
+	@Test
+	void testGetActiveAlarms_withNoAlarms_returnsEmptyList() {
+		when(mockRepository.findActiveAlarms()).thenReturn(Collections.emptyList());
+
+		List<Alarm> result = alarmComponent.getActiveAlarms();
+
+		assertTrue(result.isEmpty());
+		verify(mockRepository).findActiveAlarms();
+	}
+
+	@Test
+	void testClearDisabledResolvedAlarms_resolvesAlarmsForDisabledDevices() {
+		Alarm activeAlarm = createTestAlarm();
+		activeAlarm.setEmailed(System.currentTimeMillis());
+		Device disabledDevice = new Device();
+		disabledDevice.setId(DEVICE_ID);
+		disabledDevice.setSiteId(SITE_ID);
+		disabledDevice.setDisabled(true);
+
+		when(mockRepository.findActiveAlarms()).thenReturn(List.of(activeAlarm));
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(disabledDevice));
+		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(activeAlarm));
+
+		alarmComponent.clearDisabledResolvedAlarms();
+
+		verify(mockRepository).findActiveAlarms();
+		verify(mockDeviceComponent).findDeviceById(DEVICE_ID, CUSTOMER_ID);
+		verify(mockRepository)
+				.update(argThat(alarm -> alarm.getState() == RESOLVED
+						&& alarm.getEmailed() == RESOLVED_NOT_EMAILED
+						&& alarm.getEndDate() > 0));
+	}
+
+	@Test
+	void testClearDisabledResolvedAlarms_skipsEnabledDevices() {
+		Alarm activeAlarm = createTestAlarm();
+		Device enabledDevice = new Device();
+		enabledDevice.setId(DEVICE_ID);
+		enabledDevice.setDisabled(false);
+
+		when(mockRepository.findActiveAlarms()).thenReturn(List.of(activeAlarm));
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(enabledDevice));
+
+		alarmComponent.clearDisabledResolvedAlarms();
+
+		verify(mockRepository).findActiveAlarms();
+		verify(mockRepository, never()).update(any(Alarm.class));
+	}
+
+	@Test
+	void testIsLinkedDeviceErrored_withDeviceNotFound_returnsEmpty() {
+		DeviceData deviceData = createValidDeviceData();
+		alarmComponent.setUseRealLinkedDeviceErrored(true);
+
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.empty());
+
+		Optional<LinkedDevice> result = alarmComponent.isLinkedDeviceErrored(deviceData, null);
+
+		assertFalse(result.isPresent());
+		verify(mockDeviceComponent).findDeviceById(DEVICE_ID, CUSTOMER_ID);
+	}
+
+	@Test
+	void testIsLinkedDeviceErrored_withNoSerialNumber_returnsEmpty() {
+		DeviceData deviceData = createValidDeviceData();
+		Device device = new Device();
+		device.setSerialNumber("");
+		alarmComponent.setUseRealLinkedDeviceErrored(true);
+
+		Optional<LinkedDevice> result = alarmComponent.isLinkedDeviceErrored(deviceData, device);
+
+		assertFalse(result.isPresent());
+		verify(mockLinkedDeviceComponent, never()).queryBySerialNumber(anyString(), anyString());
+	}
+
+	@Test
+	void testIsLinkedDeviceErrored_withNoLinkedDevice_returnsEmpty() {
+		DeviceData deviceData = createValidDeviceData();
+		Device device = new Device();
+		device.setSerialNumber("serial-123");
+		alarmComponent.setUseRealLinkedDeviceErrored(true);
+
+		when(mockLinkedDeviceComponent.queryBySerialNumber("serial-123", CUSTOMER_ID))
+				.thenReturn(Optional.empty());
+
+		Optional<LinkedDevice> result = alarmComponent.isLinkedDeviceErrored(deviceData, device);
+
+		assertFalse(result.isPresent());
+		verify(mockLinkedDeviceComponent).queryBySerialNumber("serial-123", CUSTOMER_ID);
+	}
+
+	@Test
+	void testIsLinkedDeviceErrored_withNominalCriticalAlarm_returnsEmpty() {
+		DeviceData deviceData = createValidDeviceData();
+		Device device = new Device();
+		device.setSerialNumber("serial-123");
+		LinkedDevice linkedDevice = new LinkedDevice();
+		linkedDevice.setCriticalAlarm(ISolectriaConstants.NOMINAL);
+		linkedDevice.setInformativeAlarm(ISolectriaConstants.NOMINAL);
+		alarmComponent.setUseRealLinkedDeviceErrored(true);
+
+		when(mockLinkedDeviceComponent.queryBySerialNumber("serial-123", CUSTOMER_ID))
+				.thenReturn(Optional.of(linkedDevice));
+
+		Optional<LinkedDevice> result = alarmComponent.isLinkedDeviceErrored(deviceData, device);
+
+		assertFalse(result.isPresent());
+	}
+
+	@Test
+	void testIsLinkedDeviceErrored_withCriticalAlarm_returnsLinkedDevice() {
+		DeviceData deviceData = createValidDeviceData();
+		Device device = new Device();
+		device.setSerialNumber("serial-123");
+		LinkedDevice linkedDevice = new LinkedDevice();
+		linkedDevice.setCriticalAlarm(5);
+		linkedDevice.setInformativeAlarm(0);
+		alarmComponent.setUseRealLinkedDeviceErrored(true);
+
+		when(mockLinkedDeviceComponent.queryBySerialNumber("serial-123", CUSTOMER_ID))
+				.thenReturn(Optional.of(linkedDevice));
+
+		Optional<LinkedDevice> result = alarmComponent.isLinkedDeviceErrored(deviceData, device);
+
+		assertTrue(result.isPresent());
+		assertEquals(linkedDevice, result.get());
+	}
+
+	@Test
+	void testCheckDevice_withNullDevice_returnsEmpty() {
+		Optional<Alarm> result = alarmComponent.checkDevice(null);
+
+		assertFalse(result.isPresent());
+	}
+
+	@Test
+	void testCheckDevice_withDisabledDevice_returnsEmpty() {
+		Device device = new Device();
+		device.setId(DEVICE_ID);
+		device.setClientId(CUSTOMER_ID);
+		device.setSiteId(SITE_ID);
+		device.setDisabled(true);
+
+		when(mockOpenSearchComponent.getLastDeviceEntry(eq(DEVICE_ID), any())).thenReturn(new DeviceData());
+
+		Optional<Alarm> result = alarmComponent.checkDevice(device);
+
+		assertFalse(result.isPresent());
+	}
+
+	@Test
+	void testCheckDevice_withNoDeviceData_returnsEmpty() {
+		Device device = new Device();
+		device.setId(DEVICE_ID);
+		device.setClientId(CUSTOMER_ID);
+		device.setSiteId(SITE_ID);
+		device.setDisabled(false);
+
+		when(mockOpenSearchComponent.getLastDeviceEntry(eq(DEVICE_ID), any())).thenReturn(null);
+
+		Optional<Alarm> result = alarmComponent.checkDevice(device);
+
+		assertFalse(result.isPresent());
+	}
+
+	@Test
+	void testSendPendingNotifications_withNoAlarmsToSend_doesNothing() {
+		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(Collections.emptyList());
+		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(Collections.emptyList());
+
+		alarmComponent.sendPendingNotifications();
+
+		verify(mockNotificationComponent, never()).sendNotification(anyString(), anyString(), any());
+	}
+
+	@Test
+	void testSendPendingNotifications_withActiveAlarmsAndOpenSearchFailure_doesNotSend() {
+		Alarm alarm = createTestAlarm();
+		alarm.setEmailed(NEEDS_EMAIL);
+		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(List.of(alarm));
+		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(Collections.emptyList());
+		when(mockOpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes()).thenReturn(true);
+		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(alarm));
+
+		alarmComponent.sendPendingNotifications();
+
+		verify(mockNotificationComponent, never()).sendNotification(anyString(), anyString(), any());
+		verify(mockRepository).update(argThat(a -> a.getEmailed() > 0));
+	}
+
+	@Test
+	void testSendPendingNotifications_withActiveAlarms_updatesEmailedTimestamp() {
+		Alarm alarm = createTestAlarm();
+		alarm.setEmailed(NEEDS_EMAIL);
+		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(List.of(alarm));
+		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(Collections.emptyList());
+		when(mockOpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes()).thenReturn(false);
+		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(alarm));
+
+		alarmComponent.sendPendingNotifications();
+
+		verify(mockRepository).update(argThat(a -> a.getEmailed() > 0));
+	}
+
+	@Test
+	void testSendPendingNotifications_withResolvedAlarms_updatesResolveEmailedTimestamp() {
+		Alarm alarm = createTestAlarm();
+		alarm.setState(RESOLVED);
+		alarm.setResolveEmailed(NEEDS_EMAIL);
+		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(Collections.emptyList());
+		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(List.of(alarm));
+		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(alarm));
+
+		alarmComponent.sendPendingNotifications();
+
+		verify(mockRepository).update(argThat(a -> a.getResolveEmailed() > 0));
+	}
+
+	@Test
+	void testCheckDevice_withStaleDataAndHealthyOpenSearch_createsNoDataAlarm() {
+		Device device = new Device();
+		device.setId(DEVICE_ID);
+		device.setClientId(CUSTOMER_ID);
+		device.setSiteId(SITE_ID);
+		device.setDisabled(false);
+
+		DeviceData staleData = createValidDeviceData();
+		staleData.setDate(new Date(System.currentTimeMillis() - TimeConstants.HOUR * 2));
+
+		when(mockOpenSearchComponent.getLastDeviceEntry(eq(DEVICE_ID), any())).thenReturn(staleData);
+		when(mockOpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes()).thenReturn(false);
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(Collections.emptyList());
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.checkDevice(device);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository).update(argThat(alarm -> alarm.getMessage().contains(NO_DATA_RECENTLY)));
+	}
+
+	@Test
+	void testCheckDevice_withStaleDataButUnhealthyOpenSearch_returnsEmpty() {
+		Device device = new Device();
+		device.setId(DEVICE_ID);
+		device.setClientId(CUSTOMER_ID);
+		device.setSiteId(SITE_ID);
+		device.setDisabled(false);
+
+		DeviceData staleData = createValidDeviceData();
+		staleData.setDate(new Date(System.currentTimeMillis() - TimeConstants.HOUR * 2));
+
+		when(mockOpenSearchComponent.getLastDeviceEntry(eq(DEVICE_ID), any())).thenReturn(staleData);
+		when(mockOpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes()).thenReturn(true);
+
+		Optional<Alarm> result = alarmComponent.checkDevice(device);
+
+		assertFalse(result.isPresent());
+		verify(mockRepository, never()).update(any(Alarm.class));
+	}
+
+	@Test
+	void testQuickCheckDevices_withNoDeviceUpdates_returnsEmptyList() {
+		when(mockDeviceUpdateComponent.queryByTimeRange(anyLong())).thenReturn(Collections.emptyList());
+
+		List<Alarm> result = alarmComponent.quickCheckDevices();
+
+		assertTrue(result.isEmpty());
+	}
+
+	@Test
+	void testQuickCheckDevices_withDisabledDevice_skipsDevice() {
+		com.bigboxer23.solar_moon.data.DeviceUpdateData updateData =
+				new com.bigboxer23.solar_moon.data.DeviceUpdateData();
+		updateData.setDeviceId(DEVICE_ID);
+		updateData.setLastUpdate(System.currentTimeMillis());
+
+		Device device = new Device();
+		device.setId(DEVICE_ID);
+		device.setClientId(CUSTOMER_ID);
+		device.setSiteId(SITE_ID);
+		device.setDisabled(true);
+
+		when(mockDeviceUpdateComponent.queryByTimeRange(anyLong())).thenReturn(List.of(updateData));
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID)).thenReturn(Optional.of(device));
+
+		List<Alarm> result = alarmComponent.quickCheckDevices();
+
+		assertTrue(result.isEmpty());
+		verify(mockRepository, never()).findAlarmsByDevice(anyString(), anyString());
+	}
+
+	@Test
+	void testQuickCheckDevices_withDeviceNotFound_skipsDevice() {
+		com.bigboxer23.solar_moon.data.DeviceUpdateData updateData =
+				new com.bigboxer23.solar_moon.data.DeviceUpdateData();
+		updateData.setDeviceId(DEVICE_ID);
+		updateData.setLastUpdate(System.currentTimeMillis());
+
+		when(mockDeviceUpdateComponent.queryByTimeRange(anyLong())).thenReturn(List.of(updateData));
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID)).thenReturn(Optional.empty());
+
+		List<Alarm> result = alarmComponent.quickCheckDevices();
+
+		assertTrue(result.isEmpty());
+	}
+
+	@Test
+	void testQuickCheckDevices_atNight_skipsDevice() {
+		com.bigboxer23.solar_moon.data.DeviceUpdateData updateData =
+				new com.bigboxer23.solar_moon.data.DeviceUpdateData();
+		updateData.setDeviceId(DEVICE_ID);
+		updateData.setLastUpdate(System.currentTimeMillis());
+
+		Device device = new Device();
+		device.setId(DEVICE_ID);
+		device.setClientId(CUSTOMER_ID);
+		device.setSiteId(SITE_ID);
+		device.setDisabled(false);
+
+		Device siteDevice = new Device();
+		siteDevice.setId(SITE_ID);
+		siteDevice.setClientId(CUSTOMER_ID);
+		siteDevice.setLatitude(40.0);
+		siteDevice.setLongitude(-75.0);
+
+		when(mockDeviceUpdateComponent.queryByTimeRange(anyLong())).thenReturn(List.of(updateData));
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID)).thenReturn(Optional.of(device));
+		when(mockDeviceComponent.findDeviceById(SITE_ID, CUSTOMER_ID)).thenReturn(Optional.of(siteDevice));
+		when(mockLocationComponent.isDay(any(Date.class), anyDouble(), anyDouble()))
+				.thenReturn(Optional.of(false));
+
+		List<Alarm> result = alarmComponent.quickCheckDevices();
+
+		assertTrue(result.isEmpty());
+	}
+
+	@Test
+	void testQuickCheckDevices_duringDayWithNoUpdates_createsAlarm() {
+		com.bigboxer23.solar_moon.data.DeviceUpdateData updateData =
+				new com.bigboxer23.solar_moon.data.DeviceUpdateData();
+		updateData.setDeviceId(DEVICE_ID);
+		updateData.setLastUpdate(System.currentTimeMillis());
+
+		Device device = new Device();
+		device.setId(DEVICE_ID);
+		device.setClientId(CUSTOMER_ID);
+		device.setSiteId(SITE_ID);
+		device.setDisabled(false);
+
+		Device siteDevice = new Device();
+		siteDevice.setId(SITE_ID);
+		siteDevice.setClientId(CUSTOMER_ID);
+		siteDevice.setLatitude(40.0);
+		siteDevice.setLongitude(-75.0);
+
+		Alarm alarm = createTestAlarm();
+
+		when(mockDeviceUpdateComponent.queryByTimeRange(anyLong())).thenReturn(List.of(updateData));
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID)).thenReturn(Optional.of(device));
+		when(mockDeviceComponent.findDeviceById(SITE_ID, CUSTOMER_ID)).thenReturn(Optional.of(siteDevice));
+		when(mockLocationComponent.isDay(any(Date.class), anyDouble(), anyDouble()))
+				.thenReturn(Optional.of(true));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(Collections.emptyList());
+		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(alarm));
+
+		List<Alarm> result = alarmComponent.quickCheckDevices();
+
+		assertFalse(result.isEmpty());
+		verify(mockRepository).update(argThat(a -> a.getMessage().contains(NO_DATA_RECENTLY)));
+	}
+
+	@Test
+	void testIsDeviceOK_withNotDaylight_returnsTrue() {
+		Device device = new Device();
+		DeviceData deviceData = createValidDeviceData();
+		deviceData.setDaylight(false);
+
+		boolean result = alarmComponent.isDeviceOK(device, deviceData, true);
+
+		assertTrue(result);
+	}
+
+	@Test
+	void testIsDeviceOK_withGoodPower_returnsTrue() {
+		Device device = new Device();
+		DeviceData deviceData = createValidDeviceData();
+		deviceData.setTotalRealPower(5.0f);
+
+		boolean result = alarmComponent.isDeviceOK(device, deviceData, true);
+
+		assertTrue(result);
+	}
+
+	@Test
+	void testIsDeviceOK_withUnhealthyOpenSearch_returnsTrue() {
+		Device device = new Device();
+		DeviceData deviceData = createValidDeviceData();
+		deviceData.setTotalRealPower(0.0f);
+
+		boolean result = alarmComponent.isDeviceOK(device, deviceData, false);
+
+		assertTrue(result);
+	}
+
+	@Test
+	void testIsDeviceOK_withSiteDevice_returnsTrue() {
+		Device device = new Device();
+		device.setIsSite("1");
+		DeviceData deviceData = createValidDeviceData();
+		deviceData.setTotalRealPower(0.0f);
+
+		boolean result = alarmComponent.isDeviceOK(device, deviceData, true);
+
+		assertTrue(result);
+	}
+
+	@Test
+	void testResolveActiveAlarms_withOldData_doesNotResolve() {
+		DeviceData deviceData = createValidDeviceData();
+		deviceData.setDate(new Date(System.currentTimeMillis() - TimeConstants.HOUR * 2));
+
+		alarmComponent.resolveActiveAlarms(deviceData);
+
+		verify(mockDeviceUpdateComponent, never()).update(anyString());
+		verify(mockRepository, never()).findMostRecentAlarm(anyString());
+	}
+
+	@Test
+	void testResolveActiveAlarms_withNullDate_doesNotResolve() {
+		DeviceData deviceData = createValidDeviceData();
+		deviceData.setDate(null);
+
+		alarmComponent.resolveActiveAlarms(deviceData);
+
+		verify(mockDeviceUpdateComponent, never()).update(anyString());
+		verify(mockRepository, never()).findMostRecentAlarm(anyString());
+	}
+
+	@Test
+	void testResolveActiveAlarms_withNoActiveAlarm_updatesDeviceButDoesNotResolve() {
+		DeviceData deviceData = createValidDeviceData();
+		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.empty());
+
+		alarmComponent.resolveActiveAlarms(deviceData);
+
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
+		verify(mockRepository, never()).update(any(Alarm.class));
+	}
+
+	@Test
+	void testResolveActiveAlarms_withResolvedAlarm_doesNotResolveAgain() {
+		DeviceData deviceData = createValidDeviceData();
+		Alarm resolvedAlarm = createTestAlarm();
+		resolvedAlarm.setState(RESOLVED);
+		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(resolvedAlarm));
+
+		alarmComponent.resolveActiveAlarms(deviceData);
+
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
+		verify(mockRepository, never()).update(any(Alarm.class));
+	}
+
+	@Test
+	void testFaultDetected_withExistingActiveFault_updatesExistingAlarm() {
+		String content = "Device fault detected";
+		Alarm existingFault = createTestAlarm();
+		existingFault.setMessage(content);
+		existingFault.setEmailed(DONT_EMAIL);
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(existingFault));
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.faultDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository)
+				.update(argThat(alarm -> alarm.getAlarmId().equals(ALARM_ID) && alarm.getLastUpdate() > 0));
+	}
+
+	@Test
+	void testAlarmConditionDetected_withBlankContent_createsAlarmWithBlankMessage() {
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(Collections.emptyList());
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.alarmConditionDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, "");
+
+		assertTrue(result.isPresent());
+		verify(mockRepository).update(argThat(alarm -> alarm.getMessage().isEmpty()));
+	}
+
+	@Test
+	void testAlarmConditionDetected_withNullContent_createsAlarmWithNullMessage() {
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(Collections.emptyList());
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.alarmConditionDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, null);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository).update(any(Alarm.class));
+	}
+
+	@Test
+	void testFaultDetected_withBlankContent_createsAlarmWithBlankMessage() {
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(Collections.emptyList());
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.faultDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, "");
+
+		assertTrue(result.isPresent());
+		verify(mockRepository).update(argThat(alarm -> alarm.getMessage().isEmpty()));
+	}
+
+	@Test
+	void testFilterAlarms_withOnlyDeviceId_returnsDeviceAlarms() {
+		List<Alarm> expectedAlarms = List.of(createTestAlarm());
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(expectedAlarms);
+
+		List<Alarm> result = alarmComponent.filterAlarms(CUSTOMER_ID, null, DEVICE_ID);
+
+		assertEquals(expectedAlarms, result);
+		verify(mockRepository).findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID);
+	}
+
+	@Test
+	void testFilterAlarms_withOnlySiteId_returnsSiteAlarms() {
+		List<Alarm> expectedAlarms = List.of(createTestAlarm());
+		when(mockRepository.findAlarmsBySite(CUSTOMER_ID, SITE_ID)).thenReturn(expectedAlarms);
+
+		List<Alarm> result = alarmComponent.filterAlarms(CUSTOMER_ID, SITE_ID, null);
+
+		assertEquals(expectedAlarms, result);
+		verify(mockRepository).findAlarmsBySite(CUSTOMER_ID, SITE_ID);
 	}
 
 	private DeviceData createValidDeviceData() {
