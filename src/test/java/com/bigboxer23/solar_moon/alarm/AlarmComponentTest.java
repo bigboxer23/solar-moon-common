@@ -587,6 +587,188 @@ public class AlarmComponentTest implements IAlarmConstants {
 		assertFalse(result.isPresent());
 	}
 
+	@Test
+	void testAlarmConditionDetected_duringMaintenanceMode_returnsEmpty() {
+		String content = "Alarm condition detected";
+		when(mockMaintenanceComponent.isInMaintenanceMode()).thenReturn(true);
+
+		Optional<Alarm> result = alarmComponent.alarmConditionDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
+
+		assertFalse(result.isPresent());
+		verify(mockRepository, never()).update(any(Alarm.class));
+		verify(mockMaintenanceComponent).isInMaintenanceMode();
+	}
+
+	@Test
+	void testAlarmConditionDetected_withDeviceNotificationsDisabled_doesNotSetEmailFlag() {
+		String content = "Alarm condition detected";
+		Alarm existingFault = createTestAlarm();
+		existingFault.setEmailed(DONT_EMAIL);
+		existingFault.setMessage("");
+		Device device = new Device();
+		device.setNotificationsDisabled(true);
+
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(existingFault));
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(device));
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.alarmConditionDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository)
+				.update(argThat(alarm ->
+						alarm.getEmailed() == DONT_EMAIL && alarm.getMessage().equals(content)));
+	}
+
+	@Test
+	void testGetNewAlarm_withNotificationsDisabled_doesNotSetEmailFlag() {
+		String content = "Test alarm content";
+		Device device = new Device();
+		device.setNotificationsDisabled(true);
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(device));
+
+		Alarm result = alarmComponent.getNewAlarm(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
+
+		assertNotNull(result);
+		assertEquals(CUSTOMER_ID, result.getCustomerId());
+		assertEquals(DEVICE_ID, result.getDeviceId());
+		assertEquals(SITE_ID, result.getSiteId());
+		assertEquals(content, result.getMessage());
+		assertEquals(ACTIVE, result.getState());
+		assertNotEquals(NEEDS_EMAIL, result.getEmailed());
+	}
+
+	@Test
+	void testFaultDetected_withDeviceNotificationsDisabled_keepsEmailFlagAsDontEmail() {
+		String content = "Device fault detected";
+		Device device = new Device();
+		device.setNotificationsDisabled(true);
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(Collections.emptyList());
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(device));
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.faultDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository).update(argThat(alarm -> alarm.getEmailed() == DONT_EMAIL && alarm.getState() == ACTIVE));
+	}
+
+	@Test
+	void testResolveActiveAlarms_withActiveAlarmButLowPower_doesNotResolve() {
+		DeviceData deviceData = createValidDeviceData();
+		deviceData.setTotalRealPower(0.05f);
+		Alarm activeAlarm = createTestAlarm();
+		activeAlarm.setMessage("Low power error");
+		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+
+		alarmComponent.resolveActiveAlarms(deviceData);
+
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
+		verify(mockRepository, never()).update(any(Alarm.class));
+	}
+
+	@Test
+	void testResolveActiveAlarms_withValidDataAndActiveAlarm_resolvesAlarm() {
+		DeviceData deviceData = createValidDeviceData();
+		Alarm activeAlarm = createTestAlarm();
+		activeAlarm.setEmailed(System.currentTimeMillis());
+		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(activeAlarm));
+
+		alarmComponent.resolveActiveAlarms(deviceData);
+
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
+		verify(mockRepository)
+				.update(argThat(alarm -> alarm.getState() == RESOLVED
+						&& alarm.getResolveEmailed() == NEEDS_EMAIL
+						&& alarm.getEndDate() > 0));
+	}
+
+	@Test
+	void testUpdateAlarm_withEmptyCustomerId_doesNotUpdate() {
+		Alarm alarm = createTestAlarm();
+		alarm.setCustomerId("");
+
+		Optional<Alarm> result = alarmComponent.updateAlarm(alarm);
+
+		assertFalse(result.isPresent());
+		verify(mockRepository, never()).update(any(Alarm.class));
+	}
+
+	@Test
+	void testUpdateAlarm_withEmptyAlarmId_doesNotUpdate() {
+		Alarm alarm = createTestAlarm();
+		alarm.setAlarmId("");
+
+		Optional<Alarm> result = alarmComponent.updateAlarm(alarm);
+
+		assertFalse(result.isPresent());
+		verify(mockRepository, never()).update(any(Alarm.class));
+	}
+
+	@Test
+	void testAlarmConditionDetected_withExistingAlarmWithMessage_doesNotOverwriteMessage() {
+		String newContent = "New alarm content";
+		Alarm existingAlarm = createTestAlarm();
+		existingAlarm.setMessage("Existing message");
+		existingAlarm.setEmailed(NEEDS_EMAIL);
+
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(existingAlarm));
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.alarmConditionDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, newContent);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository)
+				.update(argThat(alarm -> alarm.getMessage().equals("Existing message") && alarm.getLastUpdate() > 0));
+	}
+
+	@Test
+	void testFilterAlarms_withNullCustomerId_returnsEmptyList() {
+		List<Alarm> result = alarmComponent.filterAlarms(null, SITE_ID, DEVICE_ID);
+
+		assertTrue(result.isEmpty());
+		verify(mockRepository, never()).findAlarmsByDevice(anyString(), anyString());
+	}
+
+	@Test
+	void testResolveActiveAlarms_notDaylightButIsNoDataAlarm_resolvesAlarm() {
+		DeviceData deviceData = createValidDeviceData();
+		deviceData.setDaylight(false);
+		Alarm activeAlarm = createTestAlarm();
+		activeAlarm.setMessage(NO_DATA_RECENTLY + "12345");
+		activeAlarm.setEmailed(System.currentTimeMillis());
+		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(activeAlarm));
+
+		alarmComponent.resolveActiveAlarms(deviceData);
+
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
+		verify(mockRepository)
+				.update(argThat(alarm -> alarm.getState() == RESOLVED
+						&& alarm.getResolveEmailed() == NEEDS_EMAIL
+						&& alarm.getEndDate() > 0));
+	}
+
+	@Test
+	void testResolveActiveAlarms_noPowerButIsNoDataAlarm_resolvesAlarm() {
+		DeviceData deviceData = createValidDeviceData();
+		deviceData.setTotalRealPower(0.0f);
+		Alarm activeAlarm = createTestAlarm();
+		activeAlarm.setMessage(NO_DATA_RECENTLY + "12345");
+		activeAlarm.setEmailed(System.currentTimeMillis());
+		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(activeAlarm));
+
+		alarmComponent.resolveActiveAlarms(deviceData);
+
+		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
+		verify(mockRepository)
+				.update(argThat(alarm -> alarm.getState() == RESOLVED
+						&& alarm.getResolveEmailed() == NEEDS_EMAIL
+						&& alarm.getEndDate() > 0));
+	}
+
 	private DeviceData createValidDeviceData() {
 		DeviceData deviceData = new DeviceData();
 		deviceData.setDeviceId(DEVICE_ID);
