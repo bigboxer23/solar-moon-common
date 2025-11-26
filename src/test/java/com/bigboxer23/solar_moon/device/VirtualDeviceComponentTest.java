@@ -1,20 +1,25 @@
 package com.bigboxer23.solar_moon.device;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
+import com.bigboxer23.solar_moon.dynamodb.DynamoLockUtils;
 import com.bigboxer23.solar_moon.location.LocationComponent;
 import com.bigboxer23.solar_moon.search.OpenSearchComponent;
 import com.bigboxer23.solar_moon.weather.PirateWeatherComponent;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.opensearch.client.ResponseException;
 
 @ExtendWith(MockitoExtension.class)
 public class VirtualDeviceComponentTest {
@@ -38,6 +43,7 @@ public class VirtualDeviceComponentTest {
 
 	private static final String CUSTOMER_ID = "test-customer-123";
 	private static final String DEVICE_ID = "device-123";
+	private static final String VIRTUAL_DEVICE_ID = "virtual-device-123";
 	private static final String SITE_ID = "site-123";
 
 	private static class TestableVirtualDeviceComponent extends VirtualDeviceComponent {
@@ -66,12 +72,12 @@ public class VirtualDeviceComponentTest {
 		}
 
 		@Override
-		protected com.bigboxer23.solar_moon.search.OpenSearchComponent getOSComponent() {
+		protected OpenSearchComponent getOSComponent() {
 			return osComponent;
 		}
 
 		@Override
-		protected com.bigboxer23.solar_moon.location.LocationComponent getLocationComponent() {
+		protected LocationComponent getLocationComponent() {
 			return locationComponent;
 		}
 
@@ -94,12 +100,6 @@ public class VirtualDeviceComponentTest {
 				mockLocationComponent,
 				mockWeatherComponent,
 				mockLinkedDeviceComponent);
-		lenient()
-				.when(mockDeviceComponent.getDevicesBySiteId(anyString(), anyString()))
-				.thenReturn(Collections.emptyList());
-		lenient()
-				.when(mockOSComponent.getSiteDevicesCountByTimePeriod(anyString(), anyString(), any(Date.class)))
-				.thenReturn(0);
 	}
 
 	@Test
@@ -108,97 +108,445 @@ public class VirtualDeviceComponentTest {
 		deviceData.setSiteId(DeviceComponent.NO_SITE);
 
 		virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+		verifyNoInteractions(mockDeviceComponent);
+		verifyNoInteractions(mockOSComponent);
 	}
 
 	@Test
-	void testHandleVirtualDevice_withValidData_handlesCorrectly() {
+	void testHandleVirtualDevice_withNoVirtualDevice_doesNothing() {
 		DeviceData deviceData = createDeviceData();
+		Device physicalDevice = createPhysicalDevice("physical-1");
+
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID))
+				.thenReturn(Collections.singletonList(physicalDevice));
 
 		virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+		verify(mockDeviceComponent).getDevicesBySiteId(CUSTOMER_ID, SITE_ID);
+		verifyNoInteractions(mockOSComponent);
 	}
 
 	@Test
-	void testHandleVirtualDevice_withEmptySiteId_doesNotProcess() {
+	void testHandleVirtualDevice_withMismatchedDeviceCount_doesNothing() throws Exception {
 		DeviceData deviceData = createDeviceData();
-		deviceData.setSiteId("");
+		Device virtualDevice = createVirtualDevice();
+		Device physicalDevice1 = createPhysicalDevice("physical-1");
+		Device physicalDevice2 = createPhysicalDevice("physical-2");
+
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID))
+				.thenReturn(Arrays.asList(virtualDevice, physicalDevice1, physicalDevice2));
+		when(mockOSComponent.getSiteDevicesCountByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+				.thenReturn(1);
 
 		virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+		verify(mockDeviceComponent).getDevicesBySiteId(CUSTOMER_ID, SITE_ID);
+		verify(mockOSComponent).getSiteDevicesCountByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class));
+		verify(mockOSComponent, never()).logData(any(), anyList());
 	}
 
 	@Test
-	void testHandleVirtualDevice_withDifferentSiteIds_processesSeparately() {
-		DeviceData deviceData1 = createDeviceData();
-		deviceData1.setSiteId("site-1");
-
-		DeviceData deviceData2 = createDeviceData();
-		deviceData2.setSiteId("site-2");
-
-		virtualDeviceComponent.handleVirtualDevice(deviceData1);
-		virtualDeviceComponent.handleVirtualDevice(deviceData2);
-	}
-
-	@Test
-	void testHandleVirtualDevice_withMultipleDevicesInSite_aggregatesCorrectly() {
+	void testHandleVirtualDevice_withDisabledDevices_countsOnlyEnabled() throws Exception {
 		DeviceData deviceData = createDeviceData();
-		deviceData.setEnergyConsumed(100.0f);
-		deviceData.setTotalRealPower(50.0f);
+		Device virtualDevice = createVirtualDevice();
+		Device physicalDevice1 = createPhysicalDevice("physical-1");
+		Device physicalDevice2 = createPhysicalDevice("physical-2");
+		physicalDevice2.setDisabled(true);
 
-		virtualDeviceComponent.handleVirtualDevice(deviceData);
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID))
+				.thenReturn(Arrays.asList(virtualDevice, physicalDevice1, physicalDevice2));
+		when(mockOSComponent.getSiteDevicesCountByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+				.thenReturn(1);
+
+		try (MockedStatic<DynamoLockUtils> mockLockUtils = mockStatic(DynamoLockUtils.class)) {
+			mockLockUtils
+					.when(() -> DynamoLockUtils.doLockedCommand(anyString(), any(Runnable.class)))
+					.thenAnswer(invocation -> {
+						Runnable command = invocation.getArgument(1);
+						command.run();
+						return null;
+					});
+
+			DeviceData deviceData1 = createDeviceData();
+			deviceData1.setEnergyConsumed(50f);
+			deviceData1.setTotalRealPower(25f);
+			deviceData1.setTotalEnergyConsumed(500f);
+
+			when(mockOSComponent.getDevicesForSiteByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+					.thenReturn(Collections.singletonList(deviceData1));
+
+			virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+			verify(mockOSComponent).logData(any(Date.class), anyList());
+		}
 	}
 
 	@Test
-	void testHandleVirtualDevice_withNegativeValues_handlesCorrectly() {
+	void testHandleVirtualDevice_withValidData_aggregatesCorrectly() throws Exception {
 		DeviceData deviceData = createDeviceData();
-		deviceData.setEnergyConsumed(-10.0f);
-		deviceData.setTotalRealPower(-5.0f);
+		Device virtualDevice = createVirtualDevice();
+		Device physicalDevice1 = createPhysicalDevice("physical-1");
 
-		virtualDeviceComponent.handleVirtualDevice(deviceData);
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID))
+				.thenReturn(Arrays.asList(virtualDevice, physicalDevice1));
+		when(mockOSComponent.getSiteDevicesCountByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+				.thenReturn(1);
+
+		try (MockedStatic<DynamoLockUtils> mockLockUtils = mockStatic(DynamoLockUtils.class)) {
+			mockLockUtils
+					.when(() -> DynamoLockUtils.doLockedCommand(anyString(), any(Runnable.class)))
+					.thenAnswer(invocation -> {
+						Runnable command = invocation.getArgument(1);
+						command.run();
+						return null;
+					});
+
+			DeviceData deviceData1 = createDeviceData();
+			deviceData1.setEnergyConsumed(50f);
+			deviceData1.setTotalRealPower(25f);
+			deviceData1.setTotalEnergyConsumed(500f);
+
+			DeviceData deviceData2 = createDeviceData();
+			deviceData2.setEnergyConsumed(30f);
+			deviceData2.setTotalRealPower(15f);
+			deviceData2.setTotalEnergyConsumed(300f);
+
+			when(mockOSComponent.getDevicesForSiteByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+					.thenReturn(Arrays.asList(deviceData1, deviceData2));
+
+			virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+			verify(mockLocationComponent).addLocationData(any(DeviceData.class), eq(virtualDevice));
+			verify(mockWeatherComponent).addWeatherData(any(DeviceData.class), eq(virtualDevice));
+			verify(mockLinkedDeviceComponent).addLinkedDeviceDataVirtual(any(DeviceData.class), anyList());
+			verify(mockOSComponent).logData(any(Date.class), argThat(list -> {
+				assertNotNull(list);
+				assertEquals(1, list.size());
+				DeviceData logged = list.getFirst();
+				assertEquals(80f, logged.getEnergyConsumed());
+				assertEquals(40f, logged.getTotalRealPower());
+				assertEquals(800f, logged.getTotalEnergyConsumed());
+				assertTrue(logged.isVirtual());
+				assertEquals(VIRTUAL_DEVICE_ID, logged.getDeviceId());
+				return true;
+			}));
+		}
 	}
 
 	@Test
-	void testHandleVirtualDevice_withZeroValues_handlesCorrectly() {
+	void testHandleVirtualDevice_withSubtractionMode_subtractsValues() throws Exception {
 		DeviceData deviceData = createDeviceData();
-		deviceData.setEnergyConsumed(0.0f);
-		deviceData.setTotalRealPower(0.0f);
+		Device virtualDevice = createVirtualDevice();
+		virtualDevice.setSubtraction(true);
+		Device physicalDevice1 = createPhysicalDevice("physical-1");
 
-		virtualDeviceComponent.handleVirtualDevice(deviceData);
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID))
+				.thenReturn(Arrays.asList(virtualDevice, physicalDevice1));
+		when(mockOSComponent.getSiteDevicesCountByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+				.thenReturn(1);
+
+		try (MockedStatic<DynamoLockUtils> mockLockUtils = mockStatic(DynamoLockUtils.class)) {
+			mockLockUtils
+					.when(() -> DynamoLockUtils.doLockedCommand(anyString(), any(Runnable.class)))
+					.thenAnswer(invocation -> {
+						Runnable command = invocation.getArgument(1);
+						command.run();
+						return null;
+					});
+
+			DeviceData deviceData1 = createDeviceData();
+			deviceData1.setEnergyConsumed(50f);
+			deviceData1.setTotalRealPower(25f);
+			deviceData1.setTotalEnergyConsumed(500f);
+
+			DeviceData deviceData2 = createDeviceData();
+			deviceData2.setEnergyConsumed(30f);
+			deviceData2.setTotalRealPower(15f);
+			deviceData2.setTotalEnergyConsumed(300f);
+
+			when(mockOSComponent.getDevicesForSiteByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+					.thenReturn(Arrays.asList(deviceData1, deviceData2));
+
+			virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+			verify(mockOSComponent).logData(any(Date.class), argThat(list -> {
+				assertNotNull(list);
+				assertEquals(1, list.size());
+				DeviceData logged = list.getFirst();
+				assertEquals(20f, logged.getEnergyConsumed());
+				assertEquals(10f, logged.getTotalRealPower());
+				assertEquals(200f, logged.getTotalEnergyConsumed());
+				return true;
+			}));
+		}
 	}
 
 	@Test
-	void testHandleVirtualDevice_withLargeValues_handlesCorrectly() {
+	void testHandleVirtualDevice_withNegativeValues_clampsToZero() throws Exception {
 		DeviceData deviceData = createDeviceData();
-		deviceData.setEnergyConsumed(999999.99f);
-		deviceData.setTotalRealPower(888888.88f);
+		Device virtualDevice = createVirtualDevice();
+		Device physicalDevice1 = createPhysicalDevice("physical-1");
 
-		virtualDeviceComponent.handleVirtualDevice(deviceData);
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID))
+				.thenReturn(Arrays.asList(virtualDevice, physicalDevice1));
+		when(mockOSComponent.getSiteDevicesCountByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+				.thenReturn(1);
+
+		try (MockedStatic<DynamoLockUtils> mockLockUtils = mockStatic(DynamoLockUtils.class)) {
+			mockLockUtils
+					.when(() -> DynamoLockUtils.doLockedCommand(anyString(), any(Runnable.class)))
+					.thenAnswer(invocation -> {
+						Runnable command = invocation.getArgument(1);
+						command.run();
+						return null;
+					});
+
+			DeviceData deviceData1 = createDeviceData();
+			deviceData1.setEnergyConsumed(-50f);
+			deviceData1.setTotalRealPower(-25f);
+			deviceData1.setTotalEnergyConsumed(-500f);
+
+			when(mockOSComponent.getDevicesForSiteByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+					.thenReturn(Collections.singletonList(deviceData1));
+
+			virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+			verify(mockOSComponent).logData(any(Date.class), argThat(list -> {
+				assertNotNull(list);
+				assertEquals(1, list.size());
+				DeviceData logged = list.getFirst();
+				assertEquals(0f, logged.getEnergyConsumed());
+				assertEquals(0f, logged.getTotalRealPower());
+				assertEquals(0f, logged.getTotalEnergyConsumed());
+				return true;
+			}));
+		}
 	}
 
 	@Test
-	void testHandleVirtualDevice_withSiteDevice_setsCorrectly() {
+	void testHandleVirtualDevice_withDeviceSite_setsSiteFlag() throws Exception {
 		DeviceData deviceData = createDeviceData();
+		Device virtualDevice = createVirtualDevice();
+		virtualDevice.setIsSite("1");
+		Device physicalDevice1 = createPhysicalDevice("physical-1");
 
-		virtualDeviceComponent.handleVirtualDevice(deviceData);
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID))
+				.thenReturn(Arrays.asList(virtualDevice, physicalDevice1));
+		when(mockOSComponent.getSiteDevicesCountByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+				.thenReturn(1);
+
+		try (MockedStatic<DynamoLockUtils> mockLockUtils = mockStatic(DynamoLockUtils.class)) {
+			mockLockUtils
+					.when(() -> DynamoLockUtils.doLockedCommand(anyString(), any(Runnable.class)))
+					.thenAnswer(invocation -> {
+						Runnable command = invocation.getArgument(1);
+						command.run();
+						return null;
+					});
+
+			DeviceData deviceData1 = createDeviceData();
+			deviceData1.setEnergyConsumed(50f);
+
+			when(mockOSComponent.getDevicesForSiteByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+					.thenReturn(Collections.singletonList(deviceData1));
+
+			virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+			verify(mockOSComponent).logData(any(Date.class), argThat(list -> {
+				assertNotNull(list);
+				assertEquals(1, list.size());
+				DeviceData logged = list.getFirst();
+				assertTrue(logged.isSite());
+				assertTrue(logged.isVirtual());
+				return true;
+			}));
+		}
 	}
 
 	@Test
-	void testHandleVirtualDevice_withMultipleConcurrentRequests_handlesCorrectly() {
-		DeviceData deviceData1 = createDeviceData();
-		DeviceData deviceData2 = createDeviceData();
+	void testHandleVirtualDevice_withNoVirtualDeviceFound_logsWarning() throws Exception {
+		DeviceData deviceData = createDeviceData();
+		Device virtualDevice = createVirtualDevice();
+		Device physicalDevice1 = createPhysicalDevice("physical-1");
 
-		virtualDeviceComponent.handleVirtualDevice(deviceData1);
-		virtualDeviceComponent.handleVirtualDevice(deviceData2);
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID))
+				.thenReturn(Arrays.asList(virtualDevice, physicalDevice1))
+				.thenReturn(Collections.singletonList(physicalDevice1));
+		when(mockOSComponent.getSiteDevicesCountByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+				.thenReturn(1);
+
+		try (MockedStatic<DynamoLockUtils> mockLockUtils = mockStatic(DynamoLockUtils.class)) {
+			mockLockUtils
+					.when(() -> DynamoLockUtils.doLockedCommand(anyString(), any(Runnable.class)))
+					.thenAnswer(invocation -> {
+						Runnable command = invocation.getArgument(1);
+						command.run();
+						return null;
+					});
+
+			virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+			verify(mockOSComponent, never()).logData(any(), anyList());
+		}
 	}
 
 	@Test
-	void testHandleVirtualDevice_withDifferentTimestamps_processesEach() {
-		DeviceData deviceData1 = createDeviceData();
-		deviceData1.setDate(new Date(System.currentTimeMillis() - 10000));
+	void testHandleVirtualDevice_withResponseException_logsError() throws Exception {
+		DeviceData deviceData = createDeviceData();
+		Device virtualDevice = createVirtualDevice();
+		Device physicalDevice1 = createPhysicalDevice("physical-1");
 
-		DeviceData deviceData2 = createDeviceData();
-		deviceData2.setDate(new Date(System.currentTimeMillis()));
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID))
+				.thenReturn(Arrays.asList(virtualDevice, physicalDevice1));
+		when(mockOSComponent.getSiteDevicesCountByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+				.thenReturn(1);
 
-		virtualDeviceComponent.handleVirtualDevice(deviceData1);
-		virtualDeviceComponent.handleVirtualDevice(deviceData2);
+		try (MockedStatic<DynamoLockUtils> mockLockUtils = mockStatic(DynamoLockUtils.class)) {
+			mockLockUtils
+					.when(() -> DynamoLockUtils.doLockedCommand(anyString(), any(Runnable.class)))
+					.thenAnswer(invocation -> {
+						Runnable command = invocation.getArgument(1);
+						command.run();
+						return null;
+					});
+
+			DeviceData deviceData1 = createDeviceData();
+			deviceData1.setEnergyConsumed(50f);
+
+			when(mockOSComponent.getDevicesForSiteByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+					.thenReturn(Collections.singletonList(deviceData1));
+			doThrow(ResponseException.class).when(mockOSComponent).logData(any(Date.class), anyList());
+
+			virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+			verify(mockOSComponent).logData(any(Date.class), anyList());
+		}
+	}
+
+	@Test
+	void testHandleVirtualDevice_filtersNegativeDeviceValues() throws Exception {
+		DeviceData deviceData = createDeviceData();
+		Device virtualDevice = createVirtualDevice();
+		Device physicalDevice1 = createPhysicalDevice("physical-1");
+
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID))
+				.thenReturn(Arrays.asList(virtualDevice, physicalDevice1));
+		when(mockOSComponent.getSiteDevicesCountByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+				.thenReturn(1);
+
+		try (MockedStatic<DynamoLockUtils> mockLockUtils = mockStatic(DynamoLockUtils.class)) {
+			mockLockUtils
+					.when(() -> DynamoLockUtils.doLockedCommand(anyString(), any(Runnable.class)))
+					.thenAnswer(invocation -> {
+						Runnable command = invocation.getArgument(1);
+						command.run();
+						return null;
+					});
+
+			DeviceData deviceData1 = createDeviceData();
+			deviceData1.setEnergyConsumed(100f);
+
+			DeviceData deviceData2 = createDeviceData();
+			deviceData2.setEnergyConsumed(-50f);
+
+			DeviceData deviceData3 = createDeviceData();
+			deviceData3.setEnergyConsumed(50f);
+
+			when(mockOSComponent.getDevicesForSiteByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+					.thenReturn(Arrays.asList(deviceData1, deviceData2, deviceData3));
+
+			virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+			verify(mockOSComponent).logData(any(Date.class), argThat(list -> {
+				assertNotNull(list);
+				assertEquals(1, list.size());
+				DeviceData logged = list.getFirst();
+				assertEquals(150f, logged.getEnergyConsumed());
+				return true;
+			}));
+		}
+	}
+
+	@Test
+	void testHandleVirtualDevice_withEmptyDeviceList_returnsNegativeOne() throws Exception {
+		DeviceData deviceData = createDeviceData();
+		Device virtualDevice = createVirtualDevice();
+		Device physicalDevice1 = createPhysicalDevice("physical-1");
+
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID))
+				.thenReturn(Arrays.asList(virtualDevice, physicalDevice1));
+		when(mockOSComponent.getSiteDevicesCountByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+				.thenReturn(1);
+
+		try (MockedStatic<DynamoLockUtils> mockLockUtils = mockStatic(DynamoLockUtils.class)) {
+			mockLockUtils
+					.when(() -> DynamoLockUtils.doLockedCommand(anyString(), any(Runnable.class)))
+					.thenAnswer(invocation -> {
+						Runnable command = invocation.getArgument(1);
+						command.run();
+						return null;
+					});
+
+			when(mockOSComponent.getDevicesForSiteByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+					.thenReturn(Collections.emptyList());
+
+			virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+			verify(mockOSComponent).logData(any(Date.class), argThat(list -> {
+				assertNotNull(list);
+				assertEquals(1, list.size());
+				DeviceData logged = list.getFirst();
+				assertEquals(0f, logged.getEnergyConsumed());
+				assertEquals(0f, logged.getTotalRealPower());
+				assertEquals(0f, logged.getTotalEnergyConsumed());
+				return true;
+			}));
+		}
+	}
+
+	@Test
+	void testHandleVirtualDevice_withAllNegativeValues_returnsNegativeOne() throws Exception {
+		DeviceData deviceData = createDeviceData();
+		Device virtualDevice = createVirtualDevice();
+		Device physicalDevice1 = createPhysicalDevice("physical-1");
+
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID))
+				.thenReturn(Arrays.asList(virtualDevice, physicalDevice1));
+		when(mockOSComponent.getSiteDevicesCountByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+				.thenReturn(1);
+
+		try (MockedStatic<DynamoLockUtils> mockLockUtils = mockStatic(DynamoLockUtils.class)) {
+			mockLockUtils
+					.when(() -> DynamoLockUtils.doLockedCommand(anyString(), any(Runnable.class)))
+					.thenAnswer(invocation -> {
+						Runnable command = invocation.getArgument(1);
+						command.run();
+						return null;
+					});
+
+			DeviceData deviceData1 = createDeviceData();
+			deviceData1.setEnergyConsumed(-100f);
+			deviceData1.setTotalRealPower(-50f);
+
+			DeviceData deviceData2 = createDeviceData();
+			deviceData2.setEnergyConsumed(-30f);
+			deviceData2.setTotalRealPower(-15f);
+
+			when(mockOSComponent.getDevicesForSiteByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+					.thenReturn(Arrays.asList(deviceData1, deviceData2));
+
+			virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+			verify(mockOSComponent).logData(any(Date.class), argThat(list -> {
+				assertNotNull(list);
+				assertEquals(1, list.size());
+				DeviceData logged = list.getFirst();
+				assertEquals(0f, logged.getEnergyConsumed());
+				assertEquals(0f, logged.getTotalRealPower());
+				return true;
+			}));
+		}
 	}
 
 	private DeviceData createDeviceData() {
@@ -211,7 +559,7 @@ public class VirtualDeviceComponentTest {
 	}
 
 	private Device createVirtualDevice() {
-		Device device = new Device(DEVICE_ID, CUSTOMER_ID, "Virtual Device");
+		Device device = new Device(VIRTUAL_DEVICE_ID, CUSTOMER_ID, "Virtual Device");
 		device.setVirtual(true);
 		device.setSiteId(SITE_ID);
 		device.setSite("Test Site");

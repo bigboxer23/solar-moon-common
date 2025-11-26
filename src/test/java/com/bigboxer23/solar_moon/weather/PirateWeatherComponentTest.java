@@ -169,4 +169,202 @@ public class PirateWeatherComponentTest {
 		site.setLongitude(LONGITUDE);
 		return site;
 	}
+
+	@Test
+	void testAddWeatherData_withValidWeather_addsDataSuccessfully() {
+		Device site = createTestSite();
+		DeviceData deviceData = new DeviceData();
+		deviceData.setDate(new java.util.Date());
+
+		StoredWeatherData weatherData = createTestStoredWeatherData(System.currentTimeMillis());
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE)).thenReturn(Optional.of(weatherData));
+
+		weatherComponent.addWeatherData(deviceData, site);
+
+		assertEquals(WEATHER_SUMMARY, deviceData.getWeatherSummary());
+		assertEquals(ICON, deviceData.getIcon());
+		assertEquals((float) TEMPERATURE, deviceData.getTemperature());
+		assertEquals((float) CLOUD_COVER, deviceData.getCloudCover());
+		assertEquals((float) VISIBILITY, deviceData.getVisibility());
+		assertEquals((float) UV_INDEX, deviceData.getUVIndex());
+		assertEquals((float) PRECIP_INTENSITY, deviceData.getPrecipitationIntensity());
+		verify(mockRepository, atLeastOnce()).findByLatitudeLongitude(LATITUDE, LONGITUDE);
+	}
+
+	@Test
+	void testAddWeatherData_withStaleWeatherData_doesNotAddWeatherData() {
+		Device site = createTestSite();
+		DeviceData deviceData = new DeviceData();
+		deviceData.setDate(new java.util.Date());
+
+		long staleTime = System.currentTimeMillis() - (com.bigboxer23.solar_moon.util.TimeConstants.HOUR * 2);
+		StoredWeatherData weatherData = createTestStoredWeatherData(staleTime);
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE)).thenReturn(Optional.of(weatherData));
+
+		weatherComponent.addWeatherData(deviceData, site);
+
+		assertEquals("", deviceData.getWeatherSummary());
+		assertEquals("", deviceData.getIcon());
+		verify(mockRepository, atLeastOnce()).findByLatitudeLongitude(LATITUDE, LONGITUDE);
+	}
+
+	@Test
+	void testAddWeatherData_withStaleDeviceDate_doesNotAddWeatherData() {
+		Device site = createTestSite();
+		DeviceData deviceData = new DeviceData();
+		long staleDeviceTime = System.currentTimeMillis() - (com.bigboxer23.solar_moon.util.TimeConstants.HOUR * 2);
+		deviceData.setDate(new java.util.Date(staleDeviceTime));
+
+		StoredWeatherData weatherData = createTestStoredWeatherData(System.currentTimeMillis());
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE)).thenReturn(Optional.of(weatherData));
+
+		weatherComponent.addWeatherData(deviceData, site);
+
+		assertEquals("", deviceData.getWeatherSummary());
+		assertEquals("", deviceData.getIcon());
+		verify(mockRepository, atLeastOnce()).findByLatitudeLongitude(LATITUDE, LONGITUDE);
+	}
+
+	@Test
+	void testAddWeatherData_withNoWeatherInRepository_doesNotAddWeatherData() {
+		Device site = createTestSite();
+		DeviceData deviceData = new DeviceData();
+		deviceData.setDate(new java.util.Date());
+
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE)).thenReturn(Optional.empty());
+
+		weatherComponent.addWeatherData(deviceData, site);
+
+		assertEquals("", deviceData.getWeatherSummary());
+		assertEquals("", deviceData.getIcon());
+		verify(mockRepository, atLeastOnce()).findByLatitudeLongitude(LATITUDE, LONGITUDE);
+	}
+
+	@Test
+	void testGetWeather_withInvalidJson_returnsEmpty() {
+		StoredWeatherData weatherData =
+				new StoredWeatherData(LATITUDE, LONGITUDE, "invalid json", System.currentTimeMillis());
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE)).thenReturn(Optional.of(weatherData));
+
+		Optional<PirateWeatherData> result = weatherComponent.getWeather(LATITUDE, LONGITUDE);
+
+		assertFalse(result.isPresent());
+		verify(mockRepository).findByLatitudeLongitude(LATITUDE, LONGITUDE);
+	}
+
+	@Test
+	void testAddWeatherData_withZeroLatitude_processesNormally() {
+		Device site = createTestSite();
+		site.setLatitude(0);
+		site.setLongitude(LONGITUDE);
+		DeviceData deviceData = new DeviceData();
+		deviceData.setDate(new java.util.Date());
+
+		StoredWeatherData weatherData = createTestStoredWeatherData(System.currentTimeMillis());
+		when(mockRepository.findByLatitudeLongitude(0, LONGITUDE)).thenReturn(Optional.of(weatherData));
+
+		weatherComponent.addWeatherData(deviceData, site);
+
+		assertEquals(WEATHER_SUMMARY, deviceData.getWeatherSummary());
+		verify(mockRepository, atLeastOnce()).findByLatitudeLongitude(0, LONGITUDE);
+	}
+
+	@Test
+	void testAddWeatherData_withZeroLongitude_processesNormally() {
+		Device site = createTestSite();
+		site.setLatitude(LATITUDE);
+		site.setLongitude(0);
+		DeviceData deviceData = new DeviceData();
+		deviceData.setDate(new java.util.Date());
+
+		StoredWeatherData weatherData = createTestStoredWeatherData(System.currentTimeMillis());
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, 0)).thenReturn(Optional.of(weatherData));
+
+		weatherComponent.addWeatherData(deviceData, site);
+
+		assertEquals(WEATHER_SUMMARY, deviceData.getWeatherSummary());
+		verify(mockRepository, atLeastOnce()).findByLatitudeLongitude(LATITUDE, 0);
+	}
+
+	@Test
+	void testAddWeatherData_withRecentWeatherData_addsDataSuccessfully() {
+		Device site = createTestSite();
+		DeviceData deviceData = new DeviceData();
+		deviceData.setDate(new java.util.Date());
+
+		long recentTime = System.currentTimeMillis() - (com.bigboxer23.solar_moon.util.TimeConstants.THIRTY_MINUTES);
+		StoredWeatherData weatherData = createTestStoredWeatherData(recentTime);
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE)).thenReturn(Optional.of(weatherData));
+
+		weatherComponent.addWeatherData(deviceData, site);
+
+		assertEquals(WEATHER_SUMMARY, deviceData.getWeatherSummary());
+		assertEquals(ICON, deviceData.getIcon());
+		verify(mockRepository, atLeastOnce()).findByLatitudeLongitude(LATITUDE, LONGITUDE);
+	}
+
+	@Test
+	void testAddWeatherData_withBoundaryTimeWeatherData_doesNotAddWeatherData() {
+		Device site = createTestSite();
+		DeviceData deviceData = new DeviceData();
+		deviceData.setDate(new java.util.Date());
+
+		long boundaryTime = System.currentTimeMillis()
+				- (com.bigboxer23.solar_moon.util.TimeConstants.HOUR
+						+ com.bigboxer23.solar_moon.util.TimeConstants.THIRTY_MINUTES)
+				- 1000;
+		StoredWeatherData weatherData = createTestStoredWeatherData(boundaryTime);
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE)).thenReturn(Optional.of(weatherData));
+
+		weatherComponent.addWeatherData(deviceData, site);
+
+		assertEquals("", deviceData.getWeatherSummary());
+		verify(mockRepository, atLeastOnce()).findByLatitudeLongitude(LATITUDE, LONGITUDE);
+	}
+
+	@Test
+	void testUpdateWeather_withValidData_storesCorrectJson() {
+		PirateWeatherData pirateWeatherData = createTestPirateWeatherData();
+		when(mockRepository.update(any(StoredWeatherData.class))).thenReturn(Optional.of(new StoredWeatherData()));
+
+		weatherComponent.updateWeather(LATITUDE, LONGITUDE, pirateWeatherData);
+
+		verify(mockRepository).update(argThat(stored -> {
+			assertEquals(LATITUDE + "," + LONGITUDE, stored.getLatitudeLongitude());
+			assertNotNull(stored.getWeather());
+			assertTrue(stored.getTime() > 0);
+			return true;
+		}));
+	}
+
+	@Test
+	void testGetLastUpdate_withMultipleCalls_returnsSameTimestamp() {
+		long expectedTime = System.currentTimeMillis();
+		StoredWeatherData weatherData = createTestStoredWeatherData(expectedTime);
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE)).thenReturn(Optional.of(weatherData));
+
+		long result1 = weatherComponent.getLastUpdate(LATITUDE, LONGITUDE);
+		long result2 = weatherComponent.getLastUpdate(LATITUDE, LONGITUDE);
+
+		assertEquals(expectedTime, result1);
+		assertEquals(expectedTime, result2);
+		verify(mockRepository, times(2)).findByLatitudeLongitude(LATITUDE, LONGITUDE);
+	}
+
+	@Test
+	void testAddWeatherData_withNegativeLatitude_processesNormally() {
+		Device site = createTestSite();
+		site.setLatitude(-33.8688);
+		site.setLongitude(151.2093);
+		DeviceData deviceData = new DeviceData();
+		deviceData.setDate(new java.util.Date());
+
+		StoredWeatherData weatherData = createTestStoredWeatherData(System.currentTimeMillis());
+		when(mockRepository.findByLatitudeLongitude(-33.8688, 151.2093)).thenReturn(Optional.of(weatherData));
+
+		weatherComponent.addWeatherData(deviceData, site);
+
+		assertEquals(WEATHER_SUMMARY, deviceData.getWeatherSummary());
+		verify(mockRepository, atLeastOnce()).findByLatitudeLongitude(-33.8688, 151.2093);
+	}
 }
