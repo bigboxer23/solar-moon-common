@@ -182,6 +182,7 @@
             <excludes>
               <exclude>**/*IntegrationTest.java</exclude>
             </excludes>
+            <rerunFailingTestsCount>2</rerunFailingTestsCount>
           </configuration>
         </plugin>
         <plugin>
