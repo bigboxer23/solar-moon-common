@@ -231,4 +231,189 @@ class SMAS3CleanupComponentTest {
 		DeleteObjectsRequest capturedRequest = deleteCaptor.getValue();
 		assertEquals(3, capturedRequest.delete().objects().size());
 	}
+
+	@Test
+	void testIsEmptyFolder_emptyFolder() {
+		String folderKey = "customer/site/empty-folder/";
+
+		S3Object folderObject = S3Object.builder().key(folderKey).build();
+
+		ListObjectsV2Response listResponse =
+				ListObjectsV2Response.builder().contents(folderObject).build();
+
+		when(mockS3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(listResponse);
+
+		assertTrue(component.isEmptyFolder(folderKey));
+
+		ArgumentCaptor<ListObjectsV2Request> captor = ArgumentCaptor.forClass(ListObjectsV2Request.class);
+		verify(mockS3Client).listObjectsV2(captor.capture());
+
+		assertEquals(folderKey, captor.getValue().prefix());
+		assertEquals(2, captor.getValue().maxKeys());
+	}
+
+	@Test
+	void testIsEmptyFolder_folderWithContents() {
+		String folderKey = "customer/site/folder-with-files/";
+
+		S3Object folderObject = S3Object.builder().key(folderKey).build();
+		S3Object fileObject = S3Object.builder()
+				.key("customer/site/folder-with-files/file.txt")
+				.build();
+
+		ListObjectsV2Response listResponse = ListObjectsV2Response.builder()
+				.contents(folderObject, fileObject)
+				.build();
+
+		when(mockS3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(listResponse);
+
+		assertFalse(component.isEmptyFolder(folderKey));
+	}
+
+	@Test
+	void testIsEmptyFolder_notAFolder() {
+		String fileKey = "file.txt";
+
+		assertFalse(component.isEmptyFolder(fileKey));
+
+		verify(mockS3Client, never()).listObjectsV2(any(ListObjectsV2Request.class));
+	}
+
+	@Test
+	void testIsEmptyFolder_rootFolder() {
+		String rootFolder = "/";
+
+		assertFalse(component.isEmptyFolder(rootFolder));
+
+		verify(mockS3Client, never()).listObjectsV2(any(ListObjectsV2Request.class));
+	}
+
+	@Test
+	void testIsEmptyFolder_singleLevelFolder() {
+		String singleLevelFolder = "folder/";
+
+		assertFalse(component.isEmptyFolder(singleLevelFolder));
+
+		verify(mockS3Client, never()).listObjectsV2(any(ListObjectsV2Request.class));
+	}
+
+	@Test
+	void testCleanupEmptyFTPS3Folders_noObjects() {
+		ListObjectsV2Response emptyResponse =
+				ListObjectsV2Response.builder().contents(List.of()).build();
+
+		when(mockS3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(emptyResponse);
+
+		component.cleanupEmptyFTPS3Folders();
+
+		verify(mockS3Client).listObjectsV2(any(ListObjectsV2Request.class));
+		verify(mockS3Client, never()).deleteObject(any(DeleteObjectRequest.class));
+	}
+
+	@Test
+	void testCleanupEmptyFTPS3Folders_deletesEmptyFolders() {
+		S3Object emptyFolder =
+				S3Object.builder().key("customer/site/emptyFolder/").build();
+		S3Object file = S3Object.builder().key("customer/site/file.txt").build();
+
+		ListObjectsV2Response listResponse =
+				ListObjectsV2Response.builder().contents(emptyFolder, file).build();
+
+		ListObjectsV2Response emptyFolderCheck = ListObjectsV2Response.builder()
+				.contents(S3Object.builder().key("customer/site/emptyFolder/").build())
+				.build();
+
+		ListObjectsV2Response fileCheck = ListObjectsV2Response.builder()
+				.contents(S3Object.builder().key("customer/site/file.txt").build())
+				.build();
+
+		when(mockS3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenAnswer(invocation -> {
+			ListObjectsV2Request req = invocation.getArgument(0);
+			if (req.prefix() == null) {
+				return listResponse;
+			} else if ("customer/site/emptyFolder/".equals(req.prefix())) {
+				return emptyFolderCheck;
+			} else if ("customer/site/file.txt".equals(req.prefix())) {
+				return fileCheck;
+			}
+			return ListObjectsV2Response.builder().contents(List.of()).build();
+		});
+
+		component.cleanupEmptyFTPS3Folders();
+
+		ArgumentCaptor<DeleteObjectRequest> deleteCaptor = ArgumentCaptor.forClass(DeleteObjectRequest.class);
+		verify(mockS3Client).deleteObject(deleteCaptor.capture());
+
+		assertEquals("customer/site/emptyFolder/", deleteCaptor.getValue().key());
+	}
+
+	@Test
+	void testCleanupEmptyFTPS3Folders_withPagination() {
+		S3Object emptyFolder1 = S3Object.builder().key("customer/site1/empty/").build();
+		S3Object emptyFolder2 = S3Object.builder().key("customer/site2/empty/").build();
+
+		ListObjectsV2Response firstPage = ListObjectsV2Response.builder()
+				.contents(emptyFolder1)
+				.nextContinuationToken("token123")
+				.build();
+
+		ListObjectsV2Response secondPage =
+				ListObjectsV2Response.builder().contents(emptyFolder2).build();
+
+		ListObjectsV2Response emptyFolderCheck1 = ListObjectsV2Response.builder()
+				.contents(S3Object.builder().key("customer/site1/empty/").build())
+				.build();
+
+		ListObjectsV2Response emptyFolderCheck2 = ListObjectsV2Response.builder()
+				.contents(S3Object.builder().key("customer/site2/empty/").build())
+				.build();
+
+		when(mockS3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenAnswer(invocation -> {
+			ListObjectsV2Request req = invocation.getArgument(0);
+			if (req.prefix() == null && req.continuationToken() == null) {
+				return firstPage;
+			} else if (req.prefix() == null && "token123".equals(req.continuationToken())) {
+				return secondPage;
+			} else if ("customer/site1/empty/".equals(req.prefix())) {
+				return emptyFolderCheck1;
+			} else if ("customer/site2/empty/".equals(req.prefix())) {
+				return emptyFolderCheck2;
+			}
+			return ListObjectsV2Response.builder().contents(List.of()).build();
+		});
+
+		component.cleanupEmptyFTPS3Folders();
+
+		verify(mockS3Client, times(2)).deleteObject(any(DeleteObjectRequest.class));
+	}
+
+	@Test
+	void testCleanupEmptyFTPS3Folders_skipsNonEmptyFolders() {
+		S3Object folder = S3Object.builder().key("customer/site/folder/").build();
+
+		ListObjectsV2Response listResponse =
+				ListObjectsV2Response.builder().contents(folder).build();
+
+		S3Object folderObject = S3Object.builder().key("customer/site/folder/").build();
+		S3Object fileObject =
+				S3Object.builder().key("customer/site/folder/file.txt").build();
+
+		ListObjectsV2Response folderContents = ListObjectsV2Response.builder()
+				.contents(folderObject, fileObject)
+				.build();
+
+		when(mockS3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenAnswer(invocation -> {
+			ListObjectsV2Request req = invocation.getArgument(0);
+			if (req.prefix() == null) {
+				return listResponse;
+			} else if ("customer/site/folder/".equals(req.prefix())) {
+				return folderContents;
+			}
+			return ListObjectsV2Response.builder().contents(List.of()).build();
+		});
+
+		component.cleanupEmptyFTPS3Folders();
+
+		verify(mockS3Client, never()).deleteObject(any(DeleteObjectRequest.class));
+	}
 }

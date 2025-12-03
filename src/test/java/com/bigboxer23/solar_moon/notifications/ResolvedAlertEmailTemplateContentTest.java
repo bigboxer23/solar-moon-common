@@ -17,7 +17,10 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
+@Execution(ExecutionMode.SAME_THREAD)
 public class ResolvedAlertEmailTemplateContentTest {
 
 	private static final String CUSTOMER_ID = "customer-123";
