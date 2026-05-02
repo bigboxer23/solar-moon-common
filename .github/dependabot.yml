@@ -24,3 +24,12 @@ updates:
       major-dependencies:
         update-types:
           - "major"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions-dependencies:
+        update-types:
+          - "minor"
+          - "patch"
