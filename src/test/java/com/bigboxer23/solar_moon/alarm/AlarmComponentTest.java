@@ -446,7 +446,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 
 		alarmComponent.resolveActiveAlarms(oldData);
 
-		verify(mockRepository, never()).findMostRecentAlarm(anyString());
+		verify(mockRepository, never()).findAlarmsByDevice(anyString(), anyString());
 		verify(mockRepository, never()).update(any(Alarm.class));
 	}
 
@@ -458,18 +458,18 @@ public class AlarmComponentTest implements IAlarmConstants {
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
-		verify(mockRepository, never()).findMostRecentAlarm(anyString());
+		verify(mockRepository, never()).findAlarmsByDevice(anyString(), anyString());
 	}
 
 	@Test
 	void testResolveActiveAlarms_withNoActiveAlarm_doesNothing() {
 		DeviceData deviceData = createValidDeviceData();
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.empty());
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(Collections.emptyList());
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
 		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
-		verify(mockRepository).findMostRecentAlarm(DEVICE_ID);
+		verify(mockRepository).findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID);
 		verify(mockRepository, never()).update(any(Alarm.class));
 	}
 
@@ -478,12 +478,12 @@ public class AlarmComponentTest implements IAlarmConstants {
 		DeviceData deviceData = createValidDeviceData();
 		Alarm resolvedAlarm = createTestAlarm();
 		resolvedAlarm.setState(RESOLVED);
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(resolvedAlarm));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(resolvedAlarm));
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
 		verify(mockDeviceUpdateComponent).update(DEVICE_ID);
-		verify(mockRepository).findMostRecentAlarm(DEVICE_ID);
+		verify(mockRepository).findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID);
 		verify(mockRepository, never()).update(any(Alarm.class));
 	}
 
@@ -493,7 +493,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 		deviceData.setDaylight(false);
 		Alarm activeAlarm = createTestAlarm();
 		activeAlarm.setMessage("Some other error");
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(activeAlarm));
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
@@ -507,7 +507,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 		deviceData.setTotalRealPower(0.0f);
 		Alarm activeAlarm = createTestAlarm();
 		activeAlarm.setMessage("Some other error");
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(activeAlarm));
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
@@ -521,7 +521,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 		Alarm activeAlarm = createTestAlarm();
 		activeAlarm.setMessage(NO_DATA_RECENTLY + "12345");
 		activeAlarm.setEmailed(NEEDS_EMAIL);
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(activeAlarm));
 		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(activeAlarm));
 
 		alarmComponent.resolveActiveAlarms(deviceData);
@@ -538,7 +538,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 		DeviceData deviceData = createValidDeviceData();
 		Alarm activeAlarm = createTestAlarm();
 		activeAlarm.setEmailed(System.currentTimeMillis());
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(activeAlarm));
 		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(activeAlarm));
 
 		alarmComponent.resolveActiveAlarms(deviceData);
@@ -736,7 +736,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 		deviceData.setTotalRealPower(0.05f);
 		Alarm activeAlarm = createTestAlarm();
 		activeAlarm.setMessage("Low power error");
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(activeAlarm));
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
@@ -749,7 +749,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 		DeviceData deviceData = createValidDeviceData();
 		Alarm activeAlarm = createTestAlarm();
 		activeAlarm.setEmailed(System.currentTimeMillis());
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(activeAlarm));
 		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(activeAlarm));
 
 		alarmComponent.resolveActiveAlarms(deviceData);
@@ -815,7 +815,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 		Alarm activeAlarm = createTestAlarm();
 		activeAlarm.setMessage(NO_DATA_RECENTLY + "12345");
 		activeAlarm.setEmailed(System.currentTimeMillis());
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(activeAlarm));
 		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(activeAlarm));
 
 		alarmComponent.resolveActiveAlarms(deviceData);
@@ -834,7 +834,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 		Alarm activeAlarm = createTestAlarm();
 		activeAlarm.setMessage(NO_DATA_RECENTLY + "12345");
 		activeAlarm.setEmailed(System.currentTimeMillis());
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(activeAlarm));
 		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(activeAlarm));
 
 		alarmComponent.resolveActiveAlarms(deviceData);
@@ -855,7 +855,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 		erroredLinkedDevice.setCriticalAlarm(1);
 
 		alarmComponent.setLinkedDeviceErrorResult(Optional.of(erroredLinkedDevice));
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(activeAlarm));
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
@@ -873,7 +873,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 		erroredLinkedDevice.setCriticalAlarm(1);
 
 		alarmComponent.setLinkedDeviceErrorResult(Optional.of(erroredLinkedDevice));
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(activeAlarm));
 		when(mockRepository.update(any(Alarm.class))).thenReturn(Optional.of(activeAlarm));
 
 		alarmComponent.resolveActiveAlarms(deviceData);
@@ -993,7 +993,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 		deviceData.setTotalRealPower(0.0f);
 		Alarm activeAlarm = createTestAlarm();
 		activeAlarm.setMessage("Some other error");
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(activeAlarm));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(activeAlarm));
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
@@ -1483,7 +1483,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 		alarmComponent.resolveActiveAlarms(deviceData);
 
 		verify(mockDeviceUpdateComponent, never()).update(anyString());
-		verify(mockRepository, never()).findMostRecentAlarm(anyString());
+		verify(mockRepository, never()).findAlarmsByDevice(anyString(), anyString());
 	}
 
 	@Test
@@ -1494,13 +1494,13 @@ public class AlarmComponentTest implements IAlarmConstants {
 		alarmComponent.resolveActiveAlarms(deviceData);
 
 		verify(mockDeviceUpdateComponent, never()).update(anyString());
-		verify(mockRepository, never()).findMostRecentAlarm(anyString());
+		verify(mockRepository, never()).findAlarmsByDevice(anyString(), anyString());
 	}
 
 	@Test
 	void testResolveActiveAlarms_withNoActiveAlarm_updatesDeviceButDoesNotResolve() {
 		DeviceData deviceData = createValidDeviceData();
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.empty());
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(Collections.emptyList());
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
@@ -1513,7 +1513,7 @@ public class AlarmComponentTest implements IAlarmConstants {
 		DeviceData deviceData = createValidDeviceData();
 		Alarm resolvedAlarm = createTestAlarm();
 		resolvedAlarm.setState(RESOLVED);
-		when(mockRepository.findMostRecentAlarm(DEVICE_ID)).thenReturn(Optional.of(resolvedAlarm));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(resolvedAlarm));
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
@@ -1568,6 +1568,30 @@ public class AlarmComponentTest implements IAlarmConstants {
 
 		assertTrue(result.isPresent());
 		verify(mockRepository).update(argThat(alarm -> alarm.getMessage().isEmpty()));
+	}
+
+	@Test
+	void testResolveActiveAlarms_withActiveAlarmHiddenByNewerResolvedAlarm_resolvesActiveAlarm() {
+		DeviceData deviceData = createValidDeviceData();
+
+		Alarm resolvedAlarm = createTestAlarm();
+		resolvedAlarm.setAlarmId("alarm-resolved");
+		resolvedAlarm.setState(RESOLVED);
+		resolvedAlarm.setStartDate(System.currentTimeMillis() + 100);
+
+		Alarm activeAlarm = new Alarm("alarm-active", CUSTOMER_ID, DEVICE_ID, SITE_ID);
+		activeAlarm.setState(ACTIVE);
+		activeAlarm.setStartDate(System.currentTimeMillis());
+		activeAlarm.setEmailed(System.currentTimeMillis());
+		activeAlarm.setMessage(MESSAGE);
+
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(resolvedAlarm, activeAlarm));
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		alarmComponent.resolveActiveAlarms(deviceData);
+
+		verify(mockRepository).update(argThat(alarm ->
+				alarm.getAlarmId().equals("alarm-active") && alarm.getState() == RESOLVED));
 	}
 
 	@Test

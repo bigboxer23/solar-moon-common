@@ -82,7 +82,7 @@ public class LocationComponent {
 	public Optional<LocalDateTime> getLocalTimeString(double latitude, double longitude) {
 		Optional<String> TZString = getLocalTimeZone(latitude, longitude);
 		if (TZString.isEmpty()) {
-			log.error("unknown timezone: " + latitude + "," + longitude);
+			log.info("unknown timezone: " + latitude + "," + longitude);
 			return Optional.empty();
 		}
 		return Optional.of(LocalDateTime.ofInstant(Instant.now(), ZoneId.of(TZString.get())));
@@ -94,7 +94,7 @@ public class LocationComponent {
 		}
 		String TZString = TimezoneMapper.latLngToTimezoneString(latitude, longitude);
 		if (TZString.equalsIgnoreCase("unknown")) {
-			log.error("unknown timezone: " + latitude + "," + longitude);
+			log.info("unknown timezone: " + latitude + "," + longitude);
 			return Optional.empty();
 		}
 		return Optional.of(TZString);
@@ -104,7 +104,7 @@ public class LocationComponent {
 		if ((latitude == -1 && longitude == -1)
 				|| (latitude > 90 || latitude < -90)
 				|| (longitude > 180 || longitude < -180)) {
-			log.error("latitude or longitude is not valid " + latitude + "," + longitude);
+			log.warn("latitude or longitude is not valid " + latitude + "," + longitude);
 			return false;
 		}
 		return true;
