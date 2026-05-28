@@ -1590,8 +1590,8 @@ public class AlarmComponentTest implements IAlarmConstants {
 
 		alarmComponent.resolveActiveAlarms(deviceData);
 
-		verify(mockRepository).update(argThat(alarm ->
-				alarm.getAlarmId().equals("alarm-active") && alarm.getState() == RESOLVED));
+		verify(mockRepository)
+				.update(argThat(alarm -> alarm.getAlarmId().equals("alarm-active") && alarm.getState() == RESOLVED));
 	}
 
 	@Test

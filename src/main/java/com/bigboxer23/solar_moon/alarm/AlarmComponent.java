@@ -73,8 +73,7 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 			return;
 		}
 		getDeviceUpdateComponent().update(deviceData.getDeviceId());
-		Optional<Alarm> maybeAlarm = findAlarmsByDevice(deviceData.getCustomerId(), deviceData.getDeviceId())
-				.stream()
+		Optional<Alarm> maybeAlarm = findAlarmsByDevice(deviceData.getCustomerId(), deviceData.getDeviceId()).stream()
 				.filter(a -> a.getState() == ACTIVE)
 				.max(Comparator.comparingLong(Alarm::getStartDate));
 		if (maybeAlarm.isEmpty()) {
