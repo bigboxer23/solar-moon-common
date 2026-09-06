@@ -3,8 +3,13 @@ package com.bigboxer23.solar_moon.device;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.bigboxer23.solar_moon.alarm.AlarmComponent;
 import com.bigboxer23.solar_moon.data.Device;
+import com.bigboxer23.solar_moon.data.Subscription;
+import com.bigboxer23.solar_moon.location.LocationComponent;
+import com.bigboxer23.solar_moon.subscription.SubscriptionComponent;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.services.location.model.Place;
+import software.amazon.awssdk.services.location.model.PlaceGeometry;
+import software.amazon.awssdk.services.location.model.SearchForTextResult;
 
 @ExtendWith(MockitoExtension.class)
 public class DeviceComponentTest {
@@ -19,44 +27,55 @@ public class DeviceComponentTest {
 	@Mock
 	private DeviceRepository mockRepository;
 
+	@Mock
+	private SubscriptionComponent mockSubscriptionComponent;
+
+	@Mock
+	private LocationComponent mockLocationComponent;
+
+	@Mock
+	private DeviceUpdateComponent mockDeviceUpdateComponent;
+
+	@Mock
+	private AlarmComponent mockAlarmComponent;
+
 	private TestableDeviceComponent deviceComponent;
 
 	private static final String CUSTOMER_ID = "test-customer-123";
 	private static final String DEVICE_ID = "device-123";
 	private static final String DEVICE_NAME = "Test Device";
 
-	private static class TestableDeviceComponent extends DeviceComponent {
-		private final DeviceRepository repository;
-
-		public TestableDeviceComponent(DeviceRepository repository) {
-			this.repository = repository;
-		}
+	private class TestableDeviceComponent extends DeviceComponent {
 
 		@Override
 		protected DeviceRepository getRepository() {
-			return repository;
+			return mockRepository;
 		}
 
 		@Override
-		public void deleteDevice(String id, String customerId) {
-			Optional<Device> device = findDeviceById(id, customerId);
-			if (device.isEmpty()) {
-				return;
-			}
-			if (device.get().isDeviceSite()) {
-				getDevicesBySiteId(customerId, device.get().getId()).forEach(childDevice -> {
-					childDevice.setSite(NO_SITE);
-					childDevice.setSiteId(NO_SITE);
-					updateDevice(childDevice);
-				});
-			}
-			getRepository().delete(device.get());
+		protected SubscriptionComponent getSubscriptionComponent() {
+			return mockSubscriptionComponent;
+		}
+
+		@Override
+		protected LocationComponent getLocationComponent() {
+			return mockLocationComponent;
+		}
+
+		@Override
+		protected DeviceUpdateComponent getDeviceUpdateComponent() {
+			return mockDeviceUpdateComponent;
+		}
+
+		@Override
+		protected AlarmComponent getAlarmComponent() {
+			return mockAlarmComponent;
 		}
 	}
 
 	@BeforeEach
 	void setUp() {
-		deviceComponent = new TestableDeviceComponent(mockRepository);
+		deviceComponent = new TestableDeviceComponent();
 	}
 
 	@Test
@@ -253,6 +272,339 @@ public class DeviceComponentTest {
 
 		verify(mockRepository).getDevicesForCustomerId(CUSTOMER_ID);
 		verify(mockRepository, times(2)).delete(any(Device.class));
+	}
+
+	@Test
+	void testAddDevice_whenSubscriptionLimitReached_returnsNullWithoutPersisting() {
+		Device device = createTestDevice();
+		when(mockSubscriptionComponent.canAddAnotherDevice(CUSTOMER_ID)).thenReturn(false);
+		when(mockSubscriptionComponent.getSubscription(CUSTOMER_ID)).thenReturn(Optional.empty());
+		when(mockRepository.getDevicesForCustomerId(CUSTOMER_ID)).thenReturn(Collections.emptyList());
+
+		assertNull(deviceComponent.addDevice(device));
+
+		verify(mockRepository, never()).add(any(Device.class));
+	}
+
+	@Test
+	void testAddDevice_whenSubscriptionAvailable_reportsLicensedDeviceCount() {
+		Device device = createTestDevice();
+		Subscription subscription = new Subscription(CUSTOMER_ID, 2, 0);
+		when(mockSubscriptionComponent.canAddAnotherDevice(CUSTOMER_ID)).thenReturn(false);
+		when(mockSubscriptionComponent.getSubscription(CUSTOMER_ID)).thenReturn(Optional.of(subscription));
+		when(mockRepository.getDevicesForCustomerId(CUSTOMER_ID)).thenReturn(Collections.emptyList());
+
+		assertNull(deviceComponent.addDevice(device));
+
+		verify(mockSubscriptionComponent).getSubscription(CUSTOMER_ID);
+		verify(mockRepository, never()).add(any(Device.class));
+	}
+
+	@Test
+	void testAddDevice_whenIdAlreadyExists_returnsNullWithoutPersisting() {
+		Device device = createTestDevice();
+		when(mockSubscriptionComponent.canAddAnotherDevice(CUSTOMER_ID)).thenReturn(true);
+		when(mockRepository.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(device));
+
+		assertNull(deviceComponent.addDevice(device));
+
+		verify(mockRepository, never()).add(any(Device.class));
+	}
+
+	@Test
+	void testAddDevice_whenDeviceNameAlreadyExists_returnsNullWithoutPersisting() {
+		Device device = createTestDevice();
+		when(mockSubscriptionComponent.canAddAnotherDevice(CUSTOMER_ID)).thenReturn(true);
+		when(mockRepository.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.empty());
+		when(mockRepository.findDeviceByDeviceName(CUSTOMER_ID, DEVICE_NAME))
+				.thenReturn(Optional.of(createTestDevice("other-id", CUSTOMER_ID, DEVICE_NAME)));
+
+		assertNull(deviceComponent.addDevice(device));
+
+		verify(mockRepository, never()).add(any(Device.class));
+	}
+
+	@Test
+	void testAddDevice_whenSiteNameMatchesDeviceName_assignsOwnIdAsSiteId() {
+		Device device = createTestDevice();
+		device.setIsSite("1");
+		device.setSite(DEVICE_NAME);
+		device.setSiteId(null);
+		allowAdd(device);
+
+		deviceComponent.addDevice(device);
+
+		assertEquals(DEVICE_ID, device.getSiteId());
+		verify(mockRepository).add(device);
+	}
+
+	@Test
+	void testAddDevice_withNullSite_persistsWithoutAssigningSiteId() {
+		Device device = createTestDevice();
+		device.setIsSite("1");
+		device.setSite(null);
+		device.setSiteId(null);
+		allowAdd(device);
+
+		deviceComponent.addDevice(device);
+
+		assertNull(device.getSiteId());
+		verify(mockRepository).add(device);
+	}
+
+	@Test
+	void testAddDevice_withNoSiteId_clearsLatLong() {
+		Device device = createTestDevice();
+		device.setSiteId(DeviceComponent.NO_SITE);
+		allowAdd(device);
+
+		deviceComponent.addDevice(device);
+
+		assertEquals(-1, device.getLatitude());
+		assertEquals(-1, device.getLongitude());
+	}
+
+	@Test
+	void testAddDevice_withNullSiteId_clearsLatLong() {
+		Device device = createTestDevice();
+		device.setSiteId(null);
+		device.setSite(null);
+		allowAdd(device);
+
+		deviceComponent.addDevice(device);
+
+		assertEquals(-1, device.getLatitude());
+		assertEquals(-1, device.getLongitude());
+	}
+
+	@Test
+	void testAddDevice_newDeviceWithSite_inheritsLatLongFromSite() {
+		Device device = createTestDevice();
+		device.setLatitude(-1);
+		device.setLongitude(-1);
+		Device site = createSiteDevice("site-123", CUSTOMER_ID, "Site");
+		site.setLatitude(12.5);
+		site.setLongitude(-71.25);
+		allowAdd(device);
+		when(mockRepository.findDeviceById("site-123", CUSTOMER_ID)).thenReturn(Optional.of(site));
+
+		deviceComponent.addDevice(device);
+
+		assertEquals(12.5, device.getLatitude());
+		assertEquals(-71.25, device.getLongitude());
+	}
+
+	@Test
+	void testAddDevice_siteWithoutCoordinates_geocodesAndPropagatesToChildren() {
+		Device site = createSiteDevice(DEVICE_ID, CUSTOMER_ID, DEVICE_NAME);
+		site.setLatitude(-1);
+		site.setLongitude(-1);
+		site.setCity("Minneapolis");
+		site.setState("MN");
+		site.setCountry("USA");
+		Device child = createTestDevice("child-1", CUSTOMER_ID, "Child");
+		child.setSiteId(DEVICE_ID);
+
+		allowAdd(site);
+		when(mockLocationComponent.getLatLongFromText("Minneapolis", "MN", "USA"))
+				.thenReturn(Optional.of(searchResult(-93.26, 44.97)));
+		when(mockRepository.getDevicesBySiteId(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(child));
+		when(mockRepository.findDeviceByDeviceName(CUSTOMER_ID, "Child")).thenReturn(Optional.of(child));
+		when(mockRepository.findDeviceById("child-1", CUSTOMER_ID)).thenReturn(Optional.of(child));
+
+		deviceComponent.addDevice(site);
+
+		assertEquals(44.97, site.getLatitude());
+		assertEquals(-93.26, site.getLongitude());
+		assertEquals(44.97, child.getLatitude());
+		assertEquals(-93.26, child.getLongitude());
+		verify(mockRepository).update(child);
+	}
+
+	@Test
+	void testAddDevice_siteGeocodeMiss_leavesCoordinatesUnset() {
+		Device site = createSiteDevice(DEVICE_ID, CUSTOMER_ID, DEVICE_NAME);
+		site.setLatitude(-1);
+		site.setLongitude(-1);
+		site.setCity("Nowhere");
+		site.setState("XX");
+		site.setCountry("ZZ");
+		allowAdd(site);
+		when(mockLocationComponent.getLatLongFromText("Nowhere", "XX", "ZZ")).thenReturn(Optional.empty());
+
+		deviceComponent.addDevice(site);
+
+		assertEquals(-1, site.getLatitude());
+		assertEquals(-1, site.getLongitude());
+		verify(mockRepository).add(site);
+	}
+
+	@Test
+	void testUpdateDevice_whenDeviceNameBelongsToAnotherDevice_returnsEmpty() {
+		Device device = createTestDevice();
+		when(mockRepository.findDeviceByDeviceName(CUSTOMER_ID, DEVICE_NAME))
+				.thenReturn(Optional.of(createTestDevice("a-different-id", CUSTOMER_ID, DEVICE_NAME)));
+
+		assertTrue(deviceComponent.updateDevice(device).isEmpty());
+
+		verify(mockRepository, never()).update(any(Device.class));
+	}
+
+	@Test
+	void testUpdateDevice_renamingSite_propagatesNewNameToChildren() {
+		Device site = createSiteDevice(DEVICE_ID, CUSTOMER_ID, DEVICE_NAME);
+		site.setName("New Site Name");
+		Device persistedSite = createSiteDevice(DEVICE_ID, CUSTOMER_ID, DEVICE_NAME);
+		persistedSite.setName("Old Site Name");
+		Device child = createTestDevice("child-1", CUSTOMER_ID, "Child");
+		child.setSiteId(DEVICE_ID);
+		child.setSite("Old Site Name");
+
+		when(mockRepository.findDeviceByDeviceName(CUSTOMER_ID, DEVICE_NAME)).thenReturn(Optional.of(site));
+		when(mockRepository.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(persistedSite));
+		when(mockRepository.getDevicesBySiteId(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(child));
+		when(mockRepository.findDeviceByDeviceName(CUSTOMER_ID, "Child")).thenReturn(Optional.of(child));
+		when(mockRepository.findDeviceById("child-1", CUSTOMER_ID)).thenReturn(Optional.of(child));
+
+		deviceComponent.updateDevice(site);
+
+		assertEquals("New Site Name", child.getSite());
+		verify(mockRepository).update(child);
+		verify(mockRepository).update(site);
+	}
+
+	@Test
+	void testUpdateDevice_siteNameUnchanged_leavesChildrenAlone() {
+		Device site = createSiteDevice(DEVICE_ID, CUSTOMER_ID, DEVICE_NAME);
+		site.setName("Same Name");
+		Device persistedSite = createSiteDevice(DEVICE_ID, CUSTOMER_ID, DEVICE_NAME);
+		persistedSite.setName("Same Name");
+
+		when(mockRepository.findDeviceByDeviceName(CUSTOMER_ID, DEVICE_NAME)).thenReturn(Optional.of(site));
+		when(mockRepository.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(persistedSite));
+
+		deviceComponent.updateDevice(site);
+
+		verify(mockRepository, never()).getDevicesBySiteId(CUSTOMER_ID, DEVICE_ID);
+		verify(mockRepository).update(site);
+	}
+
+	@Test
+	void testUpdateDevice_siteNotYetPersisted_updatesWithoutRenamingChildren() {
+		Device site = createSiteDevice(DEVICE_ID, CUSTOMER_ID, DEVICE_NAME);
+		when(mockRepository.findDeviceByDeviceName(CUSTOMER_ID, DEVICE_NAME)).thenReturn(Optional.empty());
+		when(mockRepository.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.empty());
+
+		deviceComponent.updateDevice(site);
+
+		verify(mockRepository, never()).getDevicesBySiteId(anyString(), anyString());
+		verify(mockRepository).update(site);
+	}
+
+	@Test
+	void testDeleteDevice_whenDeviceMissing_doesNothing() {
+		when(mockRepository.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.empty());
+
+		deviceComponent.deleteDevice(DEVICE_ID, CUSTOMER_ID);
+
+		verify(mockRepository, never()).delete(any(Device.class));
+		verify(mockDeviceUpdateComponent, never()).delete(anyString());
+		verify(mockAlarmComponent, never()).deleteAlarmByDeviceId(anyString(), anyString());
+	}
+
+	@Test
+	void testDeleteDevice_cascadesToDeviceUpdatesAndAlarms() {
+		Device device = createTestDevice();
+		when(mockRepository.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(device));
+
+		deviceComponent.deleteDevice(DEVICE_ID, CUSTOMER_ID);
+
+		verify(mockRepository).delete(device);
+		verify(mockDeviceUpdateComponent).delete(DEVICE_ID);
+		verify(mockAlarmComponent).deleteAlarmByDeviceId(CUSTOMER_ID, DEVICE_ID);
+	}
+
+	@Test
+	void testDeleteDevice_site_reassignsChildrenToNoSite() {
+		Device site = createSiteDevice(DEVICE_ID, CUSTOMER_ID, DEVICE_NAME);
+		Device child = createTestDevice("child-1", CUSTOMER_ID, "Child");
+		child.setSiteId(DEVICE_ID);
+
+		when(mockRepository.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(site));
+		when(mockRepository.getDevicesBySiteId(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(child));
+		when(mockRepository.findDeviceByDeviceName(CUSTOMER_ID, "Child")).thenReturn(Optional.of(child));
+		when(mockRepository.findDeviceById("child-1", CUSTOMER_ID)).thenReturn(Optional.of(child));
+
+		deviceComponent.deleteDevice(DEVICE_ID, CUSTOMER_ID);
+
+		assertEquals(DeviceComponent.NO_SITE, child.getSite());
+		assertEquals(DeviceComponent.NO_SITE, child.getSiteId());
+		assertEquals(-1, child.getLatitude());
+		assertEquals(-1, child.getLongitude());
+		verify(mockRepository).update(child);
+		verify(mockRepository).delete(site);
+	}
+
+	@Test
+	void testGetDevicesBySite_delegatesToRepository() {
+		List<Device> expectedDevices = Arrays.asList(createTestDevice());
+		when(mockRepository.getDevicesBySite(CUSTOMER_ID, "Test Site")).thenReturn(expectedDevices);
+
+		List<Device> result = deviceComponent.getDevicesBySite(CUSTOMER_ID, "Test Site");
+
+		assertEquals(expectedDevices, result);
+		verify(mockRepository).getDevicesBySite(CUSTOMER_ID, "Test Site");
+	}
+
+	@Test
+	void testIsValidUpdate_withBlankClientId_returnsFalse() {
+		Device device = createTestDevice();
+		device.setClientId("");
+
+		assertFalse(deviceComponent.isValidUpdate(device));
+	}
+
+	@Test
+	void testIsValidUpdate_withBlankDeviceName_returnsFalse() {
+		Device device = createTestDevice();
+		device.setDeviceName("");
+
+		assertFalse(deviceComponent.isValidUpdate(device));
+	}
+
+	@Test
+	void testIsValidUpdate_withBlankId_returnsFalse() {
+		Device device = createTestDevice();
+		device.setId("");
+
+		assertFalse(deviceComponent.isValidUpdate(device));
+	}
+
+	private void allowAdd(Device device) {
+		when(mockSubscriptionComponent.canAddAnotherDevice(device.getClientId()))
+				.thenReturn(true);
+		when(mockRepository.findDeviceById(device.getId(), device.getClientId()))
+				.thenReturn(Optional.empty());
+		when(mockRepository.findDeviceByDeviceName(device.getClientId(), device.getDeviceName()))
+				.thenReturn(Optional.empty());
+	}
+
+	private SearchForTextResult searchResult(double longitude, double latitude) {
+		return SearchForTextResult.builder()
+				.place(Place.builder()
+						.geometry(PlaceGeometry.builder()
+								.point(longitude, latitude)
+								.build())
+						.build())
+				.build();
+	}
+
+	private Device createSiteDevice(String id, String clientId, String deviceName) {
+		Device device = createTestDevice(id, clientId, deviceName);
+		device.setIsSite("1");
+		device.setSiteId(id);
+		device.setSite(deviceName);
+		return device;
 	}
 
 	private Device createTestDevice() {
