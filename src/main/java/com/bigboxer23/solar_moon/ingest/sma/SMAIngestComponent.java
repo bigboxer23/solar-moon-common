@@ -110,7 +110,9 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 
 	private void maybeAssignSite(String customerId, Map<String, SMADevice> devices) {
 		boolean shouldChangeSite = devices.values().stream()
-				.allMatch(d -> DeviceComponent.NO_SITE.equals(d.getDevice().getSiteId()));
+				.map(SMADevice::getDevice)
+				.filter(Objects::nonNull)
+				.allMatch(d -> DeviceComponent.NO_SITE.equals(d.getSiteId()));
 		if (shouldChangeSite) {
 			log.info("all new items, assigning site");
 			Double[] yield = {(double) -1};
@@ -177,7 +179,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		devices.values().stream()
 				.map(SMADevice::getDevice)
 				.filter(Objects::nonNull)
-				.filter(device -> device.getSite().equalsIgnoreCase(DeviceComponent.NO_SITE))
+				.filter(device -> DeviceComponent.NO_SITE.equalsIgnoreCase(device.getSite()))
 				.forEach(device -> {
 					TransactionUtil.addDeviceId(device.getId(), donor.getSiteId());
 					log.warn("found unassigned device within site, assigning to site " + donor.getSite());
@@ -198,39 +200,42 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		if (devices.isEmpty()) {
 			return;
 		}
-		devices.keySet().stream().findFirst().ifPresent(key -> {
-			SMADevice donor = devices.get(key);
-			if (DeviceComponent.NO_SITE.equals(donor.getDevice().getSiteId())) {
-				log.debug("cannot find ghost devices w/o site configuration");
-				return;
-			}
-			boolean isDay = IComponentRegistry.locationComponent
-					.isDay(
-							new Date(),
-							donor.getDevice().getLatitude(),
-							donor.getDevice().getLongitude())
-					.orElse(true);
-			IComponentRegistry.deviceComponent
-					.getDevicesBySiteId(customerId, donor.getDevice().getSiteId())
-					.stream()
-					.filter(d -> !d.isDisabled())
-					.forEach(d -> {
-						if (d.getDeviceName() != null && !devices.containsKey(d.getDeviceName())) {
-							TransactionUtil.addDeviceId(d.getId(), d.getSiteId());
-							if (isDay) {
-								log.info("adding ghost device " + d.getDeviceName());
-							} else {
-								log.debug("adding ghost device " + d.getDeviceName());
-							}
-							SMADevice smaDevice = new SMADevice(customerId);
-							SMARecord record = new SMARecord(donor.getRecords().getFirst());
-							record.setDevice(d.getDeviceName());
-							record.setValue("0");
-							smaDevice.addRecord(record);
-							devices.put(d.getDeviceName(), smaDevice);
-						}
-					});
-		});
+		devices.values().stream()
+				.filter(smaDevice -> smaDevice.getDevice() != null)
+				.findFirst()
+				.ifPresent(donor -> {
+					if (DeviceComponent.NO_SITE.equals(donor.getDevice().getSiteId())) {
+						log.debug("cannot find ghost devices w/o site configuration");
+						return;
+					}
+					boolean isDay = IComponentRegistry.locationComponent
+							.isDay(
+									new Date(),
+									donor.getDevice().getLatitude(),
+									donor.getDevice().getLongitude())
+							.orElse(true);
+					IComponentRegistry.deviceComponent
+							.getDevicesBySiteId(customerId, donor.getDevice().getSiteId())
+							.stream()
+							.filter(d -> !d.isDisabled())
+							.forEach(d -> {
+								if (d.getDeviceName() != null && !devices.containsKey(d.getDeviceName())) {
+									TransactionUtil.addDeviceId(d.getId(), d.getSiteId());
+									if (isDay) {
+										log.info("adding ghost device " + d.getDeviceName());
+									} else {
+										log.debug("adding ghost device " + d.getDeviceName());
+									}
+									SMADevice smaDevice = new SMADevice(customerId);
+									SMARecord record =
+											new SMARecord(donor.getRecords().getFirst());
+									record.setDevice(d.getDeviceName());
+									record.setValue("0");
+									smaDevice.addRecord(record);
+									devices.put(d.getDeviceName(), smaDevice);
+								}
+							});
+				});
 		TransactionUtil.addDeviceId(null, null);
 	}
 

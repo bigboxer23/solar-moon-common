@@ -62,6 +62,14 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 		return IComponentRegistry.notificationComponent;
 	}
 
+	protected AlarmEmailTemplateContent createAlarmEmail(String customerId, List<Alarm> alarms) {
+		return new AlarmEmailTemplateContent(customerId, alarms);
+	}
+
+	protected ResolvedAlertEmailTemplateContent createResolvedAlarmEmail(String customerId, List<Alarm> alarms) {
+		return new ResolvedAlertEmailTemplateContent(customerId, alarms);
+	}
+
 	public Optional<Alarm> getMostRecentAlarm(String deviceId) {
 		return getRepository().findMostRecentAlarm(deviceId);
 	}
@@ -235,7 +243,7 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 		customerSortedAlarms.forEach((customerId, alarms) -> {
 			TransactionUtil.updateCustomerId(customerId);
 			log.info("Starting sending active notifications");
-			AlarmEmailTemplateContent alarmEmail = new AlarmEmailTemplateContent(customerId, alarms);
+			AlarmEmailTemplateContent alarmEmail = createAlarmEmail(customerId, alarms);
 			if (alarmEmail.isNotificationEnabled()
 					&& !getOpenSearchStatusComponent().hasFailureWithinLastThirtyMinutes()) {
 				getNotificationComponent()
@@ -264,7 +272,7 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 		customerSortedAlarms.forEach((customerId, alarms) -> {
 			TransactionUtil.updateCustomerId(customerId);
 			log.info("Starting sending resolved notifications");
-			ResolvedAlertEmailTemplateContent alarmEmail = new ResolvedAlertEmailTemplateContent(customerId, alarms);
+			ResolvedAlertEmailTemplateContent alarmEmail = createResolvedAlarmEmail(customerId, alarms);
 			getNotificationComponent().sendNotification(alarmEmail.getRecipient(), alarmEmail.getSubject(), alarmEmail);
 			alarms.forEach(a -> {
 				a.setResolveEmailed(System.currentTimeMillis());

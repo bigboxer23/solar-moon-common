@@ -50,39 +50,33 @@ class SMAIngestComponentTest {
 	private static final String VALID_SMA_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 			+ "<ClusterController>"
 			+ "<CurrentPublic>"
-			+ "<Device>"
 			+ "<Key>123456789:Power</Key>"
 			+ "<Timestamp>2025-01-15T10:30:00</Timestamp>"
 			+ "<Mean>5000</Mean>"
-			+ "</Device>"
-			+ "<Device>"
+			+ "</CurrentPublic>"
+			+ "<CurrentPublic>"
 			+ "<Key>123456789:Total yield</Key>"
 			+ "<Timestamp>2025-01-15T10:30:00</Timestamp>"
 			+ "<Mean>10000</Mean>"
-			+ "</Device>"
 			+ "</CurrentPublic>"
 			+ "<MeanPublic>"
-			+ "<Device>"
 			+ "<Key>123456789:Grid voltage phase L1</Key>"
 			+ "<Timestamp>2025-01-15T10:30:00</Timestamp>"
 			+ "<Mean>240</Mean>"
-			+ "</Device>"
 			+ "</MeanPublic>"
 			+ "</ClusterController>";
 
 	private static final String MULTI_DEVICE_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 			+ "<ClusterController>"
 			+ "<CurrentPublic>"
-			+ "<Device>"
 			+ "<Key>Device1:Total yield</Key>"
 			+ "<Timestamp>2025-01-15T10:30:00</Timestamp>"
 			+ "<Mean>50000</Mean>"
-			+ "</Device>"
-			+ "<Device>"
+			+ "</CurrentPublic>"
+			+ "<CurrentPublic>"
 			+ "<Key>Device2:Total yield</Key>"
 			+ "<Timestamp>2025-01-15T10:30:00</Timestamp>"
 			+ "<Mean>20000</Mean>"
-			+ "</Device>"
 			+ "</CurrentPublic>"
 			+ "</ClusterController>";
 
@@ -201,7 +195,6 @@ class SMAIngestComponentTest {
 	}
 
 	@Test
-	@org.junit.jupiter.api.Disabled("Integration test - mocking issue with IComponentRegistry access from SMADevice")
 	void testIngestXMLFile_validXml() throws Exception {
 		component.ingestXMLFile(VALID_SMA_XML, "customer-1");
 
@@ -338,7 +331,6 @@ class SMAIngestComponentTest {
 	}
 
 	@Test
-	@org.junit.jupiter.api.Disabled("Integration test - mocking issue with IComponentRegistry access from SMADevice")
 	void testIngestXMLFile_maybeAssignSite() throws Exception {
 		Device device1 = createTestDevice();
 		device1.setId("device-1");
@@ -355,6 +347,17 @@ class SMAIngestComponentTest {
 		siteDevice.setDeviceName("Device1");
 		siteDevice.setSiteId("site-1");
 
+		when(mockGenerationComponent.findDeviceFromDeviceNameFuzzy(eq("customer-1"), anyString()))
+				.thenAnswer(invocation -> {
+					String deviceName = invocation.getArgument(1, String.class);
+					Device unassigned = new Device();
+					unassigned.setId("device-" + deviceName);
+					unassigned.setClientId("customer-1");
+					unassigned.setDeviceName(deviceName);
+					unassigned.setSiteId(DeviceComponent.NO_SITE);
+					unassigned.setSite(DeviceComponent.NO_SITE);
+					return unassigned;
+				});
 		when(mockDeviceComponent.findDeviceByDeviceName("customer-1", "Device1"))
 				.thenReturn(Optional.of(siteDevice));
 		when(mockDeviceComponent.updateDevice(any(Device.class))).thenReturn(Optional.of(siteDevice));
@@ -365,7 +368,6 @@ class SMAIngestComponentTest {
 	}
 
 	@Test
-	@org.junit.jupiter.api.Disabled("Integration test - mocking issue with IComponentRegistry access from SMADevice")
 	void testIngestXMLFile_checkForNewDevicesAndAssignSite() throws Exception {
 		Device device1 = createTestDevice();
 		device1.setId("device-1");
@@ -379,7 +381,6 @@ class SMAIngestComponentTest {
 	}
 
 	@Test
-	@org.junit.jupiter.api.Disabled("Integration test - mocking issue with IComponentRegistry access from SMADevice")
 	void testIngestXMLFile_addMissingDevices() throws Exception {
 		Device device1 = createTestDevice();
 		device1.setId("device-1");
@@ -406,7 +407,6 @@ class SMAIngestComponentTest {
 	}
 
 	@Test
-	@org.junit.jupiter.api.Disabled("Integration test - mocking issue with IComponentRegistry access from SMADevice")
 	void testIngestXMLFile_skipsDisabledGhostDevices() throws Exception {
 		Device device1 = createTestDevice();
 		device1.setId("device-1");
@@ -433,16 +433,13 @@ class SMAIngestComponentTest {
 	}
 
 	@Test
-	@org.junit.jupiter.api.Disabled("Integration test - mocking issue with IComponentRegistry access from SMADevice")
 	void testIngestXMLFile_backfillsTotalEnergyWhenZero() throws Exception {
 		String zeroYieldXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 				+ "<ClusterController>"
 				+ "<CurrentPublic>"
-				+ "<Device>"
 				+ "<Key>123456789:Total yield</Key>"
 				+ "<Timestamp>2025-01-15T10:30:00</Timestamp>"
 				+ "<Mean>0</Mean>"
-				+ "</Device>"
 				+ "</CurrentPublic>"
 				+ "</ClusterController>";
 
@@ -458,7 +455,6 @@ class SMAIngestComponentTest {
 	}
 
 	@Test
-	@org.junit.jupiter.api.Disabled("Integration test - mocking issue with IComponentRegistry access from SMADevice")
 	void testIngestXMLFile_convertsPowerToKw() throws Exception {
 		component.ingestXMLFile(VALID_SMA_XML, "customer-1");
 
@@ -466,6 +462,89 @@ class SMAIngestComponentTest {
 		verify(mockGenerationComponent).handleDevice(any(), captor.capture());
 
 		assertEquals(5.0f, captor.getValue().getTotalRealPower());
+	}
+
+	@Test
+	void testIngestXMLFile_whenDeviceCannotBeCreated_skipsDeviceWithoutFailingFile() throws Exception {
+		when(mockGenerationComponent.findDeviceFromDeviceNameFuzzy(anyString(), anyString()))
+				.thenReturn(null);
+
+		component.ingestXMLFile(MULTI_DEVICE_XML, "customer-1");
+
+		verify(mockGenerationComponent, never()).handleDevice(any(Device.class), any(DeviceData.class));
+	}
+
+	@Test
+	void testIngestXMLFile_whenOneDeviceCannotBeCreated_stillIngestsTheOthers() throws Exception {
+		when(mockGenerationComponent.findDeviceFromDeviceNameFuzzy(eq("customer-1"), anyString()))
+				.thenAnswer(invocation -> {
+					String deviceName = invocation.getArgument(1, String.class);
+					if ("Device2".equals(deviceName)) {
+						return null;
+					}
+					Device device = new Device();
+					device.setId("device-" + deviceName);
+					device.setClientId("customer-1");
+					device.setDeviceName(deviceName);
+					device.setSiteId("site-1");
+					device.setSite("Test Site");
+					return device;
+				});
+
+		component.ingestXMLFile(MULTI_DEVICE_XML, "customer-1");
+
+		verify(mockGenerationComponent, times(1)).handleDevice(any(Device.class), any(DeviceData.class));
+	}
+
+	@Test
+	void testIngestXMLFile_assignsUnassignedDeviceToSiteOfItsPeers() throws Exception {
+		when(mockGenerationComponent.findDeviceFromDeviceNameFuzzy(eq("customer-1"), anyString()))
+				.thenAnswer(invocation -> {
+					String deviceName = invocation.getArgument(1, String.class);
+					Device device = new Device();
+					device.setId("device-" + deviceName);
+					device.setClientId("customer-1");
+					device.setDeviceName(deviceName);
+					if ("Device2".equals(deviceName)) {
+						device.setSiteId(DeviceComponent.NO_SITE);
+						device.setSite(DeviceComponent.NO_SITE);
+					} else {
+						device.setSiteId("site-1");
+						device.setSite("Test Site");
+					}
+					return device;
+				});
+		when(mockDeviceComponent.getDevicesBySiteId("customer-1", "site-1")).thenReturn(List.of());
+
+		component.ingestXMLFile(MULTI_DEVICE_XML, "customer-1");
+
+		ArgumentCaptor<Device> captor = ArgumentCaptor.forClass(Device.class);
+		verify(mockDeviceComponent, atLeastOnce()).updateDevice(captor.capture());
+		Device reassigned = captor.getAllValues().stream()
+				.filter(d -> "device-Device2".equals(d.getId()))
+				.findFirst()
+				.orElseThrow();
+		assertEquals("site-1", reassigned.getSiteId());
+		assertEquals("Test Site", reassigned.getSite());
+	}
+
+	@Test
+	void testIngestXMLFile_withNullSiteOnDevice_doesNotFail() throws Exception {
+		when(mockGenerationComponent.findDeviceFromDeviceNameFuzzy(eq("customer-1"), anyString()))
+				.thenAnswer(invocation -> {
+					String deviceName = invocation.getArgument(1, String.class);
+					Device device = new Device();
+					device.setId("device-" + deviceName);
+					device.setClientId("customer-1");
+					device.setDeviceName(deviceName);
+					device.setSiteId("site-1");
+					device.setSite(null);
+					return device;
+				});
+
+		component.ingestXMLFile(MULTI_DEVICE_XML, "customer-1");
+
+		verify(mockGenerationComponent, atLeastOnce()).handleDevice(any(Device.class), any(DeviceData.class));
 	}
 
 	private Device createTestDevice() {
