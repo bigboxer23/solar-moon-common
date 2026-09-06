@@ -50,7 +50,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: 21.0
-          distribution: 'adopt'
+          distribution: 'temurin'
     - name: Configure Maven for GitHub Packages
       run: |
         mkdir -p ~/.m2

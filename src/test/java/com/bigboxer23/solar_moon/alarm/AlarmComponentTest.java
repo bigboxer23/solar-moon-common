@@ -11,7 +11,10 @@ import com.bigboxer23.solar_moon.data.LinkedDevice;
 import com.bigboxer23.solar_moon.device.DeviceComponent;
 import com.bigboxer23.solar_moon.device.DeviceUpdateComponent;
 import com.bigboxer23.solar_moon.maintenance.MaintenanceComponent;
+import com.bigboxer23.solar_moon.notifications.AlarmEmailTemplateContent;
+import com.bigboxer23.solar_moon.notifications.ResolvedAlertEmailTemplateContent;
 import com.bigboxer23.solar_moon.util.TimeConstants;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -73,6 +76,8 @@ public class AlarmComponentTest implements IAlarmConstants {
 		private final com.bigboxer23.solar_moon.notifications.NotificationComponent notificationComponent;
 		private Optional<LinkedDevice> linkedDeviceErrorResult = Optional.empty();
 		private boolean useRealLinkedDeviceErrored = false;
+		private AlarmEmailTemplateContent alarmEmail;
+		private ResolvedAlertEmailTemplateContent resolvedAlarmEmail;
 
 		public TestableAlarmComponent(
 				AlarmRepository repository,
@@ -138,6 +143,16 @@ public class AlarmComponentTest implements IAlarmConstants {
 		@Override
 		protected com.bigboxer23.solar_moon.notifications.NotificationComponent getNotificationComponent() {
 			return notificationComponent;
+		}
+
+		@Override
+		protected AlarmEmailTemplateContent createAlarmEmail(String customerId, List<Alarm> alarms) {
+			return alarmEmail != null ? alarmEmail : super.createAlarmEmail(customerId, alarms);
+		}
+
+		@Override
+		protected ResolvedAlertEmailTemplateContent createResolvedAlarmEmail(String customerId, List<Alarm> alarms) {
+			return resolvedAlarmEmail != null ? resolvedAlarmEmail : super.createResolvedAlarmEmail(customerId, alarms);
 		}
 
 		@Override
@@ -1614,6 +1629,389 @@ public class AlarmComponentTest implements IAlarmConstants {
 
 		assertEquals(expectedAlarms, result);
 		verify(mockRepository).findAlarmsBySite(CUSTOMER_ID, SITE_ID);
+	}
+
+	@Test
+	void testIsDeviceOK_withDarkInRecentHistory_returnsTrue() throws IOException {
+		Device device = createNonSiteDevice();
+		DeviceData deviceData = createUnproductiveData();
+		DeviceData darkEntry = createHistoricEntry(0f);
+		darkEntry.setDaylight(false);
+		when(mockOpenSearchComponent.getRecentDeviceData(CUSTOMER_ID, DEVICE_ID, TimeConstants.HOUR * 2))
+				.thenReturn(List.of(darkEntry));
+
+		assertTrue(alarmComponent.isDeviceOK(device, deviceData, true));
+
+		verify(mockLocationComponent, never()).isDay(any(Date.class), anyDouble(), anyDouble());
+	}
+
+	@Test
+	void testIsDeviceOK_nearSunset_returnsTrue() throws IOException {
+		Device device = createNonSiteDevice();
+		DeviceData deviceData = createUnproductiveData();
+		when(mockOpenSearchComponent.getRecentDeviceData(CUSTOMER_ID, DEVICE_ID, TimeConstants.HOUR * 2))
+				.thenReturn(List.of(createHistoricEntry(0f)));
+		when(mockLocationComponent.isDay(any(Date.class), anyDouble(), anyDouble()))
+				.thenReturn(Optional.of(false));
+
+		assertTrue(alarmComponent.isDeviceOK(device, deviceData, true));
+	}
+
+	@Test
+	void testIsDeviceOK_withNullDate_skipsSunsetCheck() throws IOException {
+		Device device = createNonSiteDevice();
+		DeviceData deviceData = createUnproductiveData();
+		deviceData.setDate(null);
+		when(mockOpenSearchComponent.getRecentDeviceData(CUSTOMER_ID, DEVICE_ID, TimeConstants.HOUR * 2))
+				.thenReturn(List.of(createHistoricEntry(5.0f)));
+
+		assertTrue(alarmComponent.isDeviceOK(device, deviceData, true));
+
+		verify(mockLocationComponent, never()).isDay(any(Date.class), anyDouble(), anyDouble());
+	}
+
+	@Test
+	void testIsDeviceOK_withHealthyAverageHistoricPower_returnsTrue() throws IOException {
+		Device device = createNonSiteDevice();
+		DeviceData deviceData = createUnproductiveData();
+		when(mockOpenSearchComponent.getRecentDeviceData(CUSTOMER_ID, DEVICE_ID, TimeConstants.HOUR * 2))
+				.thenReturn(Arrays.asList(createHistoricEntry(0f), createHistoricEntry(4.0f)));
+		when(mockLocationComponent.isDay(any(Date.class), anyDouble(), anyDouble()))
+				.thenReturn(Optional.of(true));
+
+		assertTrue(alarmComponent.isDeviceOK(device, deviceData, true));
+	}
+
+	@Test
+	void testIsDeviceOK_withVeryLowUvIndex_returnsTrue() throws IOException {
+		Device device = createNonSiteDevice();
+		DeviceData deviceData = createUnproductiveData();
+		DeviceData entry = createHistoricEntry(0f);
+		entry.setUVIndex(0.2f);
+		when(mockOpenSearchComponent.getRecentDeviceData(CUSTOMER_ID, DEVICE_ID, TimeConstants.HOUR * 2))
+				.thenReturn(List.of(entry));
+		when(mockLocationComponent.isDay(any(Date.class), anyDouble(), anyDouble()))
+				.thenReturn(Optional.of(true));
+
+		assertTrue(alarmComponent.isDeviceOK(device, deviceData, true));
+	}
+
+	@Test
+	void testIsDeviceOK_withMissingUvData_doesNotSuppressAlarm() throws IOException {
+		Device device = createNonSiteDevice();
+		device.setSiteId("");
+		DeviceData deviceData = createUnproductiveData();
+		DeviceData entry = createHistoricEntry(0f);
+		entry.setUVIndex(-1f);
+		when(mockOpenSearchComponent.getRecentDeviceData(CUSTOMER_ID, DEVICE_ID, TimeConstants.HOUR * 2))
+				.thenReturn(List.of(entry));
+		when(mockLocationComponent.isDay(any(Date.class), anyDouble(), anyDouble()))
+				.thenReturn(Optional.of(true));
+
+		assertFalse(alarmComponent.isDeviceOK(device, deviceData, true));
+	}
+
+	@Test
+	void testIsDeviceOK_withRecentRain_returnsTrue() throws IOException {
+		Device device = createNonSiteDevice();
+		DeviceData deviceData = createUnproductiveData();
+		DeviceData entry = createHistoricEntry(0f);
+		entry.setUVIndex(5.0f);
+		entry.setWeatherSummary("Rain");
+		entry.setPrecipitationIntensity(0.5f);
+		when(mockOpenSearchComponent.getRecentDeviceData(CUSTOMER_ID, DEVICE_ID, TimeConstants.HOUR * 2))
+				.thenReturn(List.of(entry));
+		when(mockLocationComponent.isDay(any(Date.class), anyDouble(), anyDouble()))
+				.thenReturn(Optional.of(true));
+
+		assertTrue(alarmComponent.isDeviceOK(device, deviceData, true));
+	}
+
+	@Test
+	void testIsDeviceOK_withRecentSnow_returnsTrue() throws IOException {
+		Device device = createNonSiteDevice();
+		DeviceData deviceData = createUnproductiveData();
+		DeviceData entry = createHistoricEntry(0f);
+		entry.setUVIndex(5.0f);
+		entry.setWeatherSummary("Snow");
+		entry.setPrecipitationIntensity(0.5f);
+		when(mockOpenSearchComponent.getRecentDeviceData(CUSTOMER_ID, DEVICE_ID, TimeConstants.HOUR * 2))
+				.thenReturn(List.of(entry));
+		when(mockLocationComponent.isDay(any(Date.class), anyDouble(), anyDouble()))
+				.thenReturn(Optional.of(true));
+
+		assertTrue(alarmComponent.isDeviceOK(device, deviceData, true));
+	}
+
+	@Test
+	void testIsDeviceOK_withRainButNegligibleIntensity_doesNotSuppressAlarm() throws IOException {
+		Device device = createNonSiteDevice();
+		device.setSiteId("");
+		DeviceData deviceData = createUnproductiveData();
+		DeviceData entry = createHistoricEntry(0f);
+		entry.setUVIndex(5.0f);
+		entry.setWeatherSummary("Rain");
+		entry.setPrecipitationIntensity(0.001f);
+		when(mockOpenSearchComponent.getRecentDeviceData(CUSTOMER_ID, DEVICE_ID, TimeConstants.HOUR * 2))
+				.thenReturn(List.of(entry));
+		when(mockLocationComponent.isDay(any(Date.class), anyDouble(), anyDouble()))
+				.thenReturn(Optional.of(true));
+
+		assertFalse(alarmComponent.isDeviceOK(device, deviceData, true));
+	}
+
+	@Test
+	void testIsDeviceOK_whenOpenSearchThrows_failsOpen() throws IOException {
+		Device device = createNonSiteDevice();
+		DeviceData deviceData = createUnproductiveData();
+		when(mockOpenSearchComponent.getRecentDeviceData(CUSTOMER_ID, DEVICE_ID, TimeConstants.HOUR * 2))
+				.thenThrow(new IOException("opensearch down"));
+
+		assertTrue(alarmComponent.isDeviceOK(device, deviceData, true));
+	}
+
+	@Test
+	void testIsDeviceOK_whenSiblingSiteDeviceIsProducing_doesNotSuppressAlarm() throws IOException {
+		Device device = createNonSiteDevice();
+		Device sibling = new Device("sibling-1", CUSTOMER_ID, "Sibling");
+		DeviceData siblingData = new DeviceData();
+		siblingData.setTotalRealPower(3.0f);
+		siblingData.setDate(new Date());
+
+		stubUnproductiveHistory();
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID)).thenReturn(List.of(sibling));
+		when(mockOpenSearchComponent.getLastDeviceEntry(eq("sibling-1"), any())).thenReturn(siblingData);
+
+		assertFalse(alarmComponent.isDeviceOK(device, createUnproductiveData(), true));
+	}
+
+	@Test
+	void testIsDeviceOK_whenAllSiteDevicesAreDark_returnsTrue() throws IOException {
+		Device device = createNonSiteDevice();
+		Device sibling = new Device("sibling-1", CUSTOMER_ID, "Sibling");
+		DeviceData siblingData = new DeviceData();
+		siblingData.setTotalRealPower(0.05f);
+		siblingData.setDate(new Date());
+
+		stubUnproductiveHistory();
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID)).thenReturn(List.of(sibling));
+		when(mockOpenSearchComponent.getLastDeviceEntry(eq("sibling-1"), any())).thenReturn(siblingData);
+
+		assertTrue(alarmComponent.isDeviceOK(device, createUnproductiveData(), true));
+	}
+
+	@Test
+	void testIsDeviceOK_whenNoSiblingSiteDataExists_doesNotSuppressAlarm() throws IOException {
+		Device device = createNonSiteDevice();
+		Device sibling = new Device("sibling-1", CUSTOMER_ID, "Sibling");
+
+		stubUnproductiveHistory();
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID)).thenReturn(List.of(sibling));
+		when(mockOpenSearchComponent.getLastDeviceEntry(eq("sibling-1"), any())).thenReturn(null);
+
+		assertFalse(alarmComponent.isDeviceOK(device, createUnproductiveData(), true));
+	}
+
+	@Test
+	void testIsDeviceOK_siteCheckSkipsSelfAndSiteDevices() throws IOException {
+		Device device = createNonSiteDevice();
+		Device self = new Device(DEVICE_ID, CUSTOMER_ID, "Self");
+		Device siteDevice = new Device("the-site", CUSTOMER_ID, "The Site");
+		siteDevice.setIsSite("1");
+
+		stubUnproductiveHistory();
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID)).thenReturn(Arrays.asList(self, siteDevice));
+
+		assertFalse(alarmComponent.isDeviceOK(device, createUnproductiveData(), true));
+
+		verify(mockOpenSearchComponent, never()).getLastDeviceEntry(eq(DEVICE_ID), any());
+		verify(mockOpenSearchComponent, never()).getLastDeviceEntry(eq("the-site"), any());
+	}
+
+	@Test
+	void testIsDeviceOK_withNoSiteAttached_doesNotSuppressAlarm() throws IOException {
+		Device device = createNonSiteDevice();
+		device.setSiteId(DeviceComponent.NO_SITE);
+
+		stubUnproductiveHistory();
+
+		assertFalse(alarmComponent.isDeviceOK(device, createUnproductiveData(), true));
+
+		verify(mockDeviceComponent, never()).getDevicesBySiteId(anyString(), anyString());
+	}
+
+	private void stubUnproductiveHistory() throws IOException {
+		DeviceData entry = createHistoricEntry(0f);
+		entry.setUVIndex(5.0f);
+		when(mockOpenSearchComponent.getRecentDeviceData(CUSTOMER_ID, DEVICE_ID, TimeConstants.HOUR * 2))
+				.thenReturn(List.of(entry));
+		when(mockLocationComponent.isDay(any(Date.class), anyDouble(), anyDouble()))
+				.thenReturn(Optional.of(true));
+	}
+
+	private Device createNonSiteDevice() {
+		Device device = new Device(DEVICE_ID, CUSTOMER_ID, "Test Device");
+		device.setSiteId(SITE_ID);
+		device.setLatitude(45.0);
+		device.setLongitude(-93.0);
+		return device;
+	}
+
+	private DeviceData createUnproductiveData() {
+		DeviceData deviceData = createValidDeviceData();
+		deviceData.setTotalRealPower(0.0f);
+		return deviceData;
+	}
+
+	private DeviceData createHistoricEntry(float power) {
+		DeviceData entry = new DeviceData();
+		entry.setDaylight(true);
+		entry.setTotalRealPower(power);
+		return entry;
+	}
+
+	@Test
+	void testSendPendingNotifications_groupsActiveAlarmsPerCustomerAndMarksEmailed() {
+		Alarm first = createAlarmFor("customer-a", "alarm-1");
+		Alarm second = createAlarmFor("customer-a", "alarm-2");
+		Alarm other = createAlarmFor("customer-b", "alarm-3");
+		AlarmEmailTemplateContent email = enabledAlarmEmail("a@example.com", "Alert A");
+
+		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(Arrays.asList(first, second, other));
+		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(Collections.emptyList());
+		when(mockOpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes()).thenReturn(false);
+		alarmComponent.alarmEmail = email;
+
+		alarmComponent.sendPendingNotifications();
+
+		verify(mockNotificationComponent, times(2)).sendNotification("a@example.com", "Alert A", email);
+		assertTrue(first.getEmailed() > 0);
+		assertTrue(second.getEmailed() > 0);
+		assertTrue(other.getEmailed() > 0);
+		verify(mockRepository, times(3)).update(any(Alarm.class));
+	}
+
+	@Test
+	void testSendPendingNotifications_whenNotificationDisabled_stillMarksAlarmsEmailed() {
+		Alarm alarm = createAlarmFor(CUSTOMER_ID, ALARM_ID);
+		AlarmEmailTemplateContent email = mock(AlarmEmailTemplateContent.class);
+		when(email.isNotificationEnabled()).thenReturn(false);
+
+		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(List.of(alarm));
+		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(Collections.emptyList());
+		when(mockOpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes()).thenReturn(false);
+		alarmComponent.alarmEmail = email;
+
+		alarmComponent.sendPendingNotifications();
+
+		verify(mockNotificationComponent, never())
+				.sendNotification(anyString(), anyString(), any(AlarmEmailTemplateContent.class));
+		assertTrue(alarm.getEmailed() > 0);
+		verify(mockRepository).update(alarm);
+	}
+
+	@Test
+	void testSendPendingNotifications_whenOpenSearchRecentlyFailed_suppressesEmailButMarksEmailed() {
+		Alarm alarm = createAlarmFor(CUSTOMER_ID, ALARM_ID);
+		AlarmEmailTemplateContent email = mock(AlarmEmailTemplateContent.class);
+		when(email.isNotificationEnabled()).thenReturn(true);
+
+		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(List.of(alarm));
+		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(Collections.emptyList());
+		when(mockOpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes()).thenReturn(true);
+		alarmComponent.alarmEmail = email;
+
+		alarmComponent.sendPendingNotifications();
+
+		verify(mockNotificationComponent, never())
+				.sendNotification(anyString(), anyString(), any(AlarmEmailTemplateContent.class));
+		assertTrue(alarm.getEmailed() > 0);
+	}
+
+	@Test
+	void testSendPendingNotifications_sendsResolvedNotificationsAndMarksResolveEmailed() {
+		Alarm resolved = createAlarmFor(CUSTOMER_ID, ALARM_ID);
+		ResolvedAlertEmailTemplateContent email = mock(ResolvedAlertEmailTemplateContent.class);
+		when(email.getRecipient()).thenReturn("resolved@example.com");
+		when(email.getSubject()).thenReturn("Resolved");
+
+		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(Collections.emptyList());
+		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(List.of(resolved));
+		alarmComponent.resolvedAlarmEmail = email;
+
+		alarmComponent.sendPendingNotifications();
+
+		verify(mockNotificationComponent).sendNotification("resolved@example.com", "Resolved", email);
+		assertTrue(resolved.getResolveEmailed() > 0);
+		verify(mockRepository).update(resolved);
+	}
+
+	@Test
+	void testSendPendingNotifications_resolvedNotificationsIgnoreOpenSearchStatus() {
+		Alarm resolved = createAlarmFor(CUSTOMER_ID, ALARM_ID);
+		ResolvedAlertEmailTemplateContent email = mock(ResolvedAlertEmailTemplateContent.class);
+		when(email.getRecipient()).thenReturn("resolved@example.com");
+		when(email.getSubject()).thenReturn("Resolved");
+
+		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(Collections.emptyList());
+		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(List.of(resolved));
+		alarmComponent.resolvedAlarmEmail = email;
+
+		alarmComponent.sendPendingNotifications();
+
+		verify(mockNotificationComponent).sendNotification("resolved@example.com", "Resolved", email);
+		verify(mockOpenSearchStatusComponent, never()).hasFailureWithinLastThirtyMinutes();
+	}
+
+	@Test
+	void testSendPendingNotifications_withNothingPending_sendsNothing() {
+		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(Collections.emptyList());
+		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(Collections.emptyList());
+
+		alarmComponent.sendPendingNotifications();
+
+		verify(mockNotificationComponent, never())
+				.sendNotification(anyString(), anyString(), any(AlarmEmailTemplateContent.class));
+		verify(mockRepository, never()).update(any(Alarm.class));
+	}
+
+	@Test
+	void testSendPendingNotifications_handlesActiveAndResolvedInSamePass() {
+		Alarm active = createAlarmFor(CUSTOMER_ID, "active-1");
+		Alarm resolved = createAlarmFor(CUSTOMER_ID, "resolved-1");
+		AlarmEmailTemplateContent activeEmail = enabledAlarmEmail("a@example.com", "Alert");
+		ResolvedAlertEmailTemplateContent resolvedEmail = mock(ResolvedAlertEmailTemplateContent.class);
+		when(resolvedEmail.getRecipient()).thenReturn("a@example.com");
+		when(resolvedEmail.getSubject()).thenReturn("Resolved");
+
+		when(mockRepository.findNonEmailedActiveAlarms()).thenReturn(List.of(active));
+		when(mockRepository.findNonEmailedResolvedAlarms()).thenReturn(List.of(resolved));
+		when(mockOpenSearchStatusComponent.hasFailureWithinLastThirtyMinutes()).thenReturn(false);
+		alarmComponent.alarmEmail = activeEmail;
+		alarmComponent.resolvedAlarmEmail = resolvedEmail;
+
+		alarmComponent.sendPendingNotifications();
+
+		verify(mockNotificationComponent).sendNotification("a@example.com", "Alert", activeEmail);
+		verify(mockNotificationComponent).sendNotification("a@example.com", "Resolved", resolvedEmail);
+		assertTrue(active.getEmailed() > 0);
+		assertTrue(resolved.getResolveEmailed() > 0);
+	}
+
+	private AlarmEmailTemplateContent enabledAlarmEmail(String recipient, String subject) {
+		AlarmEmailTemplateContent email = mock(AlarmEmailTemplateContent.class);
+		when(email.isNotificationEnabled()).thenReturn(true);
+		when(email.getRecipient()).thenReturn(recipient);
+		when(email.getSubject()).thenReturn(subject);
+		return email;
+	}
+
+	private Alarm createAlarmFor(String customerId, String alarmId) {
+		Alarm alarm = new Alarm(alarmId, customerId, DEVICE_ID, SITE_ID);
+		alarm.setMessage(MESSAGE);
+		alarm.setState(ACTIVE);
+		alarm.setStartDate(System.currentTimeMillis());
+		return alarm;
 	}
 
 	private DeviceData createValidDeviceData() {

@@ -6,6 +6,7 @@ import com.bigboxer23.solar_moon.data.Subscription;
 import com.bigboxer23.solar_moon.subscription.SubscriptionComponent;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.utils.StringUtils;
@@ -23,6 +24,22 @@ public class DeviceComponent {
 			repository = new DynamoDbDeviceRepository();
 		}
 		return repository;
+	}
+
+	protected SubscriptionComponent getSubscriptionComponent() {
+		return IComponentRegistry.subscriptionComponent;
+	}
+
+	protected com.bigboxer23.solar_moon.location.LocationComponent getLocationComponent() {
+		return IComponentRegistry.locationComponent;
+	}
+
+	protected DeviceUpdateComponent getDeviceUpdateComponent() {
+		return IComponentRegistry.deviceUpdateComponent;
+	}
+
+	protected com.bigboxer23.solar_moon.alarm.AlarmComponent getAlarmComponent() {
+		return IComponentRegistry.alarmComponent;
 	}
 
 	public Optional<Device> findDeviceByDeviceName(String customerId, String deviceName) {
@@ -80,7 +97,7 @@ public class DeviceComponent {
 				&& !StringUtils.isBlank(device.getCity())
 				&& !StringUtils.isBlank(device.getState())
 				&& !StringUtils.isBlank(device.getCountry())) {
-			IComponentRegistry.locationComponent
+			getLocationComponent()
 					.getLatLongFromText(device.getCity(), device.getState(), device.getCountry())
 					.ifPresent(location -> {
 						List<Double> points = location.place().geometry().point();
@@ -114,9 +131,9 @@ public class DeviceComponent {
 	}
 
 	public Device addDevice(Device device) {
-		if (!IComponentRegistry.subscriptionComponent.canAddAnotherDevice(device.getClientId())) {
+		if (!getSubscriptionComponent().canAddAnotherDevice(device.getClientId())) {
 			log.warn("Cannot add new device, not enough devices in license: "
-					+ (IComponentRegistry.subscriptionComponent
+					+ (getSubscriptionComponent()
 									.getSubscription(device.getClientId())
 									.map(Subscription::getPacks)
 									.orElse(0)
@@ -134,7 +151,9 @@ public class DeviceComponent {
 			return null;
 		}
 		maybeUpdateLocationData(device);
-		if (device.getSite().equalsIgnoreCase(device.getDeviceName()) && device.getSiteId() == null) {
+		if (device.getSite() != null
+				&& device.getSite().equalsIgnoreCase(device.getDeviceName())
+				&& device.getSiteId() == null) {
 			device.setSiteId(device.getId());
 		}
 		logAction("add", device.getId(), device.getSiteId());
@@ -155,13 +174,14 @@ public class DeviceComponent {
 			return Optional.empty();
 		}
 		if (device.isDeviceSite()) {
-			Device site = findDeviceById(device.getId(), device.getClientId()).get();
-			if (!site.getName().equals(device.getName())) {
-				getDevicesBySiteId(site.getClientId(), site.getSiteId()).forEach(childDevice -> {
-					childDevice.setSite(device.getName());
-					updateDevice(childDevice);
-				});
-			}
+			findDeviceById(device.getId(), device.getClientId()).ifPresent(site -> {
+				if (!Objects.equals(site.getName(), device.getName())) {
+					getDevicesBySiteId(site.getClientId(), site.getSiteId()).forEach(childDevice -> {
+						childDevice.setSite(device.getName());
+						updateDevice(childDevice);
+					});
+				}
+			});
 		}
 		// TODO: could more efficiently update child devices?
 		maybeUpdateLocationData(device);
@@ -182,9 +202,9 @@ public class DeviceComponent {
 			});
 		}
 		getRepository().delete(device.get());
-		IComponentRegistry.deviceUpdateComponent.delete(device.get().getId());
-		IComponentRegistry.alarmComponent.deleteAlarmByDeviceId(
-				device.get().getClientId(), device.get().getId());
+		getDeviceUpdateComponent().delete(device.get().getId());
+		getAlarmComponent()
+				.deleteAlarmByDeviceId(device.get().getClientId(), device.get().getId());
 	}
 
 	public void deleteDevicesByCustomerId(String customerId) {
