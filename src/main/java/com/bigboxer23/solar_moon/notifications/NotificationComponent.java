@@ -29,6 +29,25 @@ public class NotificationComponent {
 
 	private final String additionalRecipient = PropertyUtils.getProperty(ADDITIONAL_RECIPIENT);
 
+	protected SesClient getSesClient() {
+		return SesClient.builder()
+				.region(Region.of(PropertyUtils.getProperty(AWS_REGION)))
+				.credentialsProvider(DefaultCredentialsProvider.builder().build())
+				.build();
+	}
+
+	protected com.bigboxer23.solar_moon.customer.CustomerComponent getCustomerComponent() {
+		return IComponentRegistry.customerComponent;
+	}
+
+	protected String getRecipientOverride() {
+		return recipientOverride;
+	}
+
+	protected String getAdditionalRecipient() {
+		return additionalRecipient;
+	}
+
 	public void sendNotification(String recipient, String subject, EmailTemplateContent template) {
 		sendNotification(SENDER, recipient, subject, template);
 	}
@@ -42,10 +61,7 @@ public class NotificationComponent {
 			return;
 		}
 		getRecipients(recipient).forEach(r -> {
-			try (SesClient client = SesClient.builder()
-					.region(Region.of(PropertyUtils.getProperty(AWS_REGION)))
-					.credentialsProvider(DefaultCredentialsProvider.builder().build())
-					.build()) {
+			try (SesClient client = getSesClient()) {
 				log.info("Sending email to " + recipient + " proxy:" + r);
 				client.sendEmail(SendEmailRequest.builder()
 						.destination(Destination.builder().toAddresses(r).build())
@@ -65,28 +81,29 @@ public class NotificationComponent {
 		});
 	}
 
-	private List<String> getRecipients(String recipient) {
+	List<String> getRecipients(String recipient) {
 		List<String> recipients = new ArrayList<>();
 		String fetchedRecipient = getRecipient(recipient);
 		recipients.add(fetchedRecipient);
-		if (!StringUtils.isBlank(additionalRecipient) && !additionalRecipient.equalsIgnoreCase(fetchedRecipient)) {
-			recipients.add(additionalRecipient);
+		String additional = getAdditionalRecipient();
+		if (!StringUtils.isBlank(additional) && !additional.equalsIgnoreCase(fetchedRecipient)) {
+			recipients.add(additional);
 		}
 		return recipients;
 	}
 
 	private String getRecipient(String recipient) {
-		return StringUtils.isBlank(recipientOverride) ? recipient : recipientOverride;
+		return StringUtils.isBlank(getRecipientOverride()) ? recipient : getRecipientOverride();
 	}
 
 	public void sendResponseMail(String recipient, String subject, String responseContent, String previousContent) {
-		IComponentRegistry.notificationComponent.sendNotification(
+		sendNotification(
 				PropertyUtils.getProperty(EMAILER_SUPPORT),
 				recipient,
 				subject,
 				new SupportEmailTemplateContent(
 						subject,
-						IComponentRegistry.customerComponent
+						getCustomerComponent()
 								.findCustomerByEmail(recipient)
 								.map(Customer::getName)
 								.orElse(recipient),

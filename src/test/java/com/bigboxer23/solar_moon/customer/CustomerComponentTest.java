@@ -4,6 +4,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.bigboxer23.solar_moon.data.Customer;
+import com.bigboxer23.solar_moon.device.DeviceComponent;
+import com.bigboxer23.solar_moon.device.DeviceUpdateComponent;
+import com.bigboxer23.solar_moon.device.LinkedDeviceComponent;
+import com.bigboxer23.solar_moon.ingest.sma.SMAIngestComponent;
+import com.bigboxer23.solar_moon.mapping.MappingComponent;
+import com.bigboxer23.solar_moon.search.OpenSearchComponent;
+import com.bigboxer23.solar_moon.subscription.SubscriptionComponent;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +24,27 @@ public class CustomerComponentTest {
 	@Mock
 	private CustomerRepository mockRepository;
 
+	@Mock
+	private SMAIngestComponent mockSMAIngestComponent;
+
+	@Mock
+	private DeviceUpdateComponent mockDeviceUpdateComponent;
+
+	@Mock
+	private LinkedDeviceComponent mockLinkedDeviceComponent;
+
+	@Mock
+	private SubscriptionComponent mockSubscriptionComponent;
+
+	@Mock
+	private DeviceComponent mockDeviceComponent;
+
+	@Mock
+	private MappingComponent mockMappingComponent;
+
+	@Mock
+	private OpenSearchComponent mockOpenSearchComponent;
+
 	private TestableCustomerComponent customerComponent;
 
 	private static final String CUSTOMER_ID = "customer-123";
@@ -25,46 +53,52 @@ public class CustomerComponentTest {
 	private static final String STRIPE_CUSTOMER_ID = "stripe-123";
 	private static final String ACCESS_KEY = "access-key-123";
 
-	private static class TestableCustomerComponent extends CustomerComponent {
-		private final CustomerRepository repository;
-
-		public TestableCustomerComponent(CustomerRepository repository) {
-			this.repository = repository;
-		}
+	private class TestableCustomerComponent extends CustomerComponent {
 
 		@Override
 		protected CustomerRepository getRepository() {
-			return repository;
+			return mockRepository;
 		}
 
 		@Override
-		public Optional<Customer> addCustomer(String email, String customerId, String name, String stripeCustomerId) {
-			if (software.amazon.awssdk.utils.StringUtils.isEmpty(email)
-					|| software.amazon.awssdk.utils.StringUtils.isEmpty(customerId)
-					|| software.amazon.awssdk.utils.StringUtils.isEmpty(name)
-					|| software.amazon.awssdk.utils.StringUtils.isEmpty(stripeCustomerId)) {
-				return Optional.empty();
-			}
-			Optional<Customer> dbCustomer = findCustomerByCustomerId(customerId);
-			if (dbCustomer.isPresent()) {
-				return dbCustomer;
-			}
-			Customer customer = new Customer(
-					customerId, email, com.bigboxer23.solar_moon.util.TokenGenerator.generateNewToken(), name);
-			customer.setStripeCustomerId(stripeCustomerId);
-			getRepository().add(customer);
-			return Optional.of(customer);
+		protected SMAIngestComponent getSMAIngestComponent() {
+			return mockSMAIngestComponent;
 		}
 
 		@Override
-		public void deleteCustomerByCustomerId(String customerId) {
-			findCustomerByCustomerId(customerId).ifPresent(c -> getRepository().delete(c));
+		protected DeviceUpdateComponent getDeviceUpdateComponent() {
+			return mockDeviceUpdateComponent;
+		}
+
+		@Override
+		protected LinkedDeviceComponent getLinkedDeviceComponent() {
+			return mockLinkedDeviceComponent;
+		}
+
+		@Override
+		protected SubscriptionComponent getSubscriptionComponent() {
+			return mockSubscriptionComponent;
+		}
+
+		@Override
+		protected DeviceComponent getDeviceComponent() {
+			return mockDeviceComponent;
+		}
+
+		@Override
+		protected MappingComponent getMappingComponent() {
+			return mockMappingComponent;
+		}
+
+		@Override
+		protected OpenSearchComponent getOpenSearchComponent() {
+			return mockOpenSearchComponent;
 		}
 	}
 
 	@BeforeEach
 	void setUp() {
-		customerComponent = new TestableCustomerComponent(mockRepository);
+		customerComponent = new TestableCustomerComponent();
 	}
 
 	@Test
@@ -426,6 +460,180 @@ public class CustomerComponentTest {
 
 		assertTrue(customer.isAdmin());
 		verify(mockRepository).update(customer);
+	}
+
+	@Test
+	void testAddCustomer_persistsCustomerAndProvisionsAccessKeyFolder() {
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.empty());
+
+		Optional<Customer> result = customerComponent.addCustomer(EMAIL, CUSTOMER_ID, NAME, STRIPE_CUSTOMER_ID);
+
+		assertTrue(result.isPresent());
+		assertEquals(CUSTOMER_ID, result.get().getCustomerId());
+		assertEquals(EMAIL, result.get().getEmail());
+		assertEquals(STRIPE_CUSTOMER_ID, result.get().getStripeCustomerId());
+		assertNotNull(result.get().getAccessKey());
+		verify(mockRepository).add(result.get());
+		verify(mockSMAIngestComponent).handleAccessKeyChange(null, result.get().getAccessKey());
+	}
+
+	@Test
+	void testAddCustomer_whenCustomerExists_returnsExistingWithoutProvisioning() {
+		Customer existing = createTestCustomer();
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(existing));
+
+		Optional<Customer> result = customerComponent.addCustomer(EMAIL, CUSTOMER_ID, NAME, STRIPE_CUSTOMER_ID);
+
+		assertSame(existing, result.orElseThrow());
+		verify(mockRepository, never()).add(any(Customer.class));
+		verify(mockSMAIngestComponent, never()).handleAccessKeyChange(anyString(), anyString());
+	}
+
+	@Test
+	void testAddCustomer_generatesDistinctAccessKeysPerCustomer() {
+		when(mockRepository.findCustomerByCustomerId(anyString())).thenReturn(Optional.empty());
+
+		String firstKey = customerComponent
+				.addCustomer(EMAIL, CUSTOMER_ID, NAME, STRIPE_CUSTOMER_ID)
+				.orElseThrow()
+				.getAccessKey();
+		String secondKey = customerComponent
+				.addCustomer("other@example.com", "customer-456", NAME, STRIPE_CUSTOMER_ID)
+				.orElseThrow()
+				.getAccessKey();
+
+		assertNotEquals(firstKey, secondKey);
+	}
+
+	@Test
+	void testUpdateCustomer_whenAccessKeyChangeRequested_rotatesKeyAndNotifiesIngest() {
+		Customer customer = createTestCustomer();
+		customer.setAccessKey("");
+		Customer existing = createTestCustomer();
+		existing.setAccessKey("old-access-key");
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(existing));
+
+		customerComponent.updateCustomer(customer);
+
+		assertFalse(customer.getAccessKey().isEmpty());
+		assertNotEquals("old-access-key", customer.getAccessKey());
+		verify(mockRepository).update(customer);
+		verify(mockSMAIngestComponent).handleAccessKeyChange("old-access-key", customer.getAccessKey());
+	}
+
+	@Test
+	void testUpdateCustomer_withoutAccessKeyChange_leavesKeyAndSkipsIngest() {
+		Customer customer = createTestCustomer();
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.empty());
+
+		customerComponent.updateCustomer(customer);
+
+		assertEquals(ACCESS_KEY, customer.getAccessKey());
+		verify(mockSMAIngestComponent, never()).handleAccessKeyChange(any(), any());
+	}
+
+	@Test
+	void testUpdateCustomer_blocksAdminEscalation() {
+		Customer incoming = createTestCustomer();
+		incoming.setAdmin(true);
+		Customer existing = createTestCustomer();
+		existing.setAdmin(false);
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(existing));
+
+		customerComponent.updateCustomer(incoming);
+
+		assertFalse(incoming.isAdmin());
+		verify(mockRepository).update(incoming);
+	}
+
+	@Test
+	void testUpdateCustomer_allowsExistingAdminToStayAdmin() {
+		Customer incoming = createTestCustomer();
+		incoming.setAdmin(true);
+		Customer existing = createTestCustomer();
+		existing.setAdmin(true);
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(existing));
+
+		customerComponent.updateCustomer(incoming);
+
+		assertTrue(incoming.isAdmin());
+	}
+
+	@Test
+	void testUpdateCustomer_preservesStripeCustomerIdFromDatabase() {
+		Customer incoming = createTestCustomer();
+		incoming.setStripeCustomerId(null);
+		Customer existing = createTestCustomer();
+		existing.setStripeCustomerId("stripe-original");
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(existing));
+
+		customerComponent.updateCustomer(incoming);
+
+		assertEquals("stripe-original", incoming.getStripeCustomerId());
+	}
+
+	@Test
+	void testUpdateCustomer_whenDatabaseHasNoStripeId_keepsIncomingValue() {
+		Customer incoming = createTestCustomer();
+		incoming.setStripeCustomerId("stripe-incoming");
+		Customer existing = createTestCustomer();
+		existing.setStripeCustomerId("");
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(existing));
+
+		customerComponent.updateCustomer(incoming);
+
+		assertEquals("stripe-incoming", incoming.getStripeCustomerId());
+	}
+
+	@Test
+	void testDeleteCustomerByCustomerId_cascadesToEveryOwnedResource() {
+		Customer customer = createTestCustomer();
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(customer));
+
+		customerComponent.deleteCustomerByCustomerId(CUSTOMER_ID);
+
+		verify(mockDeviceUpdateComponent).deleteByCustomerId(CUSTOMER_ID);
+		verify(mockLinkedDeviceComponent).deleteByCustomerId(CUSTOMER_ID);
+		verify(mockSubscriptionComponent).deleteSubscription(CUSTOMER_ID);
+		verify(mockDeviceComponent).deleteDevicesByCustomerId(CUSTOMER_ID);
+		verify(mockMappingComponent).deleteMapping(CUSTOMER_ID);
+		verify(mockOpenSearchComponent).deleteByCustomerId(CUSTOMER_ID);
+		verify(mockSMAIngestComponent).handleAccessKeyChange(ACCESS_KEY, null);
+		verify(mockRepository).delete(customer);
+	}
+
+	@Test
+	void testDeleteCustomerByCustomerId_whenCustomerMissing_touchesNothing() {
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.empty());
+
+		customerComponent.deleteCustomerByCustomerId(CUSTOMER_ID);
+
+		verify(mockRepository, never()).delete(any(Customer.class));
+		verifyNoInteractions(mockDeviceComponent);
+		verifyNoInteractions(mockOpenSearchComponent);
+		verifyNoInteractions(mockSMAIngestComponent);
+	}
+
+	@Test
+	void testDeleteCustomerByEmail_resolvesCustomerThenCascades() {
+		Customer customer = createTestCustomer();
+		when(mockRepository.findCustomerByEmail(EMAIL)).thenReturn(Optional.of(customer));
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(customer));
+
+		customerComponent.deleteCustomerByEmail(EMAIL);
+
+		verify(mockDeviceComponent).deleteDevicesByCustomerId(CUSTOMER_ID);
+		verify(mockRepository).delete(customer);
+	}
+
+	@Test
+	void testDeleteCustomerByEmail_whenEmailUnknown_touchesNothing() {
+		when(mockRepository.findCustomerByEmail(EMAIL)).thenReturn(Optional.empty());
+
+		customerComponent.deleteCustomerByEmail(EMAIL);
+
+		verify(mockRepository, never()).delete(any(Customer.class));
+		verifyNoInteractions(mockDeviceComponent);
 	}
 
 	private Customer createTestCustomer() {
