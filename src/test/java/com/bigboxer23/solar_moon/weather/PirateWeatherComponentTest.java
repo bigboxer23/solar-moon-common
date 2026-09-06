@@ -6,7 +6,13 @@ import static org.mockito.Mockito.*;
 
 import com.bigboxer23.solar_moon.data.Device;
 import com.bigboxer23.solar_moon.data.DeviceData;
+import com.bigboxer23.solar_moon.device.DeviceComponent;
+import com.bigboxer23.solar_moon.location.LocationComponent;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +24,12 @@ public class PirateWeatherComponentTest {
 
 	@Mock
 	private WeatherRepository mockRepository;
+
+	@Mock
+	private DeviceComponent mockDeviceComponent;
+
+	@Mock
+	private LocationComponent mockLocationComponent;
 
 	private TestablePirateWeatherComponent weatherComponent;
 
@@ -31,8 +43,11 @@ public class PirateWeatherComponentTest {
 	private static final double UV_INDEX = 5.0;
 	private static final double PRECIP_INTENSITY = 0.0;
 
-	private static class TestablePirateWeatherComponent extends PirateWeatherComponent {
+	private class TestablePirateWeatherComponent extends PirateWeatherComponent {
 		private final WeatherRepository repository;
+		final List<String> forecastCalls = new ArrayList<>();
+		Optional<PirateWeatherDataResponse> forecastResponse = Optional.empty();
+		final AtomicInteger forecastFailuresRemaining = new AtomicInteger(0);
 
 		public TestablePirateWeatherComponent(WeatherRepository repository) {
 			this.repository = repository;
@@ -41,6 +56,25 @@ public class PirateWeatherComponentTest {
 		@Override
 		protected WeatherRepository getRepository() {
 			return repository;
+		}
+
+		@Override
+		protected DeviceComponent getDeviceComponent() {
+			return mockDeviceComponent;
+		}
+
+		@Override
+		protected LocationComponent getLocationComponent() {
+			return mockLocationComponent;
+		}
+
+		@Override
+		public Optional<PirateWeatherDataResponse> fetchForecastData(double latitude, double longitude) {
+			forecastCalls.add(latitude + ":" + longitude);
+			if (forecastFailuresRemaining.getAndDecrement() > 0) {
+				return Optional.empty();
+			}
+			return forecastResponse;
 		}
 	}
 
@@ -366,5 +400,149 @@ public class PirateWeatherComponentTest {
 
 		assertEquals(WEATHER_SUMMARY, deviceData.getWeatherSummary());
 		verify(mockRepository, atLeastOnce()).findByLatitudeLongitude(-33.8688, 151.2093);
+	}
+
+	@Test
+	void testFetchNewWeather_storesForecastForEligibleSite() {
+		Device site = siteAt(LATITUDE, LONGITUDE);
+		when(mockDeviceComponent.getSites()).thenReturn(List.of(site));
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE)).thenReturn(Optional.empty());
+		when(mockLocationComponent.isDay(any(Date.class), eq(LATITUDE), eq(LONGITUDE)))
+				.thenReturn(Optional.of(true));
+		weatherComponent.forecastResponse = Optional.of(forecastResponse());
+
+		weatherComponent.fetchNewWeather();
+
+		assertEquals(List.of(LATITUDE + ":" + LONGITUDE), weatherComponent.forecastCalls);
+		verify(mockRepository).update(any(StoredWeatherData.class));
+	}
+
+	@Test
+	void testFetchNewWeather_skipsSitesWithoutCoordinates() {
+		Device site = siteAt(-1, -1);
+		when(mockDeviceComponent.getSites()).thenReturn(List.of(site));
+
+		weatherComponent.fetchNewWeather();
+
+		assertTrue(weatherComponent.forecastCalls.isEmpty());
+		verify(mockRepository, never()).update(any(StoredWeatherData.class));
+	}
+
+	@Test
+	void testFetchNewWeather_skipsSiteWithRecentData() {
+		Device site = siteAt(LATITUDE, LONGITUDE);
+		when(mockDeviceComponent.getSites()).thenReturn(List.of(site));
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE))
+				.thenReturn(Optional.of(new StoredWeatherData(LATITUDE, LONGITUDE, "{}", System.currentTimeMillis())));
+
+		weatherComponent.fetchNewWeather();
+
+		assertTrue(weatherComponent.forecastCalls.isEmpty());
+		verify(mockRepository, never()).update(any(StoredWeatherData.class));
+	}
+
+	@Test
+	void testFetchNewWeather_deduplicatesSitesSharingCoordinates() {
+		Device first = siteAt(LATITUDE, LONGITUDE);
+		Device second = siteAt(LATITUDE, LONGITUDE);
+		second.setId("site-2");
+		when(mockDeviceComponent.getSites()).thenReturn(List.of(first, second));
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE)).thenReturn(Optional.empty());
+		when(mockLocationComponent.isDay(any(Date.class), eq(LATITUDE), eq(LONGITUDE)))
+				.thenReturn(Optional.of(true));
+		weatherComponent.forecastResponse = Optional.of(forecastResponse());
+
+		weatherComponent.fetchNewWeather();
+
+		assertEquals(1, weatherComponent.forecastCalls.size());
+	}
+
+	@Test
+	void testFetchNewWeather_atNightSkipsFetch() {
+		Device site = siteAt(LATITUDE, LONGITUDE);
+		when(mockDeviceComponent.getSites()).thenReturn(List.of(site));
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE)).thenReturn(Optional.empty());
+		when(mockLocationComponent.isDay(any(Date.class), eq(LATITUDE), eq(LONGITUDE)))
+				.thenReturn(Optional.of(false));
+
+		weatherComponent.fetchNewWeather();
+
+		if (java.time.LocalDateTime.now().getMinute() != 0) {
+			assertTrue(weatherComponent.forecastCalls.isEmpty());
+			verify(mockRepository, never()).update(any(StoredWeatherData.class));
+		}
+	}
+
+	@Test
+	void testFetchNewWeather_whenDaylightUnknown_assumesDayAndFetches() {
+		Device site = siteAt(LATITUDE, LONGITUDE);
+		when(mockDeviceComponent.getSites()).thenReturn(List.of(site));
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE)).thenReturn(Optional.empty());
+		when(mockLocationComponent.isDay(any(Date.class), eq(LATITUDE), eq(LONGITUDE)))
+				.thenReturn(Optional.empty());
+		weatherComponent.forecastResponse = Optional.of(forecastResponse());
+
+		weatherComponent.fetchNewWeather();
+
+		assertEquals(1, weatherComponent.forecastCalls.size());
+	}
+
+	@Test
+	void testFetchNewWeather_retriesTransientForecastFailures() {
+		Device site = siteAt(LATITUDE, LONGITUDE);
+		when(mockDeviceComponent.getSites()).thenReturn(List.of(site));
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE)).thenReturn(Optional.empty());
+		when(mockLocationComponent.isDay(any(Date.class), eq(LATITUDE), eq(LONGITUDE)))
+				.thenReturn(Optional.of(true));
+		weatherComponent.forecastFailuresRemaining.set(1);
+		weatherComponent.forecastResponse = Optional.of(forecastResponse());
+
+		weatherComponent.fetchNewWeather();
+
+		assertTrue(weatherComponent.forecastCalls.size() > 1);
+		verify(mockRepository).update(any(StoredWeatherData.class));
+	}
+
+	@Test
+	void testFetchNewWeather_whenForecastKeepsFailing_storesNothingAndContinues() {
+		Device site = siteAt(LATITUDE, LONGITUDE);
+		when(mockDeviceComponent.getSites()).thenReturn(List.of(site));
+		when(mockRepository.findByLatitudeLongitude(LATITUDE, LONGITUDE)).thenReturn(Optional.empty());
+		when(mockLocationComponent.isDay(any(Date.class), eq(LATITUDE), eq(LONGITUDE)))
+				.thenReturn(Optional.of(true));
+		weatherComponent.forecastFailuresRemaining.set(Integer.MAX_VALUE);
+
+		assertDoesNotThrow(() -> weatherComponent.fetchNewWeather());
+
+		verify(mockRepository, never()).update(any(StoredWeatherData.class));
+	}
+
+	@Test
+	void testFetchNewWeather_withNoSites_doesNothing() {
+		when(mockDeviceComponent.getSites()).thenReturn(List.of());
+
+		weatherComponent.fetchNewWeather();
+
+		assertTrue(weatherComponent.forecastCalls.isEmpty());
+		verifyNoInteractions(mockLocationComponent);
+	}
+
+	private Device siteAt(double latitude, double longitude) {
+		Device site = new Device();
+		site.setId("site-1");
+		site.setClientId("customer-1");
+		site.setLatitude(latitude);
+		site.setLongitude(longitude);
+		return site;
+	}
+
+	private PirateWeatherDataResponse forecastResponse() {
+		PirateWeatherData data = new PirateWeatherData();
+		data.setSummary(WEATHER_SUMMARY);
+		data.setIcon(ICON);
+		data.setTemperature(TEMPERATURE);
+		PirateWeatherDataResponse response = new PirateWeatherDataResponse();
+		response.setCurrently(data);
+		return response;
 	}
 }
