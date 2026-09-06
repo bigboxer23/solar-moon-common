@@ -1,4 +1,5 @@
 [![CodeQL](https://github.com/bigboxer23/solar-moon-common/actions/workflows/codeql.yml/badge.svg)](https://github.com/bigboxer23/solar-moon-common/actions/workflows/codeql.yml)
+[![codecov](https://codecov.io/gh/bigboxer23/solar-moon-common/graph/badge.svg)](https://codecov.io/gh/bigboxer23/solar-moon-common)
 
 # solar-moon-common
 
