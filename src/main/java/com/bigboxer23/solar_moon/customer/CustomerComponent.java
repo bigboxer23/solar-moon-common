@@ -20,6 +20,34 @@ public class CustomerComponent {
 		return repository;
 	}
 
+	protected com.bigboxer23.solar_moon.ingest.sma.SMAIngestComponent getSMAIngestComponent() {
+		return IComponentRegistry.smaIngestComponent;
+	}
+
+	protected com.bigboxer23.solar_moon.device.DeviceUpdateComponent getDeviceUpdateComponent() {
+		return IComponentRegistry.deviceUpdateComponent;
+	}
+
+	protected com.bigboxer23.solar_moon.device.LinkedDeviceComponent getLinkedDeviceComponent() {
+		return IComponentRegistry.linkedDeviceComponent;
+	}
+
+	protected com.bigboxer23.solar_moon.subscription.SubscriptionComponent getSubscriptionComponent() {
+		return IComponentRegistry.subscriptionComponent;
+	}
+
+	protected com.bigboxer23.solar_moon.device.DeviceComponent getDeviceComponent() {
+		return IComponentRegistry.deviceComponent;
+	}
+
+	protected com.bigboxer23.solar_moon.mapping.MappingComponent getMappingComponent() {
+		return IComponentRegistry.mappingComponent;
+	}
+
+	protected com.bigboxer23.solar_moon.search.OpenSearchComponent getOpenSearchComponent() {
+		return IComponentRegistry.OSComponent;
+	}
+
 	public Optional<Customer> addCustomer(String email, String customerId, String name, String stripeCustomerId) {
 		if (StringUtils.isEmpty(email)
 				|| StringUtils.isEmpty(customerId)
@@ -37,7 +65,7 @@ public class CustomerComponent {
 		customer.setStripeCustomerId(stripeCustomerId);
 		log.info("Adding customer " + email);
 		getRepository().add(customer);
-		IComponentRegistry.smaIngestComponent.handleAccessKeyChange(null, customer.getAccessKey());
+		getSMAIngestComponent().handleAccessKeyChange(null, customer.getAccessKey());
 		return Optional.of(customer);
 	}
 
@@ -47,11 +75,15 @@ public class CustomerComponent {
 			return;
 		}
 		logAction("update", customer.getCustomerId());
-		if (customer.isAccessKeyChangeRequested()) {
+		// Capture before mutating: setting the new key below would make this predicate false
+		boolean accessKeyChangeRequested = customer.isAccessKeyChangeRequested();
+		Optional<Customer> existing = findCustomerByCustomerId(customer.getCustomerId());
+		String previousAccessKey = existing.map(Customer::getAccessKey).orElse(null);
+		if (accessKeyChangeRequested) {
 			log.info("generating new access key for " + customer.getCustomerId());
 			customer.setAccessKey(TokenGenerator.generateNewToken());
 		}
-		findCustomerByCustomerId(customer.getCustomerId()).ifPresent(existingCustomer -> {
+		existing.ifPresent(existingCustomer -> {
 			if (customer.isAdmin() && !existingCustomer.isAdmin()) {
 				log.warn("Not allowing admin escalation" + customer.getCustomerId());
 				customer.setAdmin(false);
@@ -62,12 +94,8 @@ public class CustomerComponent {
 		});
 		// TODO:validation
 		getRepository().update(customer);
-		if (customer.isAccessKeyChangeRequested()) {
-			IComponentRegistry.smaIngestComponent.handleAccessKeyChange(
-					findCustomerByCustomerId(customer.getCustomerId())
-							.map(Customer::getAccessKey)
-							.orElse(null),
-					customer.getAccessKey());
+		if (accessKeyChangeRequested) {
+			getSMAIngestComponent().handleAccessKeyChange(previousAccessKey, customer.getAccessKey());
 		}
 	}
 
@@ -82,13 +110,13 @@ public class CustomerComponent {
 	public void deleteCustomerByCustomerId(String customerId) {
 		findCustomerByCustomerId(customerId).ifPresent(c -> {
 			logAction("delete by customer id", c.getCustomerId());
-			IComponentRegistry.deviceUpdateComponent.deleteByCustomerId(customerId);
-			IComponentRegistry.linkedDeviceComponent.deleteByCustomerId(customerId);
-			IComponentRegistry.subscriptionComponent.deleteSubscription(customerId);
-			IComponentRegistry.deviceComponent.deleteDevicesByCustomerId(customerId);
-			IComponentRegistry.mappingComponent.deleteMapping(customerId);
-			IComponentRegistry.OSComponent.deleteByCustomerId(customerId);
-			IComponentRegistry.smaIngestComponent.handleAccessKeyChange(c.getAccessKey(), null);
+			getDeviceUpdateComponent().deleteByCustomerId(customerId);
+			getLinkedDeviceComponent().deleteByCustomerId(customerId);
+			getSubscriptionComponent().deleteSubscription(customerId);
+			getDeviceComponent().deleteDevicesByCustomerId(customerId);
+			getMappingComponent().deleteMapping(customerId);
+			getOpenSearchComponent().deleteByCustomerId(customerId);
+			getSMAIngestComponent().handleAccessKeyChange(c.getAccessKey(), null);
 
 			getRepository().delete(c);
 		});

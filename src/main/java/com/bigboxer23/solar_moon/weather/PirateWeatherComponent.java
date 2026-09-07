@@ -33,6 +33,14 @@ public class PirateWeatherComponent {
 		return new DynamoDbWeatherRepository();
 	}
 
+	protected com.bigboxer23.solar_moon.device.DeviceComponent getDeviceComponent() {
+		return IComponentRegistry.deviceComponent;
+	}
+
+	protected com.bigboxer23.solar_moon.location.LocationComponent getLocationComponent() {
+		return IComponentRegistry.locationComponent;
+	}
+
 	public Optional<PirateWeatherDataResponse> fetchForecastData(double latitude, double longitude) {
 		try (Response response =
 				OkHttpUtil.getSynchronous(MessageFormat.format(FORCAST_URL, latitude, longitude), null)) {
@@ -80,7 +88,7 @@ public class PirateWeatherComponent {
 
 	public void fetchNewWeather() {
 		boolean isTopOfHour = LocalDateTime.now().getMinute() == 0;
-		Map<String, Device> sites = IComponentRegistry.deviceComponent.getSites().stream()
+		Map<String, Device> sites = getDeviceComponent().getSites().stream()
 				.filter(site -> (site.getLatitude() != -1 && site.getLongitude() != -1))
 				.collect(Collectors.toMap(
 						(site) -> site.getLatitude() + ":" + site.getLongitude(),
@@ -97,7 +105,7 @@ public class PirateWeatherComponent {
 				return;
 			}
 			try {
-				if (IComponentRegistry.locationComponent
+				if (getLocationComponent()
 								.isDay(new Date(), site.getLatitude(), site.getLongitude())
 								.orElse(true)
 						|| isTopOfHour) {

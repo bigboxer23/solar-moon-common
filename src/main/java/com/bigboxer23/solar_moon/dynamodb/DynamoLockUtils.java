@@ -14,13 +14,23 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 /** */
 @Slf4j
 public class DynamoLockUtils {
+	private static final DynamoLockUtils INSTANCE = new DynamoLockUtils();
+
 	public static void doLockedCommand(String key, Runnable command) {
-		try (AmazonDynamoDBLockClient client = new AmazonDynamoDBLockClient(
+		INSTANCE.executeLocked(key, command);
+	}
+
+	protected AmazonDynamoDBLockClient getLockClient() {
+		return new AmazonDynamoDBLockClient(
 				AmazonDynamoDBLockClientOptions.builder(DynamoDbClient.builder().build(), LOCK_TABLE)
 						.withTimeUnit(TimeUnit.SECONDS)
 						.withLeaseDuration(15L)
 						.withCreateHeartbeatBackgroundThread(false)
-						.build())) {
+						.build());
+	}
+
+	void executeLocked(String key, Runnable command) {
+		try (AmazonDynamoDBLockClient client = getLockClient()) {
 			try {
 				client.tryAcquireLock(AcquireLockOptions.builder(key)
 								.withShouldSkipBlockingWait(true)
