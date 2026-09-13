@@ -37,8 +37,7 @@ public class LogEntryTest {
 	public void jacksonMapping() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 
-		String json =
-				"""
+		String json = """
 				{
 				"@timestamp":"2024-02-01T12:00:00.000Z",
 				"service.name":"svc",

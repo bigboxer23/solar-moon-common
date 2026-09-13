@@ -27,27 +27,26 @@ public interface TestConstants {
 	String criticalAlarmsTestString = "<point number=\"15\" name=\"Critical Alarms\" units=\"\" value=\"0\" />";
 	String informativeAlarmsTestString = "<point number=\"15\" name=\"Informative Alarms\" units=\"\" value=\"0\" />";
 
-	String LINKED_DEVICE_XML =
-			"""
+	String LINKED_DEVICE_XML = """
 			<?xml version="1.0" encoding="UTF-8" ?>
 			<DAS>
 			<mode>LOGFILEUPLOAD</mode>
 			<name>\
 			"""
-					+ serialNumber
-					+ """
+			+ serialNumber
+			+ """
 					A1</name>
 					<serial>\
 					"""
-					+ serialNumber
-					+ """
+			+ serialNumber
+			+ """
 					</serial>
 					<devices>
 					<device>
 					<name>\
 					"""
-					+ device1Name
-					+ """
+			+ device1Name
+			+ """
 					</name>
 					<address>1</address>
 					<type>xxxxxx</type>
@@ -57,8 +56,8 @@ public interface TestConstants {
 					<record>
 					<time zone="UTC">\
 					"""
-					+ date
-					+ """
+			+ date
+			+ """
 					</time>
 					<error text="Ok">0</error>
 					<point number="0" name="DC Voltage" units="V" value="367.970" />
@@ -77,11 +76,11 @@ public interface TestConstants {
 					<point number="13" name="AC Contactors Cycles" units="" value="24311.000" />
 					<point number="14" name="Slave ID" units="" value="1.000" />
 					"""
-					+ criticalAlarmsTestString
-					+ """
+			+ criticalAlarmsTestString
+			+ """
 					"""
-					+ informativeAlarmsTestString
-					+ """
+			+ informativeAlarmsTestString
+			+ """
 					</record>
 					</records>
 					</device>
@@ -169,8 +168,7 @@ public interface TestConstants {
 			+ "</devices>\n"
 			+ "</DAS>";
 
-	String deviceError =
-			"""
+	String deviceError = """
 <?xml version="1.0" encoding="UTF-8" ?>
 <DAS>
 <mode>LOGFILEUPLOAD</mode>
@@ -298,8 +296,7 @@ public interface TestConstants {
 			+ "</devices>\n"
 			+ "</DAS>";
 
-	String nonUpdateStatus =
-			"""
+	String nonUpdateStatus = """
 			<?xml version="1.0" encoding="UTF-8" ?>
 			<DAS>
 			<mode>STATUS</mode>

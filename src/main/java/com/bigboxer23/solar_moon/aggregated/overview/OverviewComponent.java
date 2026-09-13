@@ -43,10 +43,12 @@ public class OverviewComponent implements IComponentRegistry {
 			return;
 		}
 		data.setSitesOverviewData(new HashMap<>());
-		data.getDevices().stream().filter(Device::isDeviceSite).forEach(site -> data.getSitesOverviewData()
-				.put(
-						site.getDisplayName(),
-						getData(site, searchJson, OpenSearchConstants.TIME_SERIES_WITH_ERRORS_SEARCH_TYPE)));
+		data.getDevices().stream()
+				.filter(Device::isDeviceSite)
+				.forEach(site -> data.getSitesOverviewData()
+						.put(
+								site.getDisplayName(),
+								getData(site, searchJson, OpenSearchConstants.TIME_SERIES_WITH_ERRORS_SEARCH_TYPE)));
 	}
 
 	private void fillInOverallInfo(OverviewData data, SearchJSON searchJson) {
