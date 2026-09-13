@@ -579,17 +579,18 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 	}
 
 	public void clearDisabledResolvedAlarms() {
-		getActiveAlarms().forEach(alarm -> getDeviceComponent()
-				.findDeviceById(alarm.getDeviceId(), alarm.getCustomerId())
-				.filter(Device::isDisabled)
-				.ifPresent(device -> {
-					TransactionUtil.addDeviceId(device.getId(), device.getSiteId());
-					log.warn("resolving alarm for disabled device");
-					alarm.setState(RESOLVED);
-					alarm.setEmailed(RESOLVED_NOT_EMAILED);
-					alarm.setEndDate(new Date().getTime());
-					updateAlarm(alarm);
-				}));
+		getActiveAlarms()
+				.forEach(alarm -> getDeviceComponent()
+						.findDeviceById(alarm.getDeviceId(), alarm.getCustomerId())
+						.filter(Device::isDisabled)
+						.ifPresent(device -> {
+							TransactionUtil.addDeviceId(device.getId(), device.getSiteId());
+							log.warn("resolving alarm for disabled device");
+							alarm.setState(RESOLVED);
+							alarm.setEmailed(RESOLVED_NOT_EMAILED);
+							alarm.setEndDate(new Date().getTime());
+							updateAlarm(alarm);
+						}));
 	}
 
 	public List<Alarm> getActiveAlarms() {

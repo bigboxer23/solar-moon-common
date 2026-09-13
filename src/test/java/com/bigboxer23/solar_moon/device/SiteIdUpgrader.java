@@ -6,12 +6,14 @@ import com.bigboxer23.solar_moon.TestConstants;
 /** */
 public class SiteIdUpgrader implements IComponentRegistry, TestConstants {
 	public void siteNameToSiteId() {
-		deviceComponent.getSites().forEach(site -> deviceComponent
-				.getDevicesBySite(site.getClientId(), site.getDisplayName())
-				.forEach(device -> {
-					device.setSiteId(site.getId());
-					deviceComponent.updateDevice(device);
-				}));
+		deviceComponent
+				.getSites()
+				.forEach(site -> deviceComponent
+						.getDevicesBySite(site.getClientId(), site.getDisplayName())
+						.forEach(device -> {
+							device.setSiteId(site.getId());
+							deviceComponent.updateDevice(device);
+						}));
 		deviceComponent.getDevices(false).stream()
 				.filter(device -> DeviceComponent.NO_SITE.equalsIgnoreCase(device.getSite()))
 				.forEach(device -> {

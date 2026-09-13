@@ -150,18 +150,20 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 		site.setIsSite("1");
 		site.setSiteId(siteOptional.get().getId());
 		site.setSite(siteOptional.get().getDisplayName());
-		IComponentRegistry.deviceComponent.updateDevice(site).ifPresent(s -> devices.stream()
-				.map(SMADevice::getDevice)
-				.filter(Objects::nonNull)
-				.filter(device -> !site.getId().equals(device.getId()))
-				.filter(device -> DeviceComponent.NO_SITE.equalsIgnoreCase(device.getSiteId()))
-				.forEach(device -> {
-					TransactionUtil.addDeviceId(device.getId(), site.getId());
-					log.warn("adjusting site for " + device.getDisplayName() + " " + site.getSite());
-					device.setSite(site.getDisplayName());
-					device.setSiteId(site.getId());
-					IComponentRegistry.deviceComponent.updateDevice(device);
-				}));
+		IComponentRegistry.deviceComponent
+				.updateDevice(site)
+				.ifPresent(s -> devices.stream()
+						.map(SMADevice::getDevice)
+						.filter(Objects::nonNull)
+						.filter(device -> !site.getId().equals(device.getId()))
+						.filter(device -> DeviceComponent.NO_SITE.equalsIgnoreCase(device.getSiteId()))
+						.forEach(device -> {
+							TransactionUtil.addDeviceId(device.getId(), site.getId());
+							log.warn("adjusting site for " + device.getDisplayName() + " " + site.getSite());
+							device.setSite(site.getDisplayName());
+							device.setSiteId(site.getId());
+							IComponentRegistry.deviceComponent.updateDevice(device);
+						}));
 	}
 
 	private void checkForNewDevicesAndAssignSite(Map<String, SMADevice> devices) {

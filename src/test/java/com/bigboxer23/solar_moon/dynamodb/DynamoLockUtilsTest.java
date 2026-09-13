@@ -91,9 +91,11 @@ public class DynamoLockUtilsTest {
 	void testExecuteLocked_propagatesCommandFailureAfterAcquiringLock() throws Exception {
 		when(mockClient.tryAcquireLock(any(AcquireLockOptions.class))).thenReturn(Optional.of(mockLock));
 
-		assertThrows(IllegalStateException.class, () -> new TestableDynamoLockUtils().executeLocked(KEY, () -> {
-			throw new IllegalStateException("command blew up");
-		}));
+		assertThrows(
+				IllegalStateException.class,
+				() -> new TestableDynamoLockUtils().executeLocked(KEY, () -> {
+					throw new IllegalStateException("command blew up");
+				}));
 
 		verify(mockClient, never()).releaseLock(any(LockItem.class));
 	}
