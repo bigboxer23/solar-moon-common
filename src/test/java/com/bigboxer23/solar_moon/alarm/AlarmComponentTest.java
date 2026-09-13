@@ -594,6 +594,102 @@ public class AlarmComponentTest implements IAlarmConstants {
 	}
 
 	@Test
+	void testFaultDetected_withLongRunningFault_escalatesToNeedsEmail() {
+		String content = "No route to host errorCode:113";
+		Alarm existingAlarm = createTestAlarm();
+		existingAlarm.setEmailed(DONT_EMAIL);
+		existingAlarm.setStartDate(System.currentTimeMillis() - (TimeConstants.HOUR * 3));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(existingAlarm));
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.empty());
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.faultDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository)
+				.update(argThat(alarm -> alarm.getEmailed() == NEEDS_EMAIL
+						&& alarm.getState() == ACTIVE
+						&& alarm.getAlarmId().equals(ALARM_ID)));
+	}
+
+	@Test
+	void testFaultDetected_withRecentFault_staysDontEmail() {
+		String content = "No route to host errorCode:113";
+		Alarm existingAlarm = createTestAlarm();
+		existingAlarm.setEmailed(DONT_EMAIL);
+		existingAlarm.setStartDate(System.currentTimeMillis() - TimeConstants.THIRTY_MINUTES);
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(existingAlarm));
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.faultDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository).update(argThat(alarm -> alarm.getEmailed() == DONT_EMAIL));
+	}
+
+	@Test
+	void testFaultDetected_withLongRunningFaultAndNotificationsDisabled_staysDontEmail() {
+		String content = "No route to host errorCode:113";
+		Device device = new Device();
+		device.setNotificationsDisabled(true);
+		Alarm existingAlarm = createTestAlarm();
+		existingAlarm.setEmailed(DONT_EMAIL);
+		existingAlarm.setStartDate(System.currentTimeMillis() - (TimeConstants.HOUR * 3));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(existingAlarm));
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.of(device));
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.faultDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository).update(argThat(alarm -> alarm.getEmailed() == DONT_EMAIL));
+	}
+
+	@Test
+	void testFaultDetected_withAlreadyEmailedAlarm_doesNotChangeEmailFlag() {
+		String content = "No route to host errorCode:113";
+		long emailed = System.currentTimeMillis() - TimeConstants.DAY;
+		Alarm existingAlarm = createTestAlarm();
+		existingAlarm.setEmailed(emailed);
+		existingAlarm.setStartDate(System.currentTimeMillis() - (TimeConstants.HOUR * 3));
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(existingAlarm));
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.faultDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository).update(argThat(alarm -> alarm.getEmailed() == emailed));
+	}
+
+	@Test
+	void testFaultDetected_withoutStartDate_doesNotEscalate() {
+		String content = "No route to host errorCode:113";
+		Alarm existingAlarm = createTestAlarm();
+		existingAlarm.setEmailed(DONT_EMAIL);
+		existingAlarm.setStartDate(0);
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(List.of(existingAlarm));
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.faultDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository).update(argThat(alarm -> alarm.getEmailed() == DONT_EMAIL));
+	}
+
+	@Test
+	void testFaultDetected_withNewAlarm_doesNotEscalateImmediately() {
+		String content = "No route to host errorCode:113";
+		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(Collections.emptyList());
+		when(mockDeviceComponent.findDeviceById(DEVICE_ID, CUSTOMER_ID)).thenReturn(Optional.empty());
+		when(mockRepository.update(any(Alarm.class))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+		Optional<Alarm> result = alarmComponent.faultDetected(CUSTOMER_ID, DEVICE_ID, SITE_ID, content);
+
+		assertTrue(result.isPresent());
+		verify(mockRepository).update(argThat(alarm -> alarm.getEmailed() == DONT_EMAIL));
+	}
+
+	@Test
 	void testAlarmConditionDetected_withNoExistingAlarm_createsNewAlarm() {
 		String content = "Alarm condition detected";
 		when(mockRepository.findAlarmsByDevice(CUSTOMER_ID, DEVICE_ID)).thenReturn(Collections.emptyList());

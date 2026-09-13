@@ -27,6 +27,7 @@ public class DeviceDataTest {
 		assertEquals(0, data.getAverageVoltage());
 		assertEquals(0, data.getTotalEnergyConsumed());
 		assertEquals(0, data.getTotalRealPower());
+		assertFalse(data.isFault());
 	}
 
 	@Test
@@ -58,6 +59,7 @@ public class DeviceDataTest {
 		assertEquals(original.getCriticalError(), copy.getCriticalError());
 		assertEquals(original.getCriticalErrorString(), copy.getCriticalErrorString());
 		assertEquals(original.getInformationalErrorString(), copy.getInformationalErrorString());
+		assertEquals(original.isFault(), copy.isFault());
 	}
 
 	@Test
@@ -380,6 +382,7 @@ public class DeviceDataTest {
 		data.setCriticalError(3);
 		data.setCriticalErrorString("critical");
 		data.setInformationalErrorString("informational");
+		data.setFault(true);
 		return data;
 	}
 }

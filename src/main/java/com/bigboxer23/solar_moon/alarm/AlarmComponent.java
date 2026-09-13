@@ -21,6 +21,8 @@ import software.amazon.awssdk.utils.StringUtils;
 public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 	protected static final long QUICK_CHECK_THRESHOLD = TimeConstants.FORTY_FIVE_MINUTES;
 
+	protected static final long FAULT_ESCALATION_THRESHOLD = TimeConstants.HOUR * 2;
+
 	private AlarmRepository repository;
 
 	protected AlarmRepository getRepository() {
@@ -202,8 +204,38 @@ public class AlarmComponent implements IAlarmConstants, ISolectriaConstants {
 					newAlarm.setEmailed(DONT_EMAIL);
 					return newAlarm;
 				});
+		maybeEscalateFault(alarm, customerId, deviceId);
 		alarm.setLastUpdate(System.currentTimeMillis());
 		return updateAlarm(alarm);
+	}
+
+	/**
+	 * Faults frequently resolve on their own, which is why they're created as DONT_EMAIL. One still
+	 * open hours later isn't transient though, it's the meter telling us over and over that it
+	 * can't be read, so send the notification rather than letting it sit active and silent. This is
+	 * an explicit error from the device, not something inferred from production data, so it applies
+	 * to every device type including sites.
+	 *
+	 * @param alarm
+	 * @param customerId
+	 * @param deviceId
+	 */
+	protected void maybeEscalateFault(Alarm alarm, String customerId, String deviceId) {
+		if (alarm.getEmailed() != DONT_EMAIL || alarm.getStartDate() <= 0) {
+			return;
+		}
+		if (System.currentTimeMillis() - alarm.getStartDate() < FAULT_ESCALATION_THRESHOLD) {
+			return;
+		}
+		if (getDeviceComponent()
+				.findDeviceById(deviceId, customerId)
+				.map(Device::isNotificationsDisabled)
+				.orElse(false)) {
+			log.debug("notifications disabled, not escalating fault " + alarm.getAlarmId());
+			return;
+		}
+		log.warn("fault active since " + alarm.getStartDate() + ", escalating to notification " + alarm.getAlarmId());
+		alarm.setEmailed(NEEDS_EMAIL);
 	}
 
 	public Optional<Alarm> alarmConditionDetected(String customerId, String deviceId, String siteId, String content) {

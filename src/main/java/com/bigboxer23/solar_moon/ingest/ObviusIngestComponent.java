@@ -210,6 +210,7 @@ public class ObviusIngestComponent implements MeterConstants {
 				return getTimestampFromBody(body)
 						.map(date -> {
 							DeviceData deviceData = DeviceData.createEmpty(siteId, customerId, deviceId, date);
+							deviceData.setFault(true);
 							deviceData.setTotalEnergyConsumed(IComponentRegistry.OSComponent.getMaxTotalEnergyConsumed(
 									customerId, deviceId, 7 * TimeConstants.DAY));
 							return deviceData;
@@ -239,6 +240,7 @@ public class ObviusIngestComponent implements MeterConstants {
 									.getNamedItem("value")
 									.getNodeValue();
 							if (StringUtils.isEmpty(value) || "NULL".equalsIgnoreCase(value)) {
+								deviceData.setFault(true);
 								IComponentRegistry.alarmComponent.faultDetected(
 										customerId, deviceData.getDeviceId(), deviceData.getSiteId(), findError(body));
 							}

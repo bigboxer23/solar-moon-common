@@ -407,6 +407,7 @@ class ObviusIngestComponentTest {
 		assertNotNull(result);
 		assertEquals(800f, result.getTotalEnergyConsumed());
 		assertEquals(0f, result.getTotalRealPower());
+		assertTrue(result.isFault());
 		verify(mockAlarmComponent).faultDetected("customer-1", "device-1", "site-1", "Fault Detected errorCode:5");
 	}
 
@@ -543,6 +544,7 @@ class ObviusIngestComponentTest {
 				component.parseDeviceInformation(xmlNullValue, "site-1", "TestDevice", "customer-1", "device-1");
 
 		assertNotNull(result);
+		assertTrue(result.isFault());
 		verify(mockAlarmComponent).faultDetected(eq("customer-1"), eq("device-1"), eq("site-1"), anyString());
 	}
 

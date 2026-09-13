@@ -57,6 +57,9 @@ public class VirtualDeviceComponent {
 					List<DeviceData> siteDevices = getOSComponent()
 							.getDevicesForSiteByTimePeriod(
 									device.getCustomerId(), device.getSiteId(), device.getDate());
+					if (hasFaultedInput(virtualDevice, siteDevices)) {
+						return;
+					}
 					DeviceData virtualDeviceData = new DeviceData(
 							virtualDevice.getSiteId(), virtualDevice.getClientId(), virtualDevice.getId());
 					virtualDeviceData.setVirtual(true);
@@ -82,6 +85,32 @@ public class VirtualDeviceComponent {
 						log.error("handleVirtualDevice", e);
 					}
 				});
+	}
+
+	/**
+	 * A subtraction device is the difference of two meters, so a faulted record (zeros standing in
+	 * for readings we never got) doesn't degrade the result, it inverts it: abs(0 - other) returns
+	 * the surviving meter's production under the virtual device's name. Write nothing instead, so
+	 * the gap is visible rather than plausible and wrong.
+	 *
+	 * @param virtualDevice
+	 * @param siteDevices
+	 * @return true if the virtual device cannot be calculated from the data available
+	 */
+	protected boolean hasFaultedInput(Device virtualDevice, List<DeviceData> siteDevices) {
+		if (!virtualDevice.isSubtraction()) {
+			return false;
+		}
+		return siteDevices.stream().filter(Objects::nonNull).anyMatch(data -> {
+			if (data.isFault()) {
+				log.warn("not calculating subtraction device "
+						+ virtualDevice.getId()
+						+ ", faulted data from "
+						+ data.getDeviceId());
+				return true;
+			}
+			return false;
+		});
 	}
 
 	private boolean shouldAddVirtualDevice(DeviceData device) {
