@@ -73,6 +73,8 @@ public interface MeterConstants {
 
 	String INFORMATIONAL_ERROR_STRING = "informationalErrorString";
 
+	String FAULT = "fault";
+
 	String CUSTOMER_ID_ATTRIBUTE = "customer-id";
 
 	float OBVIOUS_ROLLOVER = 10000000;

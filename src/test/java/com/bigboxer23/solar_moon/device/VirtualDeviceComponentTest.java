@@ -549,6 +549,132 @@ public class VirtualDeviceComponentTest {
 		}
 	}
 
+	@Test
+	void testHandleVirtualDevice_withSubtractionModeAndFaultedData_writesNothing() throws Exception {
+		DeviceData deviceData = createDeviceData();
+		Device virtualDevice = createVirtualDevice();
+		virtualDevice.setSubtraction(true);
+		Device physicalDevice1 = createPhysicalDevice("physical-1");
+
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID))
+				.thenReturn(Arrays.asList(virtualDevice, physicalDevice1));
+		when(mockOSComponent.getSiteDevicesCountByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+				.thenReturn(1);
+
+		try (MockedStatic<DynamoLockUtils> mockLockUtils = mockStatic(DynamoLockUtils.class)) {
+			mockLockUtils
+					.when(() -> DynamoLockUtils.doLockedCommand(anyString(), any(Runnable.class)))
+					.thenAnswer(invocation -> {
+						Runnable command = invocation.getArgument(1);
+						command.run();
+						return null;
+					});
+
+			DeviceData faultedData = createDeviceData();
+			faultedData.setEnergyConsumed(0f);
+			faultedData.setTotalRealPower(0f);
+			faultedData.setTotalEnergyConsumed(0f);
+			faultedData.setFault(true);
+
+			DeviceData healthyData = createDeviceData();
+			healthyData.setEnergyConsumed(30f);
+			healthyData.setTotalRealPower(15f);
+			healthyData.setTotalEnergyConsumed(300f);
+
+			when(mockOSComponent.getDevicesForSiteByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+					.thenReturn(Arrays.asList(faultedData, healthyData));
+
+			virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+			verify(mockOSComponent, never()).logData(any(), anyList());
+			verifyNoInteractions(mockLocationComponent);
+			verifyNoInteractions(mockWeatherComponent);
+			verifyNoInteractions(mockLinkedDeviceComponent);
+		}
+	}
+
+	@Test
+	void testHandleVirtualDevice_withAdditionModeAndFaultedData_stillAggregates() throws Exception {
+		DeviceData deviceData = createDeviceData();
+		Device virtualDevice = createVirtualDevice();
+		Device physicalDevice1 = createPhysicalDevice("physical-1");
+
+		when(mockDeviceComponent.getDevicesBySiteId(CUSTOMER_ID, SITE_ID))
+				.thenReturn(Arrays.asList(virtualDevice, physicalDevice1));
+		when(mockOSComponent.getSiteDevicesCountByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+				.thenReturn(1);
+
+		try (MockedStatic<DynamoLockUtils> mockLockUtils = mockStatic(DynamoLockUtils.class)) {
+			mockLockUtils
+					.when(() -> DynamoLockUtils.doLockedCommand(anyString(), any(Runnable.class)))
+					.thenAnswer(invocation -> {
+						Runnable command = invocation.getArgument(1);
+						command.run();
+						return null;
+					});
+
+			DeviceData faultedData = createDeviceData();
+			faultedData.setEnergyConsumed(0f);
+			faultedData.setTotalRealPower(0f);
+			faultedData.setTotalEnergyConsumed(0f);
+			faultedData.setFault(true);
+
+			DeviceData healthyData = createDeviceData();
+			healthyData.setEnergyConsumed(30f);
+			healthyData.setTotalRealPower(15f);
+			healthyData.setTotalEnergyConsumed(300f);
+
+			when(mockOSComponent.getDevicesForSiteByTimePeriod(eq(CUSTOMER_ID), eq(SITE_ID), any(Date.class)))
+					.thenReturn(Arrays.asList(faultedData, healthyData));
+
+			virtualDeviceComponent.handleVirtualDevice(deviceData);
+
+			verify(mockOSComponent).logData(any(Date.class), argThat(list -> {
+				assertEquals(30f, list.getFirst().getEnergyConsumed());
+				assertEquals(15f, list.getFirst().getTotalRealPower());
+				assertEquals(300f, list.getFirst().getTotalEnergyConsumed());
+				return true;
+			}));
+		}
+	}
+
+	@Test
+	void testHasFaultedInput_withSubtractionAndCleanData_returnsFalse() {
+		Device virtualDevice = createVirtualDevice();
+		virtualDevice.setSubtraction(true);
+
+		assertFalse(virtualDeviceComponent.hasFaultedInput(
+				virtualDevice, Arrays.asList(createDeviceData(), createDeviceData())));
+	}
+
+	@Test
+	void testHasFaultedInput_withSubtractionAndFaultedData_returnsTrue() {
+		Device virtualDevice = createVirtualDevice();
+		virtualDevice.setSubtraction(true);
+		DeviceData faultedData = createDeviceData();
+		faultedData.setFault(true);
+
+		assertTrue(
+				virtualDeviceComponent.hasFaultedInput(virtualDevice, Arrays.asList(createDeviceData(), faultedData)));
+	}
+
+	@Test
+	void testHasFaultedInput_withoutSubtraction_returnsFalse() {
+		Device virtualDevice = createVirtualDevice();
+		DeviceData faultedData = createDeviceData();
+		faultedData.setFault(true);
+
+		assertFalse(virtualDeviceComponent.hasFaultedInput(virtualDevice, Collections.singletonList(faultedData)));
+	}
+
+	@Test
+	void testHasFaultedInput_withNullData_returnsFalse() {
+		Device virtualDevice = createVirtualDevice();
+		virtualDevice.setSubtraction(true);
+
+		assertFalse(virtualDeviceComponent.hasFaultedInput(virtualDevice, Collections.singletonList(null)));
+	}
+
 	private DeviceData createDeviceData() {
 		DeviceData data = new DeviceData(SITE_ID, CUSTOMER_ID, DEVICE_ID);
 		data.setDate(new Date());

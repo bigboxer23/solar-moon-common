@@ -90,6 +90,14 @@ public class DeviceData {
 	@JsonProperty(INFORMATIONAL_ERROR_STRING)
 	private String informationalErrorString = null;
 
+	/**
+	 * True when a fault was detected while reading this record (the meter could not be reached, or
+	 * a mapped value was unreadable). The values on a faulted record are placeholders, not
+	 * readings, so they must not be fed into a virtual device calculation.
+	 */
+	@JsonProperty(FAULT)
+	private boolean fault = false;
+
 	public DeviceData() {}
 
 	public DeviceData(String siteId, String customerId, String deviceId) {
@@ -120,6 +128,7 @@ public class DeviceData {
 		setCriticalError(deviceData.getCriticalError());
 		setCriticalErrorString(deviceData.getCriticalErrorString());
 		setInformationalErrorString(deviceData.getInformationalErrorString());
+		setFault(deviceData.isFault());
 	}
 
 	public static DeviceData createEmpty(String siteId, String customerId, String deviceId, Date timestamp) {
