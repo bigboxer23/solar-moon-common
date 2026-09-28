@@ -280,6 +280,26 @@ class IngestComponentTest {
 	}
 
 	@Test
+	void testFindDeviceFromDeviceNameFuzzy_migratesLegacySmaLabelToSerial() {
+		String customerId = "customer-1";
+		String serial = "3023468998";
+		Device device = createTestDevice();
+		device.setDeviceName("SN: 3023468998 (SN: 3023468998 - 3.04):3023468998");
+		device.setDisabled(false);
+
+		when(mockDeviceComponent.findDeviceByDeviceName(customerId, serial)).thenReturn(Optional.empty());
+		when(mockDeviceComponent.getDevicesForCustomerId(customerId)).thenReturn(List.of(device));
+		when(mockDeviceComponent.updateDevice(any(Device.class))).thenReturn(Optional.of(device));
+
+		Device result = component.findDeviceFromDeviceNameFuzzy(customerId, serial);
+
+		assertSame(device, result);
+		assertEquals(serial, result.getDeviceName());
+		verify(mockDeviceComponent).updateDevice(device);
+		verify(mockDeviceComponent, never()).addDevice(any(Device.class));
+	}
+
+	@Test
 	void testFindDeviceFromDeviceNameFuzzy_noFuzzyMatch() {
 		String customerId = "customer-1";
 		String deviceName = "TestDevice";

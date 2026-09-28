@@ -224,6 +224,78 @@ class SMAIngestComponentTest {
 	}
 
 	@Test
+	void testProcessChildNode_tenDigitSerial() throws Exception {
+		SMARecord record = component.processChildNode(parseNode("<Device><Key>SN: 3023468998 (SN: 3023468998 -"
+				+ " 3.04):3023468998:Power</Key><Mean>17442</Mean></Device>"));
+
+		assertEquals("3023468998", record.getDevice());
+		assertEquals("Power", record.getAttributeName());
+		assertEquals("17442", record.getValue());
+	}
+
+	@Test
+	void testProcessChildNode_nineDigitSerialWithLabel() throws Exception {
+		SMARecord record =
+				component.processChildNode(parseNode("<Device><Key>SN: 191210245 (SN: 191210245 - 1.03):191210245:Total"
+						+ " yield</Key><Mean>241203.1</Mean></Device>"));
+
+		assertEquals("191210245", record.getDevice());
+		assertEquals("Total yield", record.getAttributeName());
+	}
+
+	@Test
+	void testProcessChildNode_mismatchedSerialInLabelUsesFirstSerial() throws Exception {
+		SMARecord record = component.processChildNode(parseNode("<Device><Key>SN: 191260183 (SN: 900001347 -"
+				+ " 1.05):191260183:Power</Key><Mean>17550</Mean></Device>"));
+
+		assertEquals("191260183", record.getDevice());
+		assertEquals("Power", record.getAttributeName());
+	}
+
+	@Test
+	void testProcessChildNode_clusterControllerSerial() throws Exception {
+		SMARecord record = component.processChildNode(
+				parseNode("<Device><Key>Cluster Controller:165012188:Power</Key>" + "<Mean>697133</Mean></Device>"));
+
+		assertEquals("165012188", record.getDevice());
+		assertEquals("Power", record.getAttributeName());
+	}
+
+	@Test
+	void testProcessChildNode_elevenDigitNumberFallsBackToKeyPrefix() throws Exception {
+		SMARecord record = component.processChildNode(
+				parseNode("<Device><Key>Meter" + " 12345678901:Power</Key><Mean>5000</Mean></Device>"));
+
+		assertEquals("Meter 12345678901", record.getDevice());
+		assertEquals("Power", record.getAttributeName());
+	}
+
+	@Test
+	void testIngestXMLFile_tenDigitSerialLooksUpBareSerial() throws Exception {
+		String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+				+ "<ClusterController>"
+				+ "<MeanPublic>"
+				+ "<Key>SN: 3023468998 (SN: 3023468998 - 3.04):3023468998:Power</Key>"
+				+ "<Timestamp>2026-09-27T12:30:00</Timestamp>"
+				+ "<Mean>17442</Mean>"
+				+ "</MeanPublic>"
+				+ "</ClusterController>";
+
+		component.ingestXMLFile(xml, "customer-1");
+
+		verify(mockGenerationComponent).findDeviceFromDeviceNameFuzzy("customer-1", "3023468998");
+		verify(mockGenerationComponent, never())
+				.findDeviceFromDeviceNameFuzzy("customer-1", "SN: 3023468998 (SN: 3023468998 - 3.04):3023468998");
+	}
+
+	private Node parseNode(String xml) throws Exception {
+		return javax.xml.parsers.DocumentBuilderFactory.newInstance()
+				.newDocumentBuilder()
+				.parse(new org.xml.sax.InputSource(new java.io.StringReader(xml)))
+				.getDocumentElement();
+	}
+
+	@Test
 	void testProcessChildNode_deviceNameWithColon() throws Exception {
 		String xml = "<Device>"
 				+ "<Key>Device:Name:With:Colons:Power</Key>"

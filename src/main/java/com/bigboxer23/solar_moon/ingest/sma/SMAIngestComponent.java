@@ -40,7 +40,7 @@ import software.amazon.awssdk.utils.StringUtils;
 public class SMAIngestComponent implements ISMAIngestConstants {
 	private final SimpleDateFormat smaFtpFolderDateFormatter = new SimpleDateFormat("yyyyMMdd");
 
-	private static final Pattern NINE_DIGIT_PATTERN = Pattern.compile("\\b\\d{9}\\b");
+	private static final Pattern SERIAL_NUMBER_PATTERN = Pattern.compile("\\b\\d{9,10}\\b");
 
 	private static S3Client s3;
 
@@ -272,7 +272,7 @@ public class SMAIngestComponent implements ISMAIngestConstants {
 			switch (childNode.getNodeName()) {
 				case KEY:
 					String content = childNode.getTextContent();
-					Matcher matcher = NINE_DIGIT_PATTERN.matcher(content);
+					Matcher matcher = SERIAL_NUMBER_PATTERN.matcher(content);
 					if (matcher.find()) {
 						record.setDevice(matcher.group());
 					} else {
