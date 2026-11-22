@@ -15,8 +15,11 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AliasExistsException;
+import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
 
 @ExtendWith(MockitoExtension.class)
 public class CustomerComponentTest {
@@ -45,6 +48,9 @@ public class CustomerComponentTest {
 	@Mock
 	private OpenSearchComponent mockOpenSearchComponent;
 
+	@Mock
+	private CognitoUserComponent mockCognitoUserComponent;
+
 	private TestableCustomerComponent customerComponent;
 
 	private static final String CUSTOMER_ID = "customer-123";
@@ -52,6 +58,7 @@ public class CustomerComponentTest {
 	private static final String NAME = "Test Customer";
 	private static final String STRIPE_CUSTOMER_ID = "stripe-123";
 	private static final String ACCESS_KEY = "access-key-123";
+	private static final String NEW_EMAIL = "new@example.com";
 
 	private class TestableCustomerComponent extends CustomerComponent {
 
@@ -93,6 +100,11 @@ public class CustomerComponentTest {
 		@Override
 		protected OpenSearchComponent getOpenSearchComponent() {
 			return mockOpenSearchComponent;
+		}
+
+		@Override
+		protected CognitoUserComponent getCognitoUserComponent() {
+			return mockCognitoUserComponent;
 		}
 	}
 
@@ -634,6 +646,146 @@ public class CustomerComponentTest {
 
 		verify(mockRepository, never()).delete(any(Customer.class));
 		verifyNoInteractions(mockDeviceComponent);
+	}
+
+	@Test
+	void testChangeEmail_withValidEmail_updatesCognitoThenSwapsRecord() {
+		Customer existing = createTestCustomer();
+		Customer changed = createTestCustomer();
+		changed.setEmail(NEW_EMAIL);
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(existing));
+		when(mockRepository.findCustomerByEmail(NEW_EMAIL)).thenReturn(Optional.empty());
+		when(mockRepository.changeEmail(existing, NEW_EMAIL)).thenReturn(changed);
+
+		Optional<Customer> result = customerComponent.changeEmail(CUSTOMER_ID, NEW_EMAIL);
+
+		assertTrue(result.isPresent());
+		assertEquals(NEW_EMAIL, result.get().getEmail());
+		InOrder inOrder = inOrder(mockCognitoUserComponent, mockRepository);
+		inOrder.verify(mockCognitoUserComponent).updateEmail(CUSTOMER_ID, NEW_EMAIL);
+		inOrder.verify(mockRepository).changeEmail(existing, NEW_EMAIL);
+		verify(mockCognitoUserComponent, times(1)).updateEmail(any(), any());
+	}
+
+	@Test
+	void testChangeEmail_trimsWhitespace() {
+		Customer existing = createTestCustomer();
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(existing));
+		when(mockRepository.findCustomerByEmail(NEW_EMAIL)).thenReturn(Optional.empty());
+		when(mockRepository.changeEmail(existing, NEW_EMAIL)).thenReturn(existing);
+
+		customerComponent.changeEmail(CUSTOMER_ID, "  " + NEW_EMAIL + "  ");
+
+		verify(mockCognitoUserComponent).updateEmail(CUSTOMER_ID, NEW_EMAIL);
+		verify(mockRepository).changeEmail(existing, NEW_EMAIL);
+	}
+
+	@Test
+	void testChangeEmail_withSameEmail_syncsCognitoWithoutSwappingRecord() {
+		Customer existing = createTestCustomer();
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(existing));
+
+		Optional<Customer> result = customerComponent.changeEmail(CUSTOMER_ID, EMAIL);
+
+		assertTrue(result.isPresent());
+		assertSame(existing, result.get());
+		verify(mockCognitoUserComponent).updateEmail(CUSTOMER_ID, EMAIL);
+		verify(mockRepository, never()).findCustomerByEmail(any());
+		verify(mockRepository, never()).changeEmail(any(), any());
+	}
+
+	@Test
+	void testChangeEmail_withEmailOwnedByAnotherCustomer_returnsEmpty() {
+		Customer other = createTestCustomer();
+		other.setCustomerId("other-customer");
+		other.setEmail(NEW_EMAIL);
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(createTestCustomer()));
+		when(mockRepository.findCustomerByEmail(NEW_EMAIL)).thenReturn(Optional.of(other));
+
+		assertTrue(customerComponent.changeEmail(CUSTOMER_ID, NEW_EMAIL).isEmpty());
+		verifyNoInteractions(mockCognitoUserComponent);
+		verify(mockRepository, never()).changeEmail(any(), any());
+	}
+
+	@Test
+	void testChangeEmail_withUnknownCustomer_returnsEmpty() {
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.empty());
+
+		assertTrue(customerComponent.changeEmail(CUSTOMER_ID, NEW_EMAIL).isEmpty());
+		verifyNoInteractions(mockCognitoUserComponent);
+		verify(mockRepository, never()).changeEmail(any(), any());
+	}
+
+	@Test
+	void testChangeEmail_withInvalidInput_returnsEmptyWithoutLookup() {
+		assertTrue(customerComponent.changeEmail(null, NEW_EMAIL).isEmpty());
+		assertTrue(customerComponent.changeEmail("", NEW_EMAIL).isEmpty());
+		assertTrue(customerComponent.changeEmail(CUSTOMER_ID, null).isEmpty());
+		assertTrue(customerComponent.changeEmail(CUSTOMER_ID, "   ").isEmpty());
+		assertTrue(customerComponent.changeEmail(CUSTOMER_ID, "not-an-email").isEmpty());
+		assertTrue(customerComponent.changeEmail(CUSTOMER_ID, "a@b").isEmpty());
+		assertTrue(customerComponent.changeEmail(CUSTOMER_ID, "a b@example.com").isEmpty());
+
+		verifyNoInteractions(mockCognitoUserComponent);
+		verify(mockRepository, never()).findCustomerByCustomerId(any());
+		verify(mockRepository, never()).changeEmail(any(), any());
+	}
+
+	@Test
+	void testChangeEmail_whenCognitoRejects_returnsEmptyWithoutSwappingRecord() {
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(createTestCustomer()));
+		when(mockRepository.findCustomerByEmail(NEW_EMAIL)).thenReturn(Optional.empty());
+		doThrow(AliasExistsException.builder().message("exists").build())
+				.when(mockCognitoUserComponent)
+				.updateEmail(CUSTOMER_ID, NEW_EMAIL);
+
+		assertTrue(customerComponent.changeEmail(CUSTOMER_ID, NEW_EMAIL).isEmpty());
+		verify(mockRepository, never()).changeEmail(any(), any());
+		verify(mockCognitoUserComponent, times(1)).updateEmail(any(), any());
+	}
+
+	@Test
+	void testChangeEmail_whenTransactionCanceled_revertsCognitoAndReturnsEmpty() {
+		Customer existing = createTestCustomer();
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(existing));
+		when(mockRepository.findCustomerByEmail(NEW_EMAIL)).thenReturn(Optional.empty());
+		when(mockRepository.changeEmail(existing, NEW_EMAIL))
+				.thenThrow(TransactionCanceledException.builder()
+						.message("ConditionalCheckFailed")
+						.build());
+
+		assertTrue(customerComponent.changeEmail(CUSTOMER_ID, NEW_EMAIL).isEmpty());
+		InOrder inOrder = inOrder(mockCognitoUserComponent);
+		inOrder.verify(mockCognitoUserComponent).updateEmail(CUSTOMER_ID, NEW_EMAIL);
+		inOrder.verify(mockCognitoUserComponent).updateEmail(CUSTOMER_ID, EMAIL);
+	}
+
+	@Test
+	void testChangeEmail_whenRecordSwapAndCognitoRevertBothFail_returnsEmpty() {
+		Customer existing = createTestCustomer();
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(existing));
+		when(mockRepository.findCustomerByEmail(NEW_EMAIL)).thenReturn(Optional.empty());
+		when(mockRepository.changeEmail(existing, NEW_EMAIL)).thenThrow(new RuntimeException("dynamo down"));
+		doNothing().when(mockCognitoUserComponent).updateEmail(CUSTOMER_ID, NEW_EMAIL);
+		doThrow(new RuntimeException("cognito down"))
+				.when(mockCognitoUserComponent)
+				.updateEmail(CUSTOMER_ID, EMAIL);
+
+		assertTrue(customerComponent.changeEmail(CUSTOMER_ID, NEW_EMAIL).isEmpty());
+		verify(mockCognitoUserComponent).updateEmail(CUSTOMER_ID, EMAIL);
+	}
+
+	@Test
+	void testUpdateCustomer_withDifferentEmail_keepsExistingEmail() {
+		Customer customer = createTestCustomer();
+		customer.setEmail("hijack@example.com");
+		when(mockRepository.findCustomerByCustomerId(CUSTOMER_ID)).thenReturn(Optional.of(createTestCustomer()));
+
+		customerComponent.updateCustomer(customer);
+
+		assertEquals(EMAIL, customer.getEmail());
+		verify(mockRepository).update(customer);
+		verify(mockRepository, never()).changeEmail(any(), any());
 	}
 
 	private Customer createTestCustomer() {

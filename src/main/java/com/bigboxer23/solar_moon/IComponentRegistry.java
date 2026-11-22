@@ -3,6 +3,7 @@ package com.bigboxer23.solar_moon;
 import com.bigboxer23.solar_moon.aggregated.overview.OverviewComponent;
 import com.bigboxer23.solar_moon.aggregated.sites.SitesOverviewComponent;
 import com.bigboxer23.solar_moon.alarm.AlarmComponent;
+import com.bigboxer23.solar_moon.customer.CognitoUserComponent;
 import com.bigboxer23.solar_moon.customer.CustomerComponent;
 import com.bigboxer23.solar_moon.device.*;
 import com.bigboxer23.solar_moon.download.DownloadComponent;
@@ -33,6 +34,8 @@ public interface IComponentRegistry {
 	Gson gson = new GsonBuilder()
 			.registerTypeAdapter(SearchResponse.class, new SearchResponseAdapter())
 			.create();
+
+	CognitoUserComponent cognitoUserComponent = new CognitoUserComponent();
 
 	CustomerComponent customerComponent = new CustomerComponent();
 

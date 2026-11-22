@@ -8,7 +8,7 @@ import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 public abstract class AbstractDynamodbComponent<T> {
 	private static DynamoDbEnhancedClient client;
 
-	private DynamoDbEnhancedClient getClient() {
+	protected DynamoDbEnhancedClient getClient() {
 		if (client == null) {
 			client = DynamoDbEnhancedClient.create();
 		}
