@@ -15,6 +15,9 @@ public final class PropertyConstants {
 	/** AWS Location Service index name for geocoding */
 	public static final String AWS_LOCATION_INDEX = "aws.location.index";
 
+	/** Cognito user pool id that holds Solar Moon users */
+	public static final String COGNITO_USER_POOL_ID = "aws.cognito.user.pool.id";
+
 	/** S3 bucket name for FTP ingestion storage */
 	public static final String FTP_S3_BUCKET = "ftp.s3.bucket";
 

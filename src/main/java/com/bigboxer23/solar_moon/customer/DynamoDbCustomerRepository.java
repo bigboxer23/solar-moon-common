@@ -4,7 +4,13 @@ import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.dynamodb.AuditableAbstractDynamodbRepository;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Expression;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.model.DeleteItemEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhancedRequest;
 import software.amazon.awssdk.utils.StringUtils;
 
 @Slf4j
@@ -62,6 +68,39 @@ public class DynamoDbCustomerRepository extends AuditableAbstractDynamodbReposit
 	@Override
 	public void delete(Customer customer) {
 		getTable().deleteItem(customer);
+	}
+
+	@Override
+	public Customer changeEmail(Customer customer, String newEmail) {
+		DynamoDbTable<Customer> table = getTable();
+		String oldEmail = customer.getEmail();
+		customer.setEmail(newEmail);
+		customer.markUpdated();
+		getClient()
+				.transactWriteItems(TransactWriteItemsEnhancedRequest.builder()
+						.addDeleteItem(
+								table,
+								DeleteItemEnhancedRequest.builder()
+										.key(Key.builder()
+												.partitionValue(oldEmail)
+												.build())
+										.conditionExpression(emailCondition("attribute_exists(#email)"))
+										.build())
+						.addPutItem(
+								table,
+								PutItemEnhancedRequest.builder(Customer.class)
+										.item(customer)
+										.conditionExpression(emailCondition("attribute_not_exists(#email)"))
+										.build())
+						.build());
+		return customer;
+	}
+
+	private static Expression emailCondition(String expression) {
+		return Expression.builder()
+				.expression(expression)
+				.putExpressionName("#email", "email")
+				.build();
 	}
 
 	@Override

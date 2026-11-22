@@ -5,11 +5,15 @@ import com.bigboxer23.solar_moon.data.Customer;
 import com.bigboxer23.solar_moon.util.TokenGenerator;
 import com.bigboxer23.solar_moon.web.TransactionUtil;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.CognitoIdentityProviderException;
 import software.amazon.awssdk.utils.StringUtils;
 
 @Slf4j
 public class CustomerComponent {
+
+	private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
 	private CustomerRepository repository;
 
@@ -46,6 +50,10 @@ public class CustomerComponent {
 
 	protected com.bigboxer23.solar_moon.search.OpenSearchComponent getOpenSearchComponent() {
 		return IComponentRegistry.OSComponent;
+	}
+
+	protected CognitoUserComponent getCognitoUserComponent() {
+		return IComponentRegistry.cognitoUserComponent;
 	}
 
 	public Optional<Customer> addCustomer(String email, String customerId, String name, String stripeCustomerId) {
@@ -91,12 +99,83 @@ public class CustomerComponent {
 			if (!StringUtils.isEmpty(existingCustomer.getStripeCustomerId())) {
 				customer.setStripeCustomerId(existingCustomer.getStripeCustomerId());
 			}
+			if (!StringUtils.equals(customer.getEmail(), existingCustomer.getEmail())) {
+				log.warn("Ignoring email change via update, use changeEmail " + customer.getCustomerId());
+				customer.setEmail(existingCustomer.getEmail());
+			}
 		});
 		// TODO:validation
 		getRepository().update(customer);
 		if (accessKeyChangeRequested) {
 			getSMAIngestComponent().handleAccessKeyChange(previousAccessKey, customer.getAccessKey());
 		}
+	}
+
+	/**
+	 * Changes the email for a customer in both Cognito and the customer table. customerId (the
+	 * Cognito sub), access key, and Stripe id are unchanged, so no other data needs to move.
+	 * Stripe's copy of the email is not updated here.
+	 *
+	 * <p>Cognito is updated first (it enforces email uniqueness across every user in the pool),
+	 * then the customer record is swapped atomically since email is the table's partition key. If
+	 * the table swap fails, Cognito is reverted to the old email.
+	 *
+	 * <p>The new email is marked verified in Cognito, so only pass an address that has already been
+	 * verified. Calling this after the user confirms the change in the app is safe: the Cognito
+	 * update is then a no-op.
+	 *
+	 * @return the updated customer, or empty if the customer doesn't exist, the email is invalid,
+	 *     the email belongs to another user, or either update fails
+	 */
+	public Optional<Customer> changeEmail(String customerId, String newEmail) {
+		String email = newEmail == null ? null : newEmail.trim();
+		if (StringUtils.isEmpty(customerId) || !isValidEmail(email)) {
+			log.warn("invalid customer id or email, cannot change email");
+			return Optional.empty();
+		}
+		Optional<Customer> existing = findCustomerByCustomerId(customerId);
+		if (existing.isEmpty()) {
+			log.warn("customer " + customerId + " not found, cannot change email");
+			return Optional.empty();
+		}
+		String oldEmail = existing.get().getEmail();
+		if (!email.equals(oldEmail)) {
+			Optional<Customer> conflict = findCustomerByEmail(email);
+			if (conflict.isPresent() && !customerId.equals(conflict.get().getCustomerId())) {
+				log.warn("email already in use, cannot change email for " + customerId);
+				return Optional.empty();
+			}
+		}
+		logAction("change email", customerId);
+		try {
+			getCognitoUserComponent().updateEmail(customerId, email);
+		} catch (CognitoIdentityProviderException e) {
+			log.warn("cognito rejected email change for " + customerId + ": " + e.getMessage());
+			return Optional.empty();
+		}
+		if (email.equals(oldEmail)) {
+			return existing;
+		}
+		try {
+			return Optional.of(getRepository().changeEmail(existing.get(), email));
+		} catch (RuntimeException e) {
+			log.error("customer table email change failed for " + customerId + ", reverting cognito", e);
+			revertCognitoEmail(customerId, oldEmail);
+			return Optional.empty();
+		}
+	}
+
+	private void revertCognitoEmail(String customerId, String oldEmail) {
+		try {
+			getCognitoUserComponent().updateEmail(customerId, oldEmail);
+		} catch (RuntimeException e) {
+			log.error(
+					"failed to revert cognito email for " + customerId + ", cognito and customer table now differ", e);
+		}
+	}
+
+	private static boolean isValidEmail(String email) {
+		return !StringUtils.isBlank(email) && EMAIL_PATTERN.matcher(email).matches();
 	}
 
 	public Optional<Customer> findCustomerByEmail(String email) {
